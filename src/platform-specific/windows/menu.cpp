@@ -285,7 +285,7 @@ static void updatePopupState(HMENU popup)
     // Refresh them each time the popup opens, including after F11 changes view.
     if (popup == g_ssDisplayMenu || popup == g_ssMonitorMenu || popup == g_ssViewMenu) {
         const int selected = popup == g_ssMonitorMenu
-            ? mi->getSecondSightRGBMonitor() : mi->getSecondSightView();
+            ? mi->getSecondSightMonitor() : mi->getSecondSightView();
         for (int i = 0; i < GetMenuItemCount(popup); ++i) {
             if (popup != g_ssDisplayMenu) setItemCheck(popup, i, i == selected);
             setItemEnable(popup, i, mi->hasSecondSightZ180());
@@ -447,8 +447,9 @@ static void dispatchCommand(UINT id)
     case MENU_SS_LATTICE_V2: mi->setSecondSightLattice(true); return;
     case MENU_SS_INT0_NONE: mi->setSecondSightInt0Pullup(false); return;
     case MENU_SS_INT0_ADDED: mi->setSecondSightInt0Pullup(true); return;
-    case MENU_SS_MONITOR_VGA: mi->setSecondSightMonitor(false); return;
-    case MENU_SS_MONITOR_RGB: mi->setSecondSightMonitor(true); return;
+    case MENU_SS_MONITOR_VGA: mi->setSecondSightMonitor(0); return;
+    case MENU_SS_MONITOR_LCD: mi->setSecondSightMonitor(1); return;
+    case MENU_SS_MONITOR_RGB: mi->setSecondSightMonitor(2); return;
     case MENU_SS_SCREEN_IIGS: mi->setSecondSightView(0); return;
     case MENU_SS_SCREEN_CARD: mi->setSecondSightView(1); return;
     case MENU_SS_SCREEN_BOTH: mi->setSecondSightView(2); return;
@@ -707,7 +708,8 @@ static void setupMenus()
     g_ssDisplayMenu = CreatePopupMenu();
     g_ssMonitorMenu = CreatePopupMenu();
     g_ssViewMenu = CreatePopupMenu();
-    AppendMenuW(g_ssMonitorMenu, MF_STRING, MENU_SS_MONITOR_VGA, L"VGA");
+    AppendMenuW(g_ssMonitorMenu, MF_STRING, MENU_SS_MONITOR_VGA, L"VGA CRT");
+    AppendMenuW(g_ssMonitorMenu, MF_STRING, MENU_SS_MONITOR_LCD, L"VGA LCD");
     AppendMenuW(g_ssMonitorMenu, MF_STRING, MENU_SS_MONITOR_RGB, L"AppleColor RGB");
     AppendMenuW(g_ssViewMenu, MF_STRING, MENU_SS_SCREEN_IIGS, L"IIgs monitor\tF11");
     AppendMenuW(g_ssViewMenu, MF_STRING, MENU_SS_SCREEN_CARD, L"Second Sight monitor\tF11");

@@ -13,12 +13,17 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <vector>
 
 // Owned by one SecondSightDisplay texture and used only on the render thread.
 // The active card image remains separate from these retained monitor pixels.
 class SecondSightCrt {
 public:
+    // A monitor that takes the changed rows of the composed window itself,
+    // as the LCD panel's scaler does, instead of a texture upload. False
+    // keeps the rows pending, as a failed upload does.
+    std::function<bool(const uint32_t *pixels, int top, int bottom)> sink;
     // CRTC (cathode-ray tube controller) counters wrap independently of the
     // monitor window. Horizontal units are pixels; vertical units are lines.
     // Each value belongs to this scan and is used only on the render thread.
@@ -27,10 +32,16 @@ public:
         // total is the counter period; start/count select the monitor window;
         // blank_start/blank_count select the signal-suppression interval.
         int total = 1, start = 0, count = 1, blank_start = 0, blank_count = 0;
+        // A monitor that samples the line with its own clock takes samples
+        // per line, the first one at the given sample after start; each
+        // sample shows the counter position phase/64 of a sample after the
+        // start of its period. 0 takes one sample per counter position.
+        int samples = 0, first = 0, phase = 0;
         // A change to either window or blanking invalidates retained pixels.
         bool operator==(const Axis &other) const {
             return total == other.total && start == other.start && count == other.count &&
-                blank_start == other.blank_start && blank_count == other.blank_count;
+                blank_start == other.blank_start && blank_count == other.blank_count &&
+                samples == other.samples && first == other.first && phase == other.phase;
         }
         // Build the unblanked window from a positive counter period and the
         // first blank position/length. A full-period blank leaves no window.
@@ -39,7 +50,11 @@ public:
             return {total, (first + length) % total, total - length, first % total, length};
         }
         // Map a window offset to the counter, including negative window starts.
-        int position(int offset) const { return ((start + offset) % total + total) % total; }
+        int position(int offset) const {
+            if (samples)
+                return int((start + (64 * int64_t(first + offset) + phase) * total / (64 * int64_t(samples))) % total);
+            return ((start + offset) % total + total) % total;
+        }
         // Is this nonnegative counter position inside the wrapping blank interval?
         bool blank(int position) const {
             return (position + total - blank_start) % total < blank_count;
@@ -209,7 +224,7 @@ private:
                     const int position = beam_y * x.total + sx;
                     const auto change = std::upper_bound(changes->begin(), changes->end(), position,
                         [](int p, const BorderChange &c) { return p < c.end; });
-                    int part = std::min(span.count - done, x.total - sx);
+                    int part = x.samples ? 1 : std::min(span.count - done, x.total - sx);
                     if (change != changes->end()) part = std::min(part, change->end - position);
                     std::fill_n(dest + span.left + done, part, change == changes->end() ? border_ : change->color);
                     done += part;

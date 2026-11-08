@@ -136,6 +136,14 @@ unsigned Bt481::pixels_per_clock_divisor() const {
     return !bit(cra, 7) ? 1 : bytes_per_pixel() / (bit(cra, 5) ? 1 : 2);
 }
 
+// Pseudo color and the two-edge 15- and 16-bit modes take 7 clocks, the
+// one-edge 15- and 16-bit and two-edge 32-bit modes 8, one-edge 24-bit 9.
+unsigned Bt481::pipeline_clocks() const {
+    if (!bit(cra, 7))
+        return 7;
+    return bit(cra, 5) ? 6 + bytes_per_pixel() : bytes_per_pixel() == 4 ? 8 : 7;
+}
+
 // Apply pixel/overlay masks and the six/eight-bit DAC precision before RGB output.
 VideoColor Bt481::pixel_select(uint8_t index, uint8_t overlay) const {
     if (asleep())

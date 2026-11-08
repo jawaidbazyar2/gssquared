@@ -45,6 +45,9 @@ SecondSightDisplay::~SecondSightDisplay() {
     // Field textures belong to their respective renderer, like the main image.
     if (main_texture.odd) SDL_DestroyTexture(main_texture.odd);
     if (window_texture.odd) SDL_DestroyTexture(window_texture.odd);
+    if (main_texture.lcd_source) SDL_DestroyTexture(main_texture.lcd_source);
+    if (window_texture.lcd_source) SDL_DestroyTexture(window_texture.lcd_source);
+    lcd_gpu.shutdown(vs->gpu_device);
     if (renderer) SDL_DestroyRenderer(renderer);
     if (window) SDL_DestroyWindow(window);
 }
@@ -91,7 +94,7 @@ bool SecondSightDisplay::open_window() {
 // switching renderers because each texture has its own retained pixels.
 // refresh requires ownership of stopped Oak state. Otherwise return the last
 // shown texture without reading the card. Null means no drawable texture.
-SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &texture, bool refresh) {
+SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &texture, bool refresh, SDL_FPoint shown) {
     // Retained SDL textures are host-owned. Reusing one must not inspect Oak,
     // including its dimensions, current field or dirty-line bookkeeping.
     if (!refresh) return texture.shown;
@@ -103,7 +106,23 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
     if (timing.width < 1 || timing.height < 1 || timing.width > OTI087::MAX_FRAME_DIMENSION || timing.height > OTI087::MAX_FRAME_DIMENSION)
         return nullptr;
     bool full = last_renderer != dest;
-    const auto scan = ss_monitor::scan(video);
+    // The web build shows the LCD only with its GPU filter; the CPU filter is
+    // too slow for a browser.
+    bool on_lcd = video.vga_monitor() && SystemSettings::instance().ss_vga_lcd() && ss_lcd_offered();
+#if defined(__EMSCRIPTEN__)
+    on_lcd = on_lcd && use_lcd_gpu(dest);
+#endif
+    const auto signal = on_lcd ? ss_monitor::lcd_signal(video) : ss_monitor::LcdSignal{};
+    lcd.follow(signal.present, signal.timing);
+    if (on_lcd) {
+        const auto shape = ss_monitor::lcd_shape(video, signal);
+        if (lcd.needs_picture() || !(shape == lcd_shape)) {
+            lcd_shape = shape;
+            lcd.picture(ss_monitor::lcd_picture(video, signal));
+        }
+    }
+    const auto scan = on_lcd ? ss_monitor::lcd_scan(video, lcd, signal) : ss_monitor::scan(video);
+    texture.aspect = on_lcd ? ss_lcd::aspect : 0;
     const double line_hz = 1.0 / timing.line_period();
     const int fields = timing.interlaced ? 2 : 1;
     // A monitor locks to timing that holds for a whole frame. The states that
@@ -119,29 +138,70 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
         if (out_of_range) {
             // The event keeps this pointer until the heads-up display copies the text.
             static char message[96];
-            snprintf(message, sizeof message, "Second Sight %s monitor: out of range (%.2f kHz, %.2f Hz)",
-                video.vga_monitor() ? "VGA" : "AppleColor RGB", line_hz / 1000.0, fields / timing.frame_period());
+            const char *name = on_lcd ? "VGA LCD" : video.vga_monitor() ? "VGA CRT" : "AppleColor RGB";
+            if (on_lcd && !signal.present)
+                snprintf(message, sizeof message, "Second Sight %s monitor: no signal", name);
+            else
+                snprintf(message, sizeof message, "Second Sight %s monitor: out of range (%.2f kHz, %.2f Hz)",
+                    name, line_hz / 1000.0, fields / timing.frame_period());
             fprintf(stderr, "%s\n", message);
             computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
         }
     }
     const auto &horizontal = scan.horizontal, &vertical = scan.vertical;
-    const bool filtered = computer->video_system->get_crt_shader_enabled();
+    // An LCD has no scan lines and shows the fields of an interlaced signal woven.
+    const bool filtered = !on_lcd && computer->video_system->get_crt_shader_enabled();
     const int phase = timing.interlaced ? video.odd_field_sync_phase() : 0;
     const bool odd = timing.interlaced && video.vpos() >= timing.total_height / 2;
     texture.crt.configure(horizontal, vertical, filtered, timing.interlaced, video.border_color().value, !out_of_range,
-        phase, int(timing.total_width), odd, timing.interlaced);
-    const int width = texture.crt.width(), height = texture.crt.height();
+        phase, int(timing.total_width), odd, timing.interlaced && !on_lcd);
+    // On the LCD the texture holds the panel's picture at the size it is
+    // shown, or at the panel's own size when it is shown larger, filtered from
+    // the monitor's samples: on the GPU when it can, else on the CPU as each
+    // changed row arrives.
+    bool gpu = false;
+    if (on_lcd) {
+        if (texture.panel.configure(texture.crt.width(), texture.crt.height(), int(std::lround(shown.x)),
+                int(std::lround(shown.y)))) {
+            texture.lcd_tables = 0;
+            full = true;
+        }
+        gpu = use_lcd_gpu(dest) && prepare_lcd_source(dest, texture, full);
+    }
+    if (gpu) {
+        texture.crt.sink = [&texture](const uint32_t *pixels, int top, int bottom) {
+            const int width = texture.crt.width();
+            const SDL_Rect rows = {0, top, width, bottom - top + 1};
+            texture.lcd_samples_changed = true;
+            return SDL_UpdateTexture(texture.lcd_source, &rows, pixels + size_t(top) * width,
+                width * int(sizeof(uint32_t)));
+        };
+    } else if (on_lcd) {
+        texture.crt.sink = [&texture](const uint32_t *pixels, int top, int bottom) {
+            const auto [first, last] = texture.panel.update(pixels, top, bottom);
+            if (last < first) return true;
+            const int width = texture.panel.width();
+            const SDL_Rect rows = {0, first, width, last - first + 1};
+            return SDL_UpdateTexture(texture.value, &rows, texture.panel.pixels() + size_t(first) * width,
+                width * int(sizeof(uint32_t)));
+        };
+    } else {
+        texture.crt.sink = nullptr;
+    }
+    const int width = on_lcd ? texture.panel.width() : texture.crt.width();
+    const int height = on_lcd ? texture.panel.height() : texture.crt.height();
     if (width < 1 || height < 1 || width > OTI087::MAX_FRAME_DIMENSION * 2 || height > OTI087::MAX_FRAME_DIMENSION * 2)
         return nullptr;
-    if (!texture.value || texture.width != width || texture.height != height) {
+    if (!texture.value || texture.width != width || texture.height != height || texture.lcd_gpu != gpu) {
         if (texture.value) SDL_DestroyTexture(texture.value);
         if (texture.odd) SDL_DestroyTexture(texture.odd);
         texture.odd = nullptr;
         texture.width = width;
         texture.height = height;
-        texture.value = SDL_CreateTexture(dest, SDL_PIXELFORMAT_XRGB8888,
-            SDL_TEXTUREACCESS_STREAMING, texture.width, texture.height);
+        texture.lcd_gpu = gpu;
+        // The GPU filter draws into the texture, in the byte order it reads.
+        texture.value = SDL_CreateTexture(dest, gpu ? SDL_PIXELFORMAT_ABGR8888 : SDL_PIXELFORMAT_XRGB8888,
+            gpu ? SDL_TEXTUREACCESS_TARGET : SDL_TEXTUREACCESS_STREAMING, texture.width, texture.height);
         if (!texture.value) return nullptr;
         SDL_SetTextureBlendMode(texture.value, SDL_BLENDMODE_NONE);
         full = true;
@@ -160,12 +220,61 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
     if (texture.odd) SDL_SetTextureScaleMode(texture.odd, computer->video_system->display_pixel_mode == DM_PIXEL_FUZZ
         ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_PIXELART);
     if (!video.upload_frame(texture.value, full, &texture.crt, texture.odd)) return nullptr;
+    if (gpu && texture.lcd_samples_changed) {
+        texture.lcd_samples_changed = false;
+        if (!lcd_gpu.run(texture.lcd_source, texture.value, {texture.crt.height(), width, height})) return nullptr;
+    }
     last_renderer = dest;
     // The existing Oak beam includes both fields. Select its current parity,
     // not a wall-clock counter, so pause and replay retain the same picture.
     texture.shown = filtered && texture.crt.fields() && video.vpos() >= timing.total_height / 2
         ? texture.odd : texture.value;
     return texture.shown;
+}
+
+// The GPU filter works on the main window's renderer. Set it up on first use.
+bool SecondSightDisplay::use_lcd_gpu(SDL_Renderer *dest) {
+    auto *vs = computer->video_system;
+    if (dest != vs->renderer) return false;
+    if (!lcd_gpu_tried) {
+        lcd_gpu_tried = true;
+        lcd_gpu.init(vs->renderer, vs->gpu_device);
+    }
+    return lcd_gpu.ready();
+}
+
+// Size the GPU filter's input for this capture and these taps: the samples in
+// the top rows, the tap tables below. Writes the tables when they changed and
+// sets full when every sample row must be sent again. False when this size
+// needs more taps than the shader reads, so the CPU filters it.
+bool SecondSightDisplay::prepare_lcd_source(SDL_Renderer *dest, Texture &texture, bool &full) {
+    if (texture.lcd_tables < 0) return false;
+    constexpr int taps = ss_lcd::Panel::gpu_taps;
+    const int width = std::max({texture.crt.width(), texture.panel.width(), texture.panel.height()});
+    const int height = texture.crt.height() + 2 * taps;
+    if (!texture.lcd_source || texture.lcd_source_width != width || texture.lcd_source_height != height) {
+        if (texture.lcd_source) SDL_DestroyTexture(texture.lcd_source);
+        texture.lcd_source = SDL_CreateTexture(dest, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING,
+            width, height);
+        if (!texture.lcd_source) return false;
+        SDL_SetTextureBlendMode(texture.lcd_source, SDL_BLENDMODE_NONE);
+        SDL_SetTextureScaleMode(texture.lcd_source, SDL_SCALEMODE_NEAREST);
+        texture.lcd_source_width = width;
+        texture.lcd_source_height = height;
+        texture.lcd_tables = 0;
+        full = true;
+    }
+    if (texture.lcd_tables == 0) {
+        std::vector<uint32_t> rows(size_t(2 * taps) * width);
+        if (!texture.panel.gpu_tables(rows.data(), width)) {
+            texture.lcd_tables = -1;
+            return false;
+        }
+        const SDL_Rect area = {0, texture.crt.height(), width, 2 * taps};
+        if (!SDL_UpdateTexture(texture.lcd_source, &area, rows.data(), width * int(sizeof(uint32_t)))) return false;
+        texture.lcd_tables = 1;
+    }
+    return true;
 }
 
 // Present the selected monitor(s) without altering card timing. Restore the
@@ -200,10 +309,12 @@ void SecondSightDisplay::render() {
             SDL_SetWindowRelativeMouseMode(window, mouse_captured);
         }
         SDL_RenderClear(renderer);
-        if (auto *texture = prepare_texture(renderer, window_texture, refresh)) {
-            int w, h;
-            SDL_GetRenderOutputSize(renderer, &w, &h);
-            const SDL_FRect dest = frame_rect({0, 0, float(w), float(h)}, vs->aspect_ratio);
+        int w, h;
+        SDL_GetRenderOutputSize(renderer, &w, &h);
+        const SDL_FRect area = frame_rect({0, 0, float(w), float(h)}, ss_lcd::aspect);
+        if (auto *texture = prepare_texture(renderer, window_texture, refresh, {area.w, area.h})) {
+            const SDL_FRect dest = frame_rect({0, 0, float(w), float(h)},
+                window_texture.aspect > 0 ? window_texture.aspect : vs->aspect_ratio);
             card_content = dest;
             SDL_RenderTexture(renderer, texture, nullptr, &dest);
         }
@@ -228,14 +339,24 @@ void SecondSightDisplay::render() {
     SDL_GetRenderDrawBlendMode(vs->renderer, &blend);
     SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
     SDL_SetRenderDrawBlendMode(vs->renderer, SDL_BLENDMODE_NONE);
-    if (auto *texture = prepare_texture(vs->renderer, main_texture, refresh)) {
+    const SDL_FRect area = frame_rect(vs->target, ss_lcd::aspect);
+    if (auto *texture = prepare_texture(vs->renderer, main_texture, refresh, {area.w, area.h})) {
         SDL_FRect source = {0, 0, float(main_texture.width), float(main_texture.height)};
         // The texture contains active pixels and overscan at one sample scale.
         // Only blank/retrace space outside this complete visible scan is black.
         // update_display already fitted this viewport with the Apple aspect.
         // The opaque complete scan covers it; avoid a redundant fill beneath
         // every browser frame. A missing card signal still clears it below.
-        vs->render_frame(texture, &source, nullptr);
+        // An LCD panel shows its picture at its own aspect, with black edges.
+        if (main_texture.aspect > 0) {
+            SDL_RenderFillRect(vs->renderer, &vs->target);
+            const SDL_FRect panel = frame_rect(vs->target, main_texture.aspect);
+            SDL_FRect inset = {0, 0, (vs->target.w - panel.w) * 0.5f * source.w / vs->target.w,
+                               (vs->target.h - panel.h) * 0.5f * source.h / vs->target.h};
+            vs->render_frame(texture, &source, &inset);
+        } else {
+            vs->render_frame(texture, &source, nullptr);
+        }
         // render_frame receives no destination adjustment or content inset;
         // its retained content is the exact SDL_RenderTexture destination.
         card_content = vs->content;

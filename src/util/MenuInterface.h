@@ -44,8 +44,9 @@ public:
 	void setMonitor(int monitor_id);
 	// CPU composite remains available when the optional GS encoder fails to load.
 	bool monitorAvailable(int monitor_id);
-	// Second Sight cable sense: false=VGA, true=AppleColor RGB; sampled at mode setup.
-	void setSecondSightMonitor(bool rgb);
+	// Second Sight monitor: VGA CRT=0, VGA LCD=1, AppleColor RGB=2. The card
+	// senses the cable at mode setup.
+	void setSecondSightMonitor(int monitor);
 	// Second Sight visibility: IIgs=0, card=1, both=2; no chip reset.
 	void setSecondSightView(int view);
 	// Save Second Sight firmware index (1.4=0, 1.5=1, 2.0=2) for Restart.
@@ -109,8 +110,10 @@ public:
 	bool hasSecondSight();
 	// Whether the firmware-executing Second Sight display is attached to this machine.
 	bool hasSecondSightZ180();
-	// Saved Second Sight cable choice; true identifies AppleColor RGB.
-	bool getSecondSightRGBMonitor();
+	// Saved Second Sight monitor: VGA CRT=0, VGA LCD=1, AppleColor RGB=2.
+	int getSecondSightMonitor();
+	// Whether the VGA LCD monitor is offered; the web build needs a GPU.
+	bool secondSightLcdOffered();
 	// Saved Second Sight view index: IIgs=0, card=1, both=2.
 	int getSecondSightView();
 	bool getMountDrivers();

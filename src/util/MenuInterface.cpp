@@ -7,6 +7,7 @@
 #include "debugger/debugwindow.hpp"
 #include "computer.hpp"
 #include "util/AudioSystem.hpp"
+#include "devices/secondsight/ss_lcd_gpu.hpp"
 #include "util/mount.hpp"
 #include "util/SystemSettings.hpp"
 #include "util/applekeys.hpp"
@@ -45,10 +46,12 @@ bool MenuInterface::monitorAvailable(int monitor_id) {
         (monitor_id != MONITOR_GS_COMPOSITE || computer_->video_system->gscomposite_allowed);
 }
 
-// Second Sight firmware senses the selected cable: true means AppleColor RGB.
+// Second Sight firmware senses the selected cable: VGA or AppleColor RGB.
 // Store the choice for the next frame hook; firmware applies it at mode setup.
-void MenuInterface::setSecondSightMonitor(bool rgb) {
-	SystemSettings::instance().set_ss_rgb_monitor(rgb);
+void MenuInterface::setSecondSightMonitor(int monitor) {
+	if (monitor == 1 && !ss_lcd_offered()) return;
+	SystemSettings::instance().set_ss_rgb_monitor(monitor == 2);
+	if (monitor != 2) SystemSettings::instance().set_ss_vga_lcd(monitor == 1);
 }
 
 // Select the visible Second Sight/IIgs monitor arrangement without resetting chips.
@@ -91,9 +94,15 @@ bool MenuInterface::hasSecondSightZ180() {
 	return computer_ && computer_->video_system && bool(computer_->video_system->additional_display);
 }
 
-// Supply the Second Sight cable checkmark from the saved monitor preference.
-bool MenuInterface::getSecondSightRGBMonitor() {
-	return SystemSettings::instance().ss_rgb_monitor();
+// Supply the Second Sight monitor checkmark from the saved preferences.
+int MenuInterface::getSecondSightMonitor() {
+	const auto &settings = SystemSettings::instance();
+	return settings.ss_rgb_monitor() ? 2 : settings.ss_vga_lcd() && ss_lcd_offered() ? 1 : 0;
+}
+
+// The web build offers the VGA LCD only with a hardware GPU (ss_lcd_gpu.hpp).
+bool MenuInterface::secondSightLcdOffered() {
+	return ss_lcd_offered();
 }
 
 // Supply the Second Sight view checkmark: IIgs=0, card=1, both=2.

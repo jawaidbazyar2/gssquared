@@ -148,6 +148,7 @@ bool SystemSettings::load() {
     // Second Sight defaults match the original card with a VGA cable; show
     // both monitors so firmware startup does not hide the built-in Apple screen.
     ss_rgb_monitor_ = false;
+    ss_vga_lcd_ = false;
     ss_view_ = SS_VIEW_BOTH;
     ss_firmware_ = SS_FW_14;
     ss_lattice_v2_ = false;
@@ -233,6 +234,7 @@ bool SystemSettings::load() {
             // Restore Second Sight cable sense and visibility separately from
             // hardware, clamping an invalid view to both monitors.
             ss_rgb_monitor_ = (*display)["ss_rgb_monitor"].value_or(false);
+            ss_vga_lcd_ = (*display)["ss_vga_lcd"].value_or(false);
             ss_view_ = (*display)["ss_view"].value_or(SS_VIEW_BOTH);
             if (ss_view_ < SS_VIEW_IIGS || ss_view_ >= SS_VIEW_COUNT) ss_view_ = SS_VIEW_BOTH;
             mono_persistence_ = (*display)["mono_persistence"].value_or(true);
@@ -316,6 +318,7 @@ bool SystemSettings::save() const {
     display.insert("ss_text_mode", ss_text_mode_);
     // Second Sight cable and visible monitors are host display preferences.
     display.insert("ss_rgb_monitor", ss_rgb_monitor_);
+    display.insert("ss_vga_lcd", ss_vga_lcd_);
     display.insert("ss_view", ss_view_);
     display.insert("mono_persistence", mono_persistence_);
     display.insert("scaling", scaling_sharp_ ? "sharp" : "smooth");
@@ -449,6 +452,13 @@ void SystemSettings::set_ss_int0_pullup(bool fitted) {
 void SystemSettings::set_ss_rgb_monitor(bool enabled) {
     if (ss_rgb_monitor_ == enabled) return;
     ss_rgb_monitor_ = enabled;
+    save();
+}
+
+// Remember whether an LCD or a CRT is on the VGA cable.
+void SystemSettings::set_ss_vga_lcd(bool enabled) {
+    if (ss_vga_lcd_ == enabled) return;
+    ss_vga_lcd_ = enabled;
     save();
 }
 

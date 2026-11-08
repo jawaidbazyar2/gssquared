@@ -406,6 +406,7 @@ add_library(gs2_devices_secondsight
     src/devices/secondsight/ss_card.cpp
     src/devices/secondsight/ss_z180.cpp
     src/devices/secondsight/ss_display.cpp
+    src/devices/secondsight/ss_lcd_gpu.cpp
     src/devices/secondsight/oti087.cpp
     src/devices/secondsight/oti087_memory.cpp
     src/devices/secondsight/oti087_registers.cpp
@@ -854,6 +855,8 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/ssoaktest)
     # Verify CRT presentation from the original card firmware's mode timings.
     add_subdirectory(apps/ssgeometrytest)
+    # Verify the VGA LCD monitor's mode choice and Auto.
+    add_subdirectory(apps/sslcdtest)
 endif()
 
 ################################################################################

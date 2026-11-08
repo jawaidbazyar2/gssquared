@@ -31,6 +31,7 @@ enum MenuEventCode {
 	// Second Sight display actions: cable sense followed by IIgs/card/both views.
 	// These are menu IDs, not hardware register or port numbers.
 	MENU_SS_MONITOR_VGA,
+	MENU_SS_MONITOR_LCD,
 	MENU_SS_MONITOR_RGB,
 	MENU_SS_SCREEN_IIGS,
 	MENU_SS_SCREEN_CARD,

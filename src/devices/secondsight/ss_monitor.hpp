@@ -6,6 +6,7 @@
 
 #include "oti087.hpp"
 #include "ss_crt.hpp"
+#include "ss_lcd.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -188,6 +189,150 @@ inline Scan scan(const OTI087 &video) {
             {timing.total_height, (timing.total_height - top) % timing.total_height, window_height,
              vfirst, mirror ? 0 : vlength},
             window.locked};
+}
+
+// The HSYNC leading edge at the card's VGA connector, in pixels from the
+// start of the active display there. HSYNC and VSYNC go from the Oak to the
+// connector through 22 ohm resistors only; the pixels and blanking go through
+// the Bt481, which the Oak's PCLK clocks. PCLK passes VCLK through on this
+// board's Type 0 color-chip interface (OTI-087 data book p. 37).
+// IBM's VGA, with the registers that IBM programs, starts HSync one border
+// and one front porch after the active display (VGA/XGA TRM pp. 4-4, 4-5,
+// timing set 1): its video leaves 2 characters after the CRTC count in
+// graphics and 3 in text, which also reads the character generator. 3 dot
+// clocks of that are IBM's DAC (TRM Fig. 2-97, T8). No source gives the
+// Oak's own delay; this takes IBM's, because the Oak BIOS and the card's
+// firmware program IBM's horizontal values unchanged. The Bt481 takes
+// pipeline_clocks().
+inline int connector_hsync(const OTI087 &video) {
+    const auto &timing = video.display_timing();
+    const auto &crtc = video.crtc_state();
+    const int characters = int(timing.line_characters), pixels = timing.total_width;
+    const int delay = (video.gc_read(6) & 1) ? 2 : 3;
+    const int start = ((crtc.horz_retrace_start + crtc.horz_retrace_skew - delay) % characters + characters) %
+        characters;
+    // The Bt481 runs on the Oak's clock input, which U12 halves on the RGB path.
+    const double clock = double(timing.oscillator_clock) / (timing.board_half_clock ? 2 : 1);
+    const int dac = int(std::lround((int(video.dac().pipeline_clocks()) - 3) / (clock * timing.pixel_period())));
+    return ((start * pixels / characters - dac) % pixels + pixels) % pixels;
+}
+
+// The card's VGA output on the LCD monitor: its sync as the monitor's
+// controller measures it, and the leading edges of HSync and VSync in pixels
+// and lines of a field from the start of the active display.
+struct LcdSignal {
+    bool present = false;
+    ss_lcd::Timing timing;
+    int hsync = 0, vsync = 0;
+};
+inline LcdSignal lcd_signal(const OTI087 &video) {
+    LcdSignal signal;
+    const auto &timing = video.display_timing();
+    const auto &crtc = video.crtc_state();
+    if (!crtc.sync_en || !crtc.horz_total || !crtc.horz_disp_end || !crtc.vert_disp_end) return signal;
+    const int characters = int(timing.line_characters), pixels = timing.total_width;
+    const int line_total = crtc.vert_total + 2;
+    const int hwidth =
+        OTI087::retrace_length(crtc.horz_retrace_start, crtc.horz_retrace_end & 31, 31, characters);
+    const int vwidth =
+        OTI087::retrace_length(crtc.vert_retrace_start, crtc.vert_retrace_end & 15, 15, line_total);
+    // A pulse that never starts or never ends gives no sync edge.
+    if (crtc.horz_retrace_start >= characters || crtc.vert_retrace_start >= line_total || !hwidth || !vwidth)
+        return signal;
+    const int divisor = crtc.sldiv ? 2 : 1;
+    const int fields = timing.interlaced ? 2 : 1;
+    // VSYNC is the retrace XOR Miscellaneous Output bit 7 XOR the Oak ext03
+    // bit 5 toggle (vsync_r); HSYNC is the retrace XOR bit 6 (hsync_r).
+    const bool v_negative = ((video.misc_output() >> 7) ^ (video.extended_read(3, true) >> 5)) & 1;
+    signal.hsync = connector_hsync(video);
+    signal.vsync = crtc.vert_retrace_start * divisor;
+    signal.present = ss_lcd::measure(1.0 / timing.line_period(), timing.total_height / fields,
+        double(hwidth) * pixels / characters * timing.pixel_period(), vwidth * divisor,
+        !(video.misc_output() & 0x40), !v_negative, timing.interlaced, signal.timing);
+    return signal;
+}
+
+// The window of the LCD monitor: the capture of the preset its controller
+// picks, sampled with the preset's ADC clock and phase. An interlaced signal
+// shows both fields woven.
+inline Scan lcd_scan(const OTI087 &video, const ss_lcd::Monitor &lcd, const LcdSignal &signal) {
+    const auto &timing = video.display_timing();
+    const auto [hfirst, hlength, vfirst, vlength] = blanking(video);
+    const auto &capture = lcd.capture();
+    if (!lcd.supported())
+        return {SecondSightCrt::Axis::visible(timing.total_width, timing.width, timing.total_width - timing.width),
+                SecondSightCrt::Axis::visible(timing.total_height, timing.height, timing.total_height - timing.height),
+                false};
+    const int fields = timing.interlaced ? 2 : 1;
+    return {{timing.total_width, signal.hsync % timing.total_width, capture.width, hfirst, hlength,
+             capture.samples, capture.hstart, capture.phase},
+            {timing.total_height, (signal.vsync + capture.vstart + 1) * fields % timing.total_height,
+             capture.height * fields, vfirst, vlength},
+            true};
+}
+
+// What sets the LCD picture's shape: the active display, the blanking, the
+// border's brightness and the sync leading edges.
+struct LcdShape {
+    int width = 0, height = 0, total_width = 0, total_height = 0;
+    Blanking blank = {};
+    bool border = false;
+    int hsync = 0, vsync = 0;
+    bool operator==(const LcdShape &o) const {
+        return width == o.width && height == o.height && total_width == o.total_width &&
+            total_height == o.total_height && blank.hfirst == o.blank.hfirst && blank.hlength == o.blank.hlength &&
+            blank.vfirst == o.blank.vfirst && blank.vlength == o.blank.vlength && border == o.border &&
+            hsync == o.hsync && vsync == o.vsync;
+    }
+};
+inline bool lcd_lit(uint32_t color) {
+    return ((color >> 16) & 255) > 0x40 || ((color >> 8) & 255) > 0x40 || (color & 255) > 0x40;
+}
+inline LcdShape lcd_shape(const OTI087 &video, const LcdSignal &signal) {
+    const auto &timing = video.display_timing();
+    return {timing.width, timing.height, timing.total_width, timing.total_height, blanking(video),
+            lcd_lit(video.border_color().value), signal.hsync, signal.vsync};
+}
+
+// The screen that the user runs Auto on, one field: the finest detail that
+// the mode can show, white and black columns one pixel wide with white at both
+// ends of the active display, the border in its color, and black where the
+// card blanks. Auto finds a sharp clock only on a screen with detail; on a
+// plain screen the clock it finds depends on the edges of the signal. The
+// edges take the Bt481's rise and fall time, 3 ns from 10% to 90% (L481A_C
+// Table 13).
+inline ss_lcd::Picture lcd_picture(const OTI087 &video, const LcdSignal &signal) {
+    const auto &timing = video.display_timing();
+    const auto [hfirst, hlength, vfirst, vlength] = blanking(video);
+    const int fields = timing.interlaced ? 2 : 1;
+    ss_lcd::Picture picture;
+    picture.width = timing.total_width;
+    picture.lines = timing.total_height / fields;
+    picture.hsync = signal.hsync;
+    picture.vsync = signal.vsync;
+    picture.edge = 3e-9 / 0.8 / timing.pixel_period();
+    picture.active_width = timing.width;
+    picture.active_lines = (timing.height + fields - 1) / fields;
+    picture.level.assign(size_t(picture.width) * picture.lines, 0);
+    picture.blue.assign(size_t(picture.width) * picture.lines, 0);
+    const uint32_t border = video.border_color().value;
+    const uint8_t border_level = std::max({uint8_t(border >> 16), uint8_t(border >> 8), uint8_t(border)});
+    for (int line = 0; line < picture.lines; ++line) {
+        const int y = line * fields;
+        if ((y + timing.total_height - vfirst) % timing.total_height < vlength) continue;
+        uint8_t *level = picture.level.data() + size_t(line) * picture.width;
+        uint8_t *blue = picture.blue.data() + size_t(line) * picture.width;
+        for (int x = 0; x < picture.width; ++x) {
+            if ((x + timing.total_width - hfirst) % timing.total_width < hlength) continue;
+            if (x < timing.width && y < timing.height) {
+                level[x] = blue[x] = (x % 2 == 0 || x == timing.width - 1) ? 255 : 0;
+            } else {
+                level[x] = border_level;
+                blue[x] = uint8_t(border);
+            }
+        }
+    }
+    return picture;
 }
 
 } // namespace ss_monitor

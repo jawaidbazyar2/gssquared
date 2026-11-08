@@ -96,6 +96,9 @@ public:
     unsigned bytes_per_pixel() const;
     // Number of input clocks per output pixel for Oak timing conversion.
     unsigned pixels_per_clock_divisor() const;
+    // Input clocks from a pixel and its BLANK* at the inputs to its analog
+    // output (L481A_C Table 13, pipeline delay).
+    unsigned pipeline_clocks() const;
     // Resolve an indexed byte plus four overlay pins to a masked output color.
     VideoColor pixel_select(uint8_t index, uint8_t overlay = 0) const;
     // Resolve the overlay palette index, honoring sleep and component precision.

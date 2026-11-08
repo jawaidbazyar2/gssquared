@@ -33,7 +33,7 @@ bool OTI087::upload_frame(SDL_Texture *texture, bool full, SecondSightCrt *crt, 
     int const top = std::max(0, present_top), bottom = std::min(height - 1, present_bottom);
     // The visible scan includes overscan, with optional retained field textures. Source
     // pixels stay untouched; failed SDL uploads retain damage for a retry.
-    bool direct = crt && !full && crt->direct_upload(width, height);
+    bool direct = crt && !crt->sink && !full && crt->direct_upload(width, height);
     std::vector<SecondSightCrt::BorderChange> border_changes;
     if (crt && !display_changes.empty()) {
         // IBM VGA/XGA Technical Reference, May 1992, p. 2-94: the resolved
@@ -76,7 +76,9 @@ bool OTI087::upload_frame(SDL_Texture *texture, bool full, SecondSightCrt *crt, 
         crt->update(frame_pixels.data(), width, height, top, bottom,
                     border_changes.empty() ? nullptr : &border_changes);
         if (full) crt->full_upload();
-        if (crt->bottom() >= crt->top()) {
+        if (crt->bottom() >= crt->top() && crt->sink) {
+            if (!crt->sink(crt->pixels(), crt->top(), crt->bottom())) return false;
+        } else if (crt->bottom() >= crt->top()) {
             SDL_Rect damage = {0, crt->top(), crt->width(), crt->bottom() - crt->top() + 1};
             for (int field = 0; field < (crt->fields() ? 2 : 1); ++field) {
                 if (!SDL_UpdateTexture(field ? odd_texture : texture, &damage,

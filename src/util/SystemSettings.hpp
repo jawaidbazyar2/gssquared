@@ -55,6 +55,7 @@ private:
     // Second Sight monitor/view can change while running. Firmware and the
     // U7 Lattice chip equations are applied by the card reset handler.
     bool ss_rgb_monitor_ = false;
+    bool ss_vga_lcd_ = false;
     int ss_view_ = SS_VIEW_BOTH;
     int ss_firmware_ = SS_FW_14;
     bool ss_lattice_v2_ = false;
@@ -144,6 +145,8 @@ public:
     bool ss_text_mode() const { return ss_text_mode_; }
     // Second Sight cable sense: false=VGA, true=AppleColor RGB.
     bool ss_rgb_monitor() const { return ss_rgb_monitor_; }
+    // The monitor on Second Sight's VGA cable: false=CRT, true=LCD.
+    bool ss_vga_lcd() const { return ss_vga_lcd_; }
     // Second Sight monitor visibility preference; both emulated screens keep running.
     int ss_view() const { return ss_view_; }
     bool mono_persistence() const { return mono_persistence_; }
@@ -157,6 +160,8 @@ public:
     void set_ss_text_mode(bool enabled);
     // Persist Second Sight cable sense; firmware uses it on the next mode setup.
     void set_ss_rgb_monitor(bool enabled);
+    // Persist the kind of monitor on the VGA cable; the card does not sense it.
+    void set_ss_vga_lcd(bool enabled);
     // Persist a valid Second Sight view index; never powers off the card.
     void set_ss_view(int view);
     void set_mono_persistence(bool enabled);

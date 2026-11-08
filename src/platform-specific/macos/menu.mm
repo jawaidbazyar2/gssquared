@@ -206,7 +206,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(secondSightMonitor:) || menuItem.action == @selector(secondSightScreen:)) {
 		MenuInterface *mi = getMenuInterface();
 		int selected = menuItem.action == @selector(secondSightMonitor:)
-			? mi->getSecondSightRGBMonitor() : mi->getSecondSightView();
+			? mi->getSecondSightMonitor() : mi->getSecondSightView();
 		[menuItem setState:(selected == menuItem.tag) ? NSControlStateValueOn : NSControlStateValueOff];
 		return mi->hasSecondSightZ180();
 	}
@@ -336,8 +336,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)secondSightLattice:(id)sender { getMenuInterface()->setSecondSightLattice([sender tag] != 0); }
 // A nonzero tag adds the Second Sight INT0 pull-up modification.
 - (void)secondSightInt0:(id)sender { getMenuInterface()->setSecondSightInt0Pullup([sender tag] != 0); }
-// A nonzero tag selects the AppleColor RGB cable sensed by Second Sight.
-- (void)secondSightMonitor:(id)sender { getMenuInterface()->setSecondSightMonitor([sender tag] != 0); }
+// Tags 0/1/2 select a VGA CRT, a VGA LCD or the AppleColor RGB.
+- (void)secondSightMonitor:(id)sender { getMenuInterface()->setSecondSightMonitor(int([sender tag])); }
 // Tags 0/1/2 select IIgs/card/both without stopping Second Sight execution.
 - (void)secondSightScreen:(id)sender { getMenuInterface()->setSecondSightView([sender tag]); }
 - (void)displayFullScreen:(id)sender { getMenuInterface()->displayFullScreen(); (void)sender; }
@@ -935,7 +935,7 @@ static void setupMenus(void) {
 		[parent setTarget:sMenuHandler];
 		[parent setSubmenu:submenu];
 		[ssDisplayMenu addItem:parent];
-		NSArray *labels = group == 0 ? @[@"VGA", @"AppleColor RGB"]
+		NSArray *labels = group == 0 ? @[@"VGA CRT", @"VGA LCD", @"AppleColor RGB"]
 			: @[@"IIgs monitor", @"Second Sight monitor", @"Both"];
 		for (NSUInteger i = 0; i < labels.count; ++i) {
 			NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:labels[i]

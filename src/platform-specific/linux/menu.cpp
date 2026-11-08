@@ -378,11 +378,13 @@ static void build_menu_bar()
         // through the shared settings path; they do not write card registers.
         if (begin_menu("Second Sight", mi->hasSecondSightZ180())) {
             if (begin_menu("Monitor")) {
-                const bool rgb = mi->getSecondSightRGBMonitor();
-                if (ImGui::MenuItem("VGA", nullptr, !rgb))
-                    mi->setSecondSightMonitor(false);
-                if (ImGui::MenuItem("AppleColor RGB", nullptr, rgb))
-                    mi->setSecondSightMonitor(true);
+                const int monitor = mi->getSecondSightMonitor();
+                if (ImGui::MenuItem("VGA CRT", nullptr, monitor == 0))
+                    mi->setSecondSightMonitor(0);
+                if (mi->secondSightLcdOffered() && ImGui::MenuItem("VGA LCD", nullptr, monitor == 1))
+                    mi->setSecondSightMonitor(1);
+                if (ImGui::MenuItem("AppleColor RGB", nullptr, monitor == 2))
+                    mi->setSecondSightMonitor(2);
                 end_menu();
             }
             if (begin_menu("View")) {
