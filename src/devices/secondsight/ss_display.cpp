@@ -136,11 +136,11 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
         lock_since = video.frame_number();
     }
     const double field_hz = fields / timing.frame_period();
+    // The event keeps this pointer until the heads-up display copies the text.
+    static char message[128];
     if (lock_candidate == out_of_range && video.frame_number() >= lock_since + 2) {
         out_of_range = !lock_candidate;
         if (out_of_range) {
-            // The event keeps this pointer until the heads-up display copies the text.
-            static char message[128];
             const char *name = on_lcd ? "VGA LCD" : video.vga_monitor() ? "VGA CRT" : "AppleColor RGB";
             if (on_lcd && !signal.present) {
                 snprintf(message, sizeof message, "Second Sight %s: no signal", name);
@@ -168,8 +168,15 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
                     *line && *field ? ", " : "", field);
             }
             fprintf(stderr, "%s\n", message);
+            message_frame = video.frame_number();
             computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
         }
+    }
+    // The heads-up display fades a message in about 3 seconds; repeat the
+    // monitor's message for as long as it shows no picture.
+    if (out_of_range && video.frame_number() >= message_frame + 60) {
+        message_frame = video.frame_number();
+        computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
     }
     if (!scan.h_hold && !scan.v_hold && !scan.v_height) {
         hold_line = hold_field = 0;
