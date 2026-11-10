@@ -24,6 +24,8 @@ Main emu thread never blocks on file I/O.
 
 ## Dot-Matrix Printers
 
+The current spec is [PrinterEmulation.md](PrinterEmulation.md): a separately downloaded sidecar, started by opening a `.gs2print` ticket. The notes below are the earlier in-process idea.
+
 libHaru is a C library (that interfaces well with C++) that can create PDF files.
 
 So, explore the approach of implementing printer emulation threads, using libHaru to create PDF files.

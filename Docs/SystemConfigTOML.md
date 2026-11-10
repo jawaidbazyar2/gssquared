@@ -308,7 +308,7 @@ All serial and parallel port attachments use `[[connections]]`, whether the port
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `device` | string | yes | Virtual peripheral: `file`, `modem`, `echo`, `clipboard`, `serial`, `none` |
+| `device` | string | yes | Virtual peripheral: `file`, `printer`, `modem`, `echo`, `clipboard`, `serial`, `none` |
 | `slot` | integer | yes* | Firmware/expansion slot: IIgs SCC A=`1`, B=`2`; cards use their slot |
 | `port` | string | no | Channel `"a"` or `"b"` (defaults to `"a"`; legacy bare `port` without `slot` still loads) |
 | `path` | string | no | Capture file when `device = "file"` (optional); host port name when `device = "serial"` (required; stored as-is, not relative to the config) |
@@ -324,12 +324,15 @@ Aligned with `src/serial_devices/`:
 |-------|-------------|
 | `"none"` | No attachment |
 | `"file"` | Capture / file sink (`path` optional) |
+| `"printer"` | Super Serial Card only. Same capture as `"file"` (`GS2.SSCn.*`, idle close, toast). On native builds the printer worker also opens a gs2print ticket and copies the same bytes to that socket; the OS open is spawned from the worker and not waited on. If the printer app is missing, a toast says so and the dump continues. While attached, DIPSW1 mode bits are SIC P8 (`$ED` at the 9600 default) so firmware does not send ETX or wait for ACK. Not valid on SCC or parallel. The web build writes the dump only. |
 | `"clipboard"` | Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file) |
 | `"echo"` | Loopback for testing (schema only; not offered in UI) |
 | `"modem"` | Hayes-compatible virtual modem (native builds; serial ports only) |
 | `"serial"` | Real host UART; `path` is the OS port name (macOS `/dev/cu.*`, Windows `COMn`, Linux `/dev/ttyS*` `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`) |
 
-**Allowed devices by port kind:** serial (SCC, SSC) → none / file / clipboard / modem / serial; parallel → none / file / clipboard.
+**Allowed devices by port kind:** SCC serial → none / file / clipboard / modem / serial; SSC serial adds `printer`; parallel → none / file / clipboard. A `printer` row on any other port is refused when the machine starts (the port keeps its default); the config editor rewrites it to `file`.
+
+`gs2print` as its own `[[connections]]` device (parallel, and a serial port used as a printer) is not implemented. The SSC attachment `printer` is what opens the ticket. The sidecar app is still a separate download. See [PrinterEmulation.md](PrinterEmulation.md).
 
 ### Port addressing
 
