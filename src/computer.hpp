@@ -71,6 +71,7 @@ struct computer_t {
 
     using ResetHandler = std::function<bool (bool cold_start)>;
     using ShutdownHandler = std::function<bool ()>;
+    using BeginFrameHandler = std::function<void (bool to_frame_end)>;
     using DebugDisplayHandler = std::function<DebugFormatter *()>;
     using DeviceDebugHandler = std::function<bool(
         uint32_t op,
@@ -136,6 +137,7 @@ struct computer_t {
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
+    std::vector<BeginFrameHandler> begin_frame_handlers;
     std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
     DeviceDebugHandler device_debug_handlers[NUM_DEVICE_IDS]{};
 
@@ -244,6 +246,11 @@ struct computer_t {
 
     void register_reset_handler(ResetHandler handler);
     void register_shutdown_handler(ShutdownHandler handler);
+    // Called once per frame before its instructions run, after the debugger
+    // has applied this frame's run mode; also while paused or stepping.
+    // to_frame_end is false when the frame may stop at any instruction.
+    void register_begin_frame_handler(BeginFrameHandler handler);
+    void begin_frame(bool to_frame_end);
     void register_debug_display_handler(std::string name, uint64_t id, DebugDisplayHandler handler);
     DebugFormatter *call_debug_display_handler(std::string name);
 

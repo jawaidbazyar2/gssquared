@@ -46,7 +46,6 @@
 #include "util/Gs2Url.hpp"
 #include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
-#include "devices/secondsight/ss_card.hpp"
 #ifndef __EMSCRIPTEN__
 #include "ui/PackFetchModal.hpp"
 #include "platform-specific/HttpsGet.hpp"
@@ -454,17 +453,13 @@ Execute one frame of emulation. Returns true if emulation should continue,
 false if the user requested a halt.
 */
 bool run_one_frame(computer_t *computer) {
-    // Card instruction-boundary grants end before the next full-state observer.
-    // Debug stops and wall-timed calibration have no known frame fence. An absent
-    // optional card is normal, so use the nullable module slot without a diagnostic.
-    auto *card = static_cast<SSCard *>(computer->module_store[MODULE_SECOND_SIGHT_Z180]);
-    if (card
+    // A browser slice resumes the same frame; only a new frame begins here.
+    // Debugger checks, stepping and wall-timed calibration can stop it early.
 #if defined(__EMSCRIPTEN__)
-        && !gs2_web_partial_frame
+    if (!gs2_web_partial_frame)
 #endif
-        ) card->set_observation_limit(computer->execution_mode == EXEC_NORMAL &&
-        !computer->debug_window->needs_breakpoint_checks() && computer->ludicrous_cal_state != LS_CAL_PROBE
-        ? computer->clock->get_frame_end_c14M() : 0);
+        computer->begin_frame(computer->execution_mode == EXEC_NORMAL &&
+            !computer->debug_window->needs_breakpoint_checks() && computer->ludicrous_cal_state != LS_CAL_PROBE);
 
     cpu_state *cpu = computer->cpu;
     NClock *clock = computer->clock;

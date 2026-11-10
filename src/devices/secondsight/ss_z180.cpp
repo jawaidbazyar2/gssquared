@@ -147,7 +147,6 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
     st->card->held_progress = [mmu](uint64_t ticks) { mmu->advance_megaii_hold(ticks); };
     st->card->host_clock_ticks = [clock = computer->clock] { return clock->get_c14m(); };
     st->card->start_worker();
-    computer->set_module_state(MODULE_SECOND_SIGHT_Z180, st->card.get());
     // Every Mega II access before the current cycle has been observed, so
     // the card thread may run up to this time without waiting for a request.
     st->time_target = std::make_shared<std::atomic<SSCard *>>(st->card.get());
@@ -164,6 +163,12 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
         if (mmu->is_rom03_machine() ? slot == SLOT_7 : slot != SLOT_3)
             transfer.m2b0 = false;
         return st->card->observe(transfer);
+    });
+
+    // Card instruction-boundary grants end before the next full-state observer.
+    // A frame that can stop early (debugger, calibration) has no known fence.
+    computer->register_begin_frame_handler([st, clock = computer->clock](bool to_frame_end) {
+        st->card->set_observation_limit(to_frame_end ? clock->get_frame_end_c14M() : 0);
     });
 
     // Offer the current card scan while the Apple picture is drawn. Inspection
@@ -215,10 +220,9 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
     computer->register_shutdown_handler([st, computer, mmu]() {
         // Detach both host inputs before destroying the card. The clock
         // retains its callback, so its shared target must become null.
-    mmu->set_megaii_observer({});
+        mmu->set_megaii_observer({});
         st->time_target->store(nullptr, std::memory_order_relaxed);
         st->card->catch_up(computer->clock->get_c14m());
-        computer->set_module_state(MODULE_SECOND_SIGHT_Z180, nullptr);
         st->display.reset();
         secondsight_save_eeprom(st);
         delete st;

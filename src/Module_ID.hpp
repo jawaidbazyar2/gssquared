@@ -16,7 +16,5 @@ typedef enum {
     MODULE_KEYGLOO,
     MODULE_IIGSMEMORY,
     MODULE_ENSONIQ,
-    // Publish the live Second Sight board for machine-level inspection.
-    MODULE_SECOND_SIGHT_Z180,
     MODULE_NUM_MODULES
 } module_id_t;

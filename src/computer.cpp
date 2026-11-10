@@ -371,6 +371,16 @@ void computer_t::register_shutdown_handler(ShutdownHandler handler) {
     shutdown_handlers.push_back(handler);
 }
 
+void computer_t::register_begin_frame_handler(BeginFrameHandler handler) {
+    begin_frame_handlers.push_back(handler);
+}
+
+void computer_t::begin_frame(bool to_frame_end) {
+    for (auto &handler : begin_frame_handlers) {
+        handler(to_frame_end);
+    }
+}
+
 void computer_t::register_debug_display_handler(std::string name, uint64_t id, DebugDisplayHandler handler) {
     debug_display_handlers.push_back({name, id, handler});
 }
