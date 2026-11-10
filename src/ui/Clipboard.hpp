@@ -71,10 +71,13 @@ struct ClipboardImage {
     BMPHeader *header = nullptr;
 
     uint8_t *clip_buffer = nullptr;
+    size_t clip_buffer_size = 0;
 
 
     ClipboardImage();
     ~ClipboardImage();
-    void Clip(SDL_Surface *surface);
+    // The emulated display has one row per two screen lines; a card monitor's
+    // picture has one row per line and passes false.
+    void Clip(SDL_Surface *surface, bool double_scanlines = true);
 };
 

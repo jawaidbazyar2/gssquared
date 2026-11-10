@@ -59,10 +59,31 @@ typedef enum {
 } display_pixel_mode_t;
 
 
+// Where a card monitor shows in the main window: not at all (its own window,
+// or hidden), in place of the emulated display, or beside it.
+enum class monitor_place { separate, replace, beside };
+
+// A card with its own monitor output. The card fills this in and clears it on
+// shutdown. draw runs after the emulated display each frame. It gets the
+// monitor's area of the main window, which is also the target that
+// render_frame draws in, or null when place is separate. It returns true when
+// that area now shows the card's picture. event takes input for the monitor's
+// window or area and returns true when it used it. The card applies the CRT
+// setting to its own scan; the GPU pass is off while its picture replaces the
+// emulated display.
+struct card_monitor_t {
+    SDL_Window *window = nullptr;
+    std::function<monitor_place()> place;
+    std::function<bool(const SDL_FRect *area)> draw;
+    std::function<bool(const SDL_Event &)> event;
+};
+
 struct video_system_t {
     using FrameHandler = std::function<bool(bool)>;
 
     std::multimap<int, FrameHandler, std::greater<int>> frame_handlers;
+
+    card_monitor_t card_monitor;
 
     SDL_Window *window; // primary emulated display window
     SDL_Renderer* renderer;
@@ -118,6 +139,9 @@ struct video_system_t {
     bool osd_control_panel_open = false;
     
     SDL_Texture *last_texture = nullptr;
+    // The last frame shows the card monitor's picture, which has one texture
+    // row per shown line; the emulated display has one row per two.
+    bool card_picture_shown = false;
     SDL_FRect last_srcrect = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     RGBA_t mono_color_table[DM_NUM_MONO_MODES] = {
@@ -190,14 +214,17 @@ public:
     void set_mono_persistence(bool enabled);
     // Persistence needs a GPU decoder (Apple II composite or IIgs GS composite).
     bool mono_persistence_available() const { return ntsc_gpu || gscomposite_gpu; }
-    // True when the CRT post-process shader is available to be used.
-    bool crt_shader_available() const { return crt_pass.ok(); }
+    // A card monitor filters its own scan, also without the GPU shader.
+    bool crt_shader_available() const { return crt_pass.ok() || bool(card_monitor.draw); }
     NtscGpu *get_ntsc_gpu() const { return ntsc_gpu; }
     GsCompositeGpu *get_gscomposite_gpu() const { return gscomposite_gpu; }
     bool get_crt_shader_enabled() const { return crt_shader_enabled; }
     void set_crt_shader_enabled(bool enabled, bool show_message = false);
     void toggle_crt_shader();
     void register_frame_processor(int weight, FrameHandler handler);
+    monitor_place card_monitor_place() const {
+        return card_monitor.place ? card_monitor.place() : monitor_place::separate;
+    }
     void update_display(bool force_full_frame = false);
     // When the CRT shader is active, blit the offscreen scene_target onto the
     // swapchain (through the shader). No-op otherwise. Called once per frame
