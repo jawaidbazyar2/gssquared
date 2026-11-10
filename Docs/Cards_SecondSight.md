@@ -99,6 +99,10 @@ There is one card key, `second_sight_z180`, and only one Second Sight device can
 be installed. Firmware images live in `assets/roms/cards/secondsight/` and use
 the normal native and web resource packaging.
 
+## Debugging
+
+The debugger and the [debug protocol](DebugProtocol.md) read and write memory without Apple bus cycles, so the card does not see those accesses and a paused machine stays paused. A debugger read of `$C0B0`–`$C0BF` returns the card's output latch. The debugger's `ss-z180` panel shows the Z180 and capture state.
+
 ## Related
 
 - [Displays](Displays.md)

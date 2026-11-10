@@ -89,6 +89,9 @@ public:
     void change_hardware(uint64_t ticks, const uint8_t *image, SSCapture::LatticeMap lattice_map, bool int0_pullup);
     // Observe one Apple access; update read data and return extra RDY wait ticks.
     uint64_t observe(megaii_transfer_t &transfer);
+    // A debugger read of $C0B0-$C0BF gets the U3 Apple data-out latch at host
+    // time ticks. It is not a bus cycle: no event, no copy and no RDY hold.
+    void inspect(megaii_transfer_t &transfer, uint64_t ticks);
     // Drain captured accesses and run the card through this absolute host tick.
     // wait=false lets independent Apple presentation overlap the remaining work;
     // the presenter must synchronize or claim stopped Oak before reading it.

@@ -23,6 +23,19 @@ bool MMU_IIgs::observe_megaii_access(uint32_t address, uint8_t &value, bool read
     if (a == 0xc035 || a == 0xc036 || a == 0xc037) return false;
     if (read && (a == 0xc02d || a == 0xc068 || (a >= 0xc071 && a <= 0xc07f))) return false;
     megaii_transfer_t transfer;
+    if (debug_access) {
+        // The debugger's access never reaches the card's bus pins. Leave the
+        // clock and any RDY retirement untouched; a paused machine stays put.
+        // A read may still show what the card would drive.
+        if (!read) return false;
+        transfer.address = address;
+        transfer.data = value;
+        transfer.m2b0 = (address >> 16) & 1;
+        transfer.inspect = true;
+        megaii_observer(transfer);
+        value = transfer.data;
+        return transfer.driven;
+    }
     // The bus record names the first physical data-phase fall, rather than
     // the instruction's request time. The following CPU increment retires
     // this same cycle; it must not charge another period after an RDY hold.

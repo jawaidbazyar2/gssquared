@@ -80,6 +80,9 @@ class MMU {
  * This is relatively generic. 
  */
     public:
+        // True while the debugger reads or writes memory. Those accesses are
+        // not Apple bus cycles; a device watching the bus ignores them.
+        bool debug_access = false;
 
         MMU(page_t num_pages, uint32_t page_size) {
             this->num_pages = num_pages;
@@ -347,4 +350,19 @@ class MMU {
             write_d[page] = pte->write_d;
         }
 
+};
+
+// Mark the debugger's memory accesses for one scope. The previous value
+// returns at scope exit, so nested debugger calls keep the mark.
+struct MMUDebugAccess {
+    MMU *mmu;
+    bool previous;
+    explicit MMUDebugAccess(MMU *mmu) : mmu(mmu), previous(mmu && mmu->debug_access) {
+        if (mmu) mmu->debug_access = true;
+    }
+    ~MMUDebugAccess() {
+        if (mmu) mmu->debug_access = previous;
+    }
+    MMUDebugAccess(const MMUDebugAccess &) = delete;
+    MMUDebugAccess &operator=(const MMUDebugAccess &) = delete;
 };

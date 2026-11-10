@@ -159,9 +159,14 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
     // auxiliary video writes. ROM 01 exposes it only in slot 3 (Technical
     // Note 68); ROM 03 in slots 1-6. Slot 7's pin 35 carries CREF instead
     // (Hardware Reference p. 176; Second Sight manual p. 30: slots 1-6).
-    mmu->set_megaii_observer([st, mmu, slot](megaii_transfer_t &transfer) {
+    mmu->set_megaii_observer([st, mmu, slot, clock = computer->clock](megaii_transfer_t &transfer) -> uint64_t {
         if (mmu->is_rom03_machine() ? slot == SLOT_7 : slot != SLOT_3)
             transfer.m2b0 = false;
+        // A debugger access is not a bus cycle; it may only read the port.
+        if (transfer.inspect) {
+            st->card->inspect(transfer, clock->get_c14m());
+            return 0;
+        }
         return st->card->observe(transfer);
     });
 

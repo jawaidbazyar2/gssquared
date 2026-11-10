@@ -1550,3 +1550,12 @@ uint64_t SSCard::observe(megaii_transfer_t &host_transfer) {
     queued_event |= possible_event;
     return 0;
 }
+
+// The debugger reads the card's port as the Apple would see it, without the
+// access itself: catch the card up to the current host time, then sample U3.
+void SSCard::inspect(megaii_transfer_t &transfer, uint64_t ticks) {
+    if ((transfer.address & 0xfff0) != 0xc0b0) return;
+    catch_up(ticks);
+    transfer.data = host_output;
+    transfer.driven = true;
+}

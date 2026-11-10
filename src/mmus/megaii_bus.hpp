@@ -35,4 +35,7 @@ struct megaii_transfer_t {
     bool m2sel_n = false;
     // Set by the card when it supplies read data; otherwise normal RAM/I/O wins.
     bool driven = false;
+    // A debugger access, not a bus cycle: ticks is unset, and the card may
+    // only supply read data. It must not hold RDY or record an event.
+    bool inspect = false;
 };
