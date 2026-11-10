@@ -140,8 +140,6 @@ Both are useful when recording video and you want a clean picture. Preferences a
 
 **Shadow Mask** toggles the CRT effect. Shortcut: **F7**. The IIgs uses the GPU shader on macOS, Windows, and Linux. Second Sight uses software scanlines in either window and in the browser, including its border; line spacing and interlaced fields follow the card's signal. Off is the default. See [Displays](Displays.md).
 
-GPU-only choices, including **GS Composite** and **Monochrome persistence**, are grayed out when their required shaders or render targets are unavailable. Composite and monochrome still work through the CPU decoder.
-
 Hover speed and display widgets appear automatically when the mouse is over the window and is not captured. There is no Hover Enable menu item. See [On-Screen Display](OSD.md).
 
 ### Debug

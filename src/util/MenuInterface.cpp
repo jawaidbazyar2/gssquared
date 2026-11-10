@@ -36,14 +36,7 @@ void MenuInterface::setSpeed(int speed_id) {
 }
 
 void MenuInterface::setMonitor(int monitor_id) {
-	if (monitorAvailable(monitor_id)) pushMenuEvent(monitor_id);
-}
-
-// Second Sight shares the monitor menu with the built-in display. Disable
-// only choices whose required renderer is unavailable; monitor_id is a menu ID.
-bool MenuInterface::monitorAvailable(int monitor_id) {
-    return computer_ && computer_->video_system &&
-        (monitor_id != MONITOR_GS_COMPOSITE || computer_->video_system->gscomposite_allowed);
+	pushMenuEvent(monitor_id);
 }
 
 // Second Sight firmware senses the selected cable: VGA or AppleColor RGB.

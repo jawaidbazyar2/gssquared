@@ -368,7 +368,7 @@ static void build_menu_bar()
             };
             for (auto &m : monitors) {
                 bool checked = (cur_mon == m.id);
-                if (ImGui::MenuItem(m.label, nullptr, checked, mi->monitorAvailable(m.id)))
+                if (ImGui::MenuItem(m.label, nullptr, checked))
                     mi->setMonitor(m.id);
             }
             end_menu();

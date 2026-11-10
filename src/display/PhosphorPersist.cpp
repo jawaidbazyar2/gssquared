@@ -35,21 +35,6 @@ bool PhosphorPersist::init(SDL_Renderer *r) {
     sub_blend = SDL_ComposeCustomBlendMode(
         SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_REV_SUBTRACT,
         SDL_BLENDFACTOR_ZERO, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
-    // A renderer may accept the history texture but not these blend operations.
-    // Check once at startup and leave the ordinary monochrome path available.
-    SDL_BlendMode saved_blend = SDL_BLENDMODE_NONE;
-    SDL_GetRenderDrawBlendMode(renderer, &saved_blend);
-    SDL_Texture *saved_target = SDL_GetRenderTarget(renderer);
-    const bool supported = SDL_SetTextureBlendMode(history, max_blend) &&
-        SDL_SetRenderDrawBlendMode(renderer, sub_blend) && SDL_SetRenderTarget(renderer, history);
-    SDL_SetRenderTarget(renderer, saved_target);
-    SDL_SetRenderDrawBlendMode(renderer, saved_blend);
-    SDL_SetTextureBlendMode(history, SDL_BLENDMODE_NONE);
-    if (!supported) {
-        printf("Phosphor persistence: required render operations unavailable\n");
-        shutdown();
-        return false;
-    }
     valid = false;
     return true;
 }

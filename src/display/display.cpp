@@ -953,6 +953,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     SDL_SetTextureBlendMode(ds->frame_vsg->get_texture(), SDL_BLENDMODE_NONE);
 
     ds->is_iigs = platform_is_iigs(computer->platform->id);
+    vs->gscomposite_allowed = ds->is_iigs;
 
     // Apple II composite decodes FrameBits (IIgs borders draw black); IIgs GS Composite
     // and Monochrome encode and decode the RGB frame.
@@ -969,12 +970,6 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             printf("NTSC shader: frame texture creation failed (%s); using CPU decoder\n", SDL_GetError());
         }
     }
-
-    // Advertise only fully initialized effects. CPU composite/monochrome still
-    // work if a shader or render target is missing; do not alter saved preferences.
-    vs->gscomposite_allowed = ds->is_iigs && ds->frame_ntsc && vs->get_gscomposite_gpu();
-    vs->mono_persistence_ready = ds->persist != nullptr;
-    if (!vs->mono_persistence_ready) vs->mono_persistence_enabled = false;
 
     // set in CPU so we can reference later
     computer->set_module_state(MODULE_DISPLAY, ds);

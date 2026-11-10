@@ -51,8 +51,6 @@ The shader mode can be activated with Display > Shadow Mask, or by pressing F7. 
 
 The GPU shader is not available in the web build. Its SDL renderer has no WebGPU backend. Second Sight uses the same Shadow Mask switch for a software scanline effect, available in either native window and in the browser.
 
-GPU effects are optional. If a shader or its render target cannot be created, the corresponding effect is disabled and its menu item is grayed out. Composite and monochrome retain their CPU decoders. **GS Composite** requires its GPU encoder; **Monochrome persistence** also requires its history texture and blend operations. Second Sight's software scanlines do not require a GPU shader.
-
 ## Second Sight Text
 
 If the current machine has the simulated **Second Sight** card, **Display → Second Sight Text** renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.

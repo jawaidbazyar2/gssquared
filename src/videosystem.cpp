@@ -462,9 +462,6 @@ void video_system_t::ensure_scene_target(int w, int h) {
     if (!scene_target) {
         printf("CRT shader: failed to create scene_target %dx%d: %s\n", w, h, SDL_GetError());
         scene_target_w = scene_target_h = 0;
-        // A shader without its output target is unavailable, not a blank frame.
-        crt_pass.destroy(gpu_device);
-        crt_shader_enabled = false;
         return;
     }
     SDL_SetTextureBlendMode(scene_target, SDL_BLENDMODE_NONE);
@@ -568,8 +565,6 @@ void video_system_t::toggle_display_engine() {
 }
 
 void video_system_t::set_display_engine(display_color_engine_t mode) {
-    // Menus and F2 agree: a missing optional encoder keeps plain composite usable.
-    if (mode == DM_ENGINE_GSCOMPOSITE && !gscomposite_allowed) return;
     display_color_engine = mode;
     send_engine_message();
 }
@@ -588,8 +583,6 @@ void video_system_t::set_display_pixel_mode(display_pixel_mode_t mode) {
 }
 
 void video_system_t::set_mono_persistence(bool enabled) {
-    // Preserve the saved preference when this renderer cannot provide the effect.
-    if (enabled && !mono_persistence_available()) return;
     mono_persistence_enabled = enabled;
     SystemSettings::instance().set_mono_persistence(enabled);
 }

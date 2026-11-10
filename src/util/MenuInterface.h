@@ -42,8 +42,6 @@ public:
 	void machineCaptureMouse();
 	void setSpeed(int speed_id);
 	void setMonitor(int monitor_id);
-	// CPU composite remains available when the optional GS encoder fails to load.
-	bool monitorAvailable(int monitor_id);
 	// Second Sight monitor: VGA CRT=0, VGA LCD=1, AppleColor RGB=2. The card
 	// senses the cable at mode setup.
 	void setSecondSightMonitor(int monitor);

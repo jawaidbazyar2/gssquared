@@ -189,7 +189,7 @@ static void updatePopupState(HMENU popup)
         for (int i = 0; i < n; ++i) {
             int id = static_cast<int>(getItemId(g_monitorMenu, i));
             setItemCheck(g_monitorMenu,  i, id == current);
-            setItemEnable(g_monitorMenu, i, running && mi->monitorAvailable(id));
+            setItemEnable(g_monitorMenu, i, running);
         }
         return;
     }
