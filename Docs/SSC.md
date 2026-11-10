@@ -44,7 +44,7 @@ Hard-coded modem-friendly factory defaults (values **as read** by firmware; ON =
 
 | Block | Value | Meaning |
 |-------|-------|---------|
-| DIPSW1 | `$EF` | 9600 baud, Communications mode |
+| DIPSW1 | `$EF` | 9600 baud, SIC P8A (SW1-5 OFF, SW1-6 OFF) |
 | DIPSW2 | `$5A` | 8N1 modem format, auto-LF off; CTS asserted (bit0 = 0) |
 
 DIP packing (from SSC firmware notes):
@@ -53,6 +53,10 @@ DIP packing (from SSC firmware notes):
 - DIPSW2: `S1 Z S2 Z S3 S4 S5 CTS`
 
 SW2-6 (IRQ enable to the slot) is a hardware gate not present in the DIPSW2 read byte; v1 leaves it enabled.
+
+`$EF` is SIC P8A, not communications mode. SW1-5 and SW1-6 are the low two bits of DIPSW1 (`S5` then `S6`; ON reads as 0). P8A is both OFF, so firmware sends ETX (`$83`) and waits for ACK. A File attachment leaves this default, which is why a `PR#` capture can be only `$83`.
+
+A Printer attachment (`device = "printer"`) keeps the baud bits and sets the mode bits to SIC P8 (SW1-5 ON, SW1-6 OFF), so DIPSW1 is `$ED`. Firmware skips ETX/ACK. Switching away from Printer restores `$EF`. The capture file is otherwise the same as File. See [PrinterEmulation.md](PrinterEmulation.md).
 
 ## Architecture
 

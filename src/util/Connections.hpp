@@ -58,9 +58,10 @@ enum class connection_device_type_t {
     CLIPBOARD,
     MODEM,
     SERIAL,
+    PRINTER,
 };
 
-using ConnectionAttachFn = std::function<void(SerialDevice *device)>;
+using ConnectionAttachFn = std::function<void(SerialDevice *device, connection_device_type_t type)>;
 
 struct connection_port_info_t {
     connection_key_t key;
@@ -77,6 +78,8 @@ struct connection_port_spec_t {
     connection_port_kind_t kind = connection_port_kind_t::SERIAL;
     connection_device_type_t device = connection_device_type_t::NONE;
     std::string path;
+    /** Super Serial Card only. Printer is a file capture plus SIC P8 DIP switches. */
+    bool offers_printer = false;
 };
 
 /**
@@ -118,6 +121,7 @@ inline const char *connection_device_type_name(connection_device_type_t type) {
         case connection_device_type_t::CLIPBOARD: return "clipboard";
         case connection_device_type_t::MODEM:     return "modem";
         case connection_device_type_t::SERIAL:    return "serial";
+        case connection_device_type_t::PRINTER:   return "printer";
     }
     return "none";
 }
@@ -127,10 +131,15 @@ inline connection_device_type_t connection_device_type_from_string(const std::st
     if (s == "clipboard") return connection_device_type_t::CLIPBOARD;
     if (s == "modem") return connection_device_type_t::MODEM;
     if (s == "serial") return connection_device_type_t::SERIAL;
+    if (s == "printer") return connection_device_type_t::PRINTER;
     return connection_device_type_t::NONE;
 }
 
-inline bool connection_device_allowed(connection_port_kind_t kind, connection_device_type_t type) {
+inline bool connection_device_allowed(connection_port_kind_t kind, connection_device_type_t type,
+                                      bool offers_printer = false) {
+    if (type == connection_device_type_t::PRINTER) {
+        return offers_printer;
+    }
     if (type == connection_device_type_t::NONE ||
         type == connection_device_type_t::FILE ||
         type == connection_device_type_t::CLIPBOARD) {
@@ -147,20 +156,20 @@ inline bool connection_device_allowed(connection_port_kind_t kind, connection_de
     return false;
 }
 
-inline std::vector<connection_device_type_t> connection_allowed_devices(connection_port_kind_t kind) {
-    if (kind == connection_port_kind_t::PARALLEL) {
-        return {
-            connection_device_type_t::NONE,
-            connection_device_type_t::FILE,
-            connection_device_type_t::CLIPBOARD,
-        };
-    }
-    return {
+inline std::vector<connection_device_type_t> connection_allowed_devices(connection_port_kind_t kind,
+                                                                        bool offers_printer = false) {
+    std::vector<connection_device_type_t> devices = {
         connection_device_type_t::NONE,
         connection_device_type_t::FILE,
-        connection_device_type_t::CLIPBOARD,
-        connection_device_type_t::MODEM,
     };
+    if (offers_printer) {
+        devices.push_back(connection_device_type_t::PRINTER);
+    }
+    devices.push_back(connection_device_type_t::CLIPBOARD);
+    if (kind != connection_port_kind_t::PARALLEL) {
+        devices.push_back(connection_device_type_t::MODEM);
+    }
+    return devices;
 }
 
 class Connections {
@@ -170,6 +179,7 @@ class Connections {
         connection_device_type_t default_device = connection_device_type_t::NONE;
         connection_device_type_t current_device = connection_device_type_t::NONE;
         bool attached_once = false; // true after any attach(), including explicit none
+        bool offers_printer = false;
         ConnectionAttachFn attach_fn;
         std::string port_id;
         std::string path;
@@ -193,7 +203,8 @@ public:
                       connection_port_kind_t kind,
                       connection_device_type_t default_device,
                       ConnectionAttachFn attach_fn,
-                      const std::string &port_id);
+                      const std::string &port_id,
+                      bool offers_printer = false);
 
     bool attach(connection_key_t key, connection_device_type_t type,
                 const std::string &path = {});

@@ -36,9 +36,14 @@ constexpr uint8_t SSC_CONTROL = 0x0B;
  *
  * DIPSW1 packing: S1 S2 S3 S4 Z Z S5 S6
  *   9600 baud = OFF OFF OFF ON → 1 1 1 0
- *   Communications mode = OFF OFF → S5=1 S6=1
  *   Unused Z bits open → 1
- *   → 0b11101111 = 0xEF
+ *   Mode (SW1-5, SW1-6), ON reads as 0:
+ *     Communications  ON  ON  → S5=0 S6=0
+ *     Printer         OFF ON  → S5=1 S6=0
+ *     SIC P8          ON  OFF → S5=0 S6=1
+ *     SIC P8A         OFF OFF → S5=1 S6=1
+ *   Default $EF is 9600 + SIC P8A. File and Modem keep that.
+ *   Printer attachment replaces the mode bits with SIC P8 ($ED).
  *
  * DIPSW2 packing: S1 Z S2 Z S3 S4 S5 CTS
  *   Modem 8N1: SW2-1 ON, SW2-2 ON, SW2-3 OFF, SW2-4 ON → S1=0 S2=0 S3=1 S4=0
@@ -49,6 +54,10 @@ constexpr uint8_t SSC_CONTROL = 0x0B;
  */
 constexpr uint8_t SSC_DEFAULT_DIPSW1 = 0xEF;
 constexpr uint8_t SSC_DEFAULT_DIPSW2 = 0x5A;
+/** Low two bits of DIPSW1 are SW1-5 (bit 1) and SW1-6 (bit 0). */
+constexpr uint8_t SSC_DIPSW1_MODE_MASK = 0x03;
+/** SIC P8: SW1-5 ON, SW1-6 OFF. Firmware skips ETX/ACK. */
+constexpr uint8_t SSC_DIPSW1_P8 = 0x01;
 
 struct ssc_state_t : public SlotData {
     ResourceFile *rom_file = nullptr;
@@ -179,13 +188,20 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
         display_name,
         connection_port_kind_t::SERIAL,
         ssc_default,
-        [st](SerialDevice *dev) {
+        [st](SerialDevice *dev, connection_device_type_t type) {
             st->serial_device = dev;
             if (st->acia) {
                 st->acia->set_device(dev);
             }
+            if (type == connection_device_type_t::PRINTER) {
+                st->dipsw1 = static_cast<uint8_t>((SSC_DEFAULT_DIPSW1 & ~SSC_DIPSW1_MODE_MASK) |
+                                                  SSC_DIPSW1_P8);
+            } else {
+                st->dipsw1 = SSC_DEFAULT_DIPSW1;
+            }
         },
-        st->port_id);
+        st->port_id,
+        true);
 
     computer->register_debug_display_handler(
         "ssc", DH_SSC,

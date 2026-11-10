@@ -11,6 +11,7 @@ namespace {
 std::string device_short_label(connection_device_type_t d, const std::string &path) {
     switch (d) {
         case connection_device_type_t::FILE:      return "File";
+        case connection_device_type_t::PRINTER:   return "Printer";
         case connection_device_type_t::CLIPBOARD: return "Clip";
         case connection_device_type_t::MODEM:     return "Modem";
         case connection_device_type_t::SERIAL:    return host_serial_basename(path);

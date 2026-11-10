@@ -43,12 +43,13 @@ void push_drive(std::vector<drive_spec_t>& out, uint16_t slot, uint16_t drive, d
 }
 
 void push_port(std::vector<connection_port_spec_t>& out, int slot, const std::string& name,
-               connection_port_kind_t kind) {
+               connection_port_kind_t kind, bool offers_printer = false) {
     connection_port_spec_t spec;
     spec.key = connection_key_t{slot, "a"};
     spec.display_name = name;
     spec.kind = kind;
     spec.device = connection_device_type_t::NONE;
+    spec.offers_printer = offers_printer;
     out.push_back(std::move(spec));
 }
 
@@ -138,7 +139,7 @@ std::vector<connection_port_spec_t> derive_ports_from_config(
         if (id == DEVICE_ID_SUPER_SERIAL) {
             char name[32];
             std::snprintf(name, sizeof(name), "SSC Slot %d", slot);
-            push_port(out, slot, name, connection_port_kind_t::SERIAL);
+            push_port(out, slot, name, connection_port_kind_t::SERIAL, true);
         } else if (id == DEVICE_ID_PARALLEL) {
             char name[32];
             std::snprintf(name, sizeof(name), "Parallel Slot %d", slot);
@@ -322,6 +323,11 @@ void ConfigDraft::prune_orphan_connections() {
                     c.path.clear();
                 }
             }
+            if (!p.offers_printer &&
+                connection_device_type_from_string(c.device) == connection_device_type_t::PRINTER) {
+                c.device = "file";
+                c.path.clear();
+            }
             break;
         }
         if (matched) {
@@ -337,16 +343,18 @@ void ConfigDraft::set_connection(connection_key_t key, connection_device_type_t 
     // Find port kind for validation.
     const auto ports = derive_ports_from_config(config_.platform_id, config_.slot_devices);
     connection_port_kind_t kind = connection_port_kind_t::SERIAL;
+    bool offers_printer = false;
     bool found = false;
     for (const auto& p : ports) {
         if (p.key == key) {
             kind = p.kind;
+            offers_printer = p.offers_printer;
             found = true;
             break;
         }
     }
     if (!found) return;
-    if (!connection_device_allowed(kind, device)) return;
+    if (!connection_device_allowed(kind, device, offers_printer)) return;
 
     auto apply_fields = [&](connection_config_t &c) {
         c.slot = key.slot;

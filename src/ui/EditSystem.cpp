@@ -482,9 +482,17 @@ void EditSystem::show_connection_picker(connection_key_t key, connection_port_ki
         connection_picker->add(b);
     };
 
-    for (connection_device_type_t type : connection_allowed_devices(kind)) {
+    bool offers_printer = false;
+    for (const auto &spec : draft.port_specs()) {
+        if (spec.key == key) {
+            offers_printer = spec.offers_printer;
+            break;
+        }
+    }
+    for (connection_device_type_t type : connection_allowed_devices(kind, offers_printer)) {
         const char *label = "Nothing";
         if (type == connection_device_type_t::FILE) label = "File";
+        else if (type == connection_device_type_t::PRINTER) label = "Printer";
         else if (type == connection_device_type_t::CLIPBOARD) label = "Clipboard";
         else if (type == connection_device_type_t::MODEM) label = "Modem";
         add_choice(type, label);

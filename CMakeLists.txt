@@ -511,8 +511,12 @@ else()
 endif()
 add_library(gs2_serial_devices
     src/serial_devices/SerialDevice.cpp
+    src/serial_devices/print/Gs2PrintSession.cpp
     ${GS2_HOST_SERIAL_SRC}
 )
+if(WIN32)
+    target_link_libraries(gs2_serial_devices PUBLIC ws2_32 shell32)
+endif()
 add_library(gs2_util src/util/media.cpp src/util/apm.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp
     src/util/Connections.cpp
     #src/util/soundeffects.cpp 

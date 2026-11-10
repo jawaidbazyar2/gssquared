@@ -86,7 +86,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         "Serial Slot 1",
         connection_port_kind_t::SERIAL,
         connection_device_type_t::FILE,
-        [st](SerialDevice *dev) {
+        [st](SerialDevice *dev, connection_device_type_t) {
             st->channel_a_device = dev;
             st->scc->set_device_channel(SCC_CHANNEL_A, dev);
         },
@@ -97,7 +97,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         "Serial Slot 2",
         connection_port_kind_t::SERIAL,
         default_b,
-        [st](SerialDevice *dev) {
+        [st](SerialDevice *dev, connection_device_type_t) {
             st->channel_b_device = dev;
             st->scc->set_device_channel(SCC_CHANNEL_B, dev);
         },
