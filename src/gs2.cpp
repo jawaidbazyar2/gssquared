@@ -135,6 +135,10 @@ void handle_single_event(computer_t *computer, cpu_state *cpu, SDL_Event &event)
     if (computer->debug_window->handle_event(event)) { // ignores event if not for debug window
         return;
     }
+    // A card monitor translates its input to the existing Apple input path.
+    // Consume it here so it is not dispatched a second time.
+    if (computer->video_system->card_monitor.event &&
+        computer->video_system->card_monitor.event(event)) return;
     if (!osd->event(event)) { // if osd doesn't handle it..
         computer->dispatch->dispatch(event); // they say call "once per frame"
     }
@@ -293,7 +297,9 @@ static bool emulator_or_debugger_focused(computer_t *computer) {
         return false;
     }
     video_system_t *vs = computer->video_system;
-    if (vs != nullptr && window_has_input_focus(vs->window)) {
+    // A card monitor window counts the same as the main window.
+    if (vs != nullptr && (window_has_input_focus(vs->window)
+        || window_has_input_focus(vs->card_monitor.window))) {
         return true;
     }
     if (computer->debug_window != nullptr && computer->debug_window->window_open
@@ -2515,7 +2521,8 @@ static void update_display_sleep(GS2AppState *state) {
 
 #ifndef __EMSCRIPTEN__
 // Freeze the guest while the main window is minimized when the user opted in.
-// A focused debugger window still counts as being in the app.
+// A focused debugger or card monitor window still counts as being in
+// the app.
 static bool should_pause_for_minimize(computer_t *computer) {
     if (computer == nullptr || !SystemSettings::instance().pause_when_minimized()) {
         return false;
@@ -2525,6 +2532,9 @@ static bool should_pause_for_minimize(computer_t *computer) {
         return false;
     }
     if ((SDL_GetWindowFlags(vs->window) & SDL_WINDOW_MINIMIZED) == 0) {
+        return false;
+    }
+    if (window_has_input_focus(vs->card_monitor.window)) {
         return false;
     }
     if (computer->debug_window != nullptr && computer->debug_window->window_open

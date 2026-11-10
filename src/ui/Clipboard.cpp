@@ -14,7 +14,8 @@
 // make it big enough to handle shr with borders
 ClipboardImage::ClipboardImage( ) {
     uint32_t clip_data_size = MAX_CLIP_WIDTH * MAX_CLIP_HEIGHT * 3;
-    clip_buffer = new uint8_t[sizeof(BMPHeader) + clip_data_size];
+    clip_buffer_size = sizeof(BMPHeader) + clip_data_size;
+    clip_buffer = new uint8_t[clip_buffer_size];
     header = nullptr;
 }
 
@@ -63,15 +64,22 @@ void ClipboardImage::Clip(computer_t *computer) {
 }
 #endif
 
-void ClipboardImage::Clip(SDL_Surface *surface) {
+void ClipboardImage::Clip(SDL_Surface *surface, bool double_scanlines) {
 
     // pass back the size.
     uint32_t width = surface->w;
     uint32_t height = surface->h;
+    int copies = double_scanlines ? 2 : 1;
 
-    uint32_t lineextra = 0;
-    if (width % 4 != 0) {
-        lineextra = 4 - (width % 4);
+    // A row of 3-byte pixels needs width % 4 bytes to reach a multiple of 4.
+    uint32_t lineextra = width % 4;
+
+    // A card monitor's picture can be larger than the emulated display.
+    size_t needed = sizeof(BMPHeader) + (size_t)(width * 3 + lineextra) * height * copies;
+    if (needed > clip_buffer_size) {
+        delete[] clip_buffer;
+        clip_buffer = new uint8_t[needed];
+        clip_buffer_size = needed;
     }
 
     // BMP files have the last scanline first. What? 
@@ -80,7 +88,7 @@ void ClipboardImage::Clip(SDL_Surface *surface) {
     uint8_t *dst = clip_buffer + sizeof(BMPHeader); // start past BPHeader
 
     for (int scanline = height - 1; scanline >= 0; scanline--) {
-        for (int doub = 0; doub < 2; doub++) {
+        for (int doub = 0; doub < copies; doub++) {
             for (int i = 0; i < width; i++) {
                 RGBA_t *pix = (RGBA_t *)surface->pixels + (scanline * width + i);
                 //RGBA_t pix = { .r = pixel[0], .g = pixel[1], .b = pixel[2], .a = pixel[3] };
@@ -89,7 +97,7 @@ void ClipboardImage::Clip(SDL_Surface *surface) {
                 *dst++ = pix->r;
             }
             // pad out to the next multiple of 4 bytes.
-            for (int i = 0; i < lineextra * 3; i++) {
+            for (int i = 0; i < lineextra; i++) {
                 *dst++ = 0;
             }
         }
@@ -102,7 +110,7 @@ void ClipboardImage::Clip(SDL_Surface *surface) {
         delete header;
         header = nullptr;
     }
-    header = new BMPHeader(width, height*2);
+    header = new BMPHeader(width, height*copies);
     memcpy(clip_buffer, header, sizeof(BMPHeader));
     bool res = SDL_SetClipboardData(clip_callback, nullptr, (void *)this, mime_types, 1 );
     if (!res) {
