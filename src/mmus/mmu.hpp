@@ -3,7 +3,10 @@
 #include <cstdint>
 #include <assert.h>
 
+#include <functional>
+#include "gs2.hpp"
 #include "util/DebugFormatter.hpp"
+#include "slot_bus.hpp"
 #include "memoryspecs.hpp"      // not used here but used by lots of stuff that includes this.
 
 #define C0X0_BASE 0xC000
@@ -80,6 +83,28 @@ class MMU {
  * This is relatively generic. 
  */
     public:
+        // True while the debugger reads or writes memory. Those accesses are
+        // not Apple bus cycles; a device watching the bus ignores them.
+        bool debug_access = false;
+
+        // A slot card's observer for the accesses on the slot bus. It may
+        // supply read data, and it returns the time it holds RDY (Ready) low,
+        // in 14.31818 MHz ticks. The MMU that the CPU uses decides which
+        // accesses reach the slot bus and calls it: MMU_IIgs for the Mega II
+        // bus, MMU_II for each access of an Apple II or IIe.
+        std::function<uint64_t(slot_bus_transfer_t &)> bus_observer;
+        // The observer's slot: some bus signals reach only certain slots.
+        SlotType_t bus_observer_slot = SLOT_NONE;
+        // Attach the observer of the card in slot on startup, and remove it
+        // before shutdown.
+        void set_bus_observer(SlotType_t slot, std::function<uint64_t(slot_bus_transfer_t &)> observer) {
+            bus_observer_slot = slot;
+            bus_observer = std::move(observer);
+        }
+        void clear_bus_observer() { bus_observer = nullptr; }
+        // An observer asks for Apple time to pass while it holds the current
+        // access with RDY. ticks is an absolute 14.31818 MHz time.
+        virtual void advance_bus_hold(uint64_t ticks) {}
 
         MMU(page_t num_pages, uint32_t page_size) {
             this->num_pages = num_pages;
@@ -347,4 +372,19 @@ class MMU {
             write_d[page] = pte->write_d;
         }
 
+};
+
+// Mark the debugger's memory accesses for one scope. The previous value
+// returns at scope exit, so nested debugger calls keep the mark.
+struct MMUDebugAccess {
+    MMU *mmu;
+    bool previous;
+    explicit MMUDebugAccess(MMU *mmu) : mmu(mmu), previous(mmu && mmu->debug_access) {
+        if (mmu) mmu->debug_access = true;
+    }
+    ~MMUDebugAccess() {
+        if (mmu) mmu->debug_access = previous;
+    }
+    MMUDebugAccess(const MMUDebugAccess &) = delete;
+    MMUDebugAccess &operator=(const MMUDebugAccess &) = delete;
 };
