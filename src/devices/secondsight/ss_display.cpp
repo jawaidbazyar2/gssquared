@@ -21,7 +21,10 @@
 #include "computer.hpp"
 #include "videosystem.hpp"
 #include "util/SystemSettings.hpp"
+#include "util/TextRenderer.hpp"
 #include <algorithm>
+#include <cmath>
+#include <vector>
 #include <string>
 #include <utility>
 
@@ -50,6 +53,9 @@ SecondSightDisplay::~SecondSightDisplay() {
     if (main_texture.lcd_source) SDL_DestroyTexture(main_texture.lcd_source);
     if (window_texture.lcd_source) SDL_DestroyTexture(window_texture.lcd_source);
     lcd_gpu.shutdown(vs->gpu_device);
+    // Each text engine belongs to its renderer; release it first.
+    window_text.reset();
+    main_text.reset();
     if (renderer) SDL_DestroyRenderer(renderer);
     if (window) SDL_DestroyWindow(window);
 }
@@ -136,8 +142,7 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
         lock_since = video.frame_number();
     }
     const double field_hz = fields / timing.frame_period();
-    // The event keeps this pointer until the heads-up display copies the text.
-    static char message[128];
+    char message[128];
     if (lock_candidate == out_of_range && video.frame_number() >= lock_since + 2) {
         out_of_range = !lock_candidate;
         if (out_of_range) {
@@ -168,15 +173,10 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
                     *line && *field ? ", " : "", field);
             }
             fprintf(stderr, "%s\n", message);
-            message_frame = video.frame_number();
-            computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
+            steady_message = message;
+        } else {
+            steady_message.clear();
         }
-    }
-    // The heads-up display fades a message in about 3 seconds; repeat the
-    // monitor's message for as long as it shows no picture.
-    if (out_of_range && video.frame_number() >= message_frame + 60) {
-        message_frame = video.frame_number();
-        computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
     }
     if (!scan.h_hold && !scan.v_hold && !scan.v_height) {
         hold_line = hold_field = 0;
@@ -192,11 +192,11 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
         for (const auto &[turned, name] : {std::pair{scan.h_hold, "H-HOLD"}, {scan.v_hold, "V-HOLD"},
                  {scan.v_height, "V-HEIGHT"}})
             if (turned) controls += (controls.empty() ? "" : ", ") + std::string(name);
-        static char notice[128];
+        char notice[128];
         snprintf(notice, sizeof notice, "Second Sight AppleColor RGB: this mode needs %s adjusted (%.2f kHz, %.2f Hz)",
             controls.c_str(), line_hz / 1000.0, field_hz);
         fprintf(stderr, "%s\n", notice);
-        computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, notice));
+        show_notice(notice);
     }
     const auto &horizontal = scan.horizontal, &vertical = scan.vertical;
     // An LCD has no scan lines and shows the fields of an interlaced signal woven.
@@ -368,6 +368,7 @@ void SecondSightDisplay::render() {
             card_content = dest;
             SDL_RenderTexture(renderer, texture, nullptr, &dest);
         }
+        draw_screen_messages(renderer, window_text, {0, 0, float(w), float(h)});
         SDL_RenderPresent(renderer);
     } else if (visible) {
         vs->hide(window);
@@ -413,6 +414,7 @@ void SecondSightDisplay::render() {
     } else {
         SDL_RenderFillRect(vs->renderer, &vs->target);
     }
+    draw_screen_messages(vs->renderer, main_text, vs->target);
     SDL_SetRenderDrawColor(vs->renderer, r, g, b, a);
     SDL_SetRenderDrawBlendMode(vs->renderer, blend);
     vs->target = target;
@@ -478,4 +480,76 @@ bool SecondSightDisplay::handle_event(const SDL_Event &event) {
         computer->dispatch->dispatch(guest);
     return true;
 #endif
+}
+
+// A notice lasts 4 s, over the picture or over a steady message.
+void SecondSightDisplay::show_notice(const std::string &text) {
+    notice = text;
+    notice_until = SDL_GetTicksNS() + 4'000'000'000ull;
+}
+
+// The steady message is centered: the monitor has no picture then. A notice
+// sits near the top, over a picture. The font follows the monitor height in
+// output pixels.
+void SecondSightDisplay::draw_screen_messages(SDL_Renderer *dest, std::unique_ptr<TextRenderer> &text,
+                                              const SDL_FRect &area) {
+    if (!notice.empty() && SDL_GetTicksNS() >= notice_until) notice.clear();
+    if ((steady_message.empty() && notice.empty()) || area.w < 1 || area.h < 1) return;
+    const float size = std::clamp(std::round(area.h / 22.0f), 12.0f, 44.0f);
+    if (!text) {
+        text = std::make_unique<TextRenderer>(dest, "fonts/OpenSans-Regular.ttf", size);
+        text->font_size = size;
+    } else if (text->font && text->font_size != size && TTF_SetFontSize(text->font, size)) {
+        text->font_size = size;
+        text->font_line_height = TTF_GetFontHeight(text->font);
+    }
+    Uint8 r, g, b, a;
+    SDL_BlendMode blend;
+    SDL_GetRenderDrawColor(dest, &r, &g, &b, &a);
+    SDL_GetRenderDrawBlendMode(dest, &blend);
+    SDL_SetRenderDrawBlendMode(dest, SDL_BLENDMODE_BLEND);
+    if (!steady_message.empty()) draw_message_box(*text, dest, steady_message, area, true);
+    if (!notice.empty()) draw_message_box(*text, dest, notice, area, false);
+    SDL_SetRenderDrawColor(dest, r, g, b, a);
+    SDL_SetRenderDrawBlendMode(dest, blend);
+}
+
+// One message in a dark box. A message wider than 90% of the monitor breaks
+// after its first colon (monitor name, then the problem), then at spaces.
+void SecondSightDisplay::draw_message_box(TextRenderer &text, SDL_Renderer *dest, const std::string &message,
+                                          const SDL_FRect &area, bool centered) {
+    const float limit = area.w * 0.9f;
+    std::vector<std::string> parts{message}, lines;
+    const size_t colon = message.find(": ");
+    if (colon != std::string::npos && text.string_width(message) > limit)
+        parts = {message.substr(0, colon + 1), message.substr(colon + 2)};
+    for (const auto &part : parts) {
+        std::string line;
+        size_t start = 0;
+        while (start < part.size()) {
+            size_t end = part.find(' ', start);
+            if (end == std::string::npos) end = part.size();
+            const std::string word = part.substr(start, end - start);
+            const std::string wider = line.empty() ? word : line + " " + word;
+            if (!line.empty() && text.string_width(wider) > limit) {
+                lines.push_back(line);
+                line = word;
+            } else {
+                line = wider;
+            }
+            start = end + 1;
+        }
+        if (!line.empty()) lines.push_back(line);
+    }
+    float width = 0;
+    for (const auto &l : lines) width = std::max(width, float(text.string_width(l)));
+    const float pad = std::round(text.font_size * 0.6f), line_height = float(text.get_font_line_height());
+    SDL_FRect box = {std::round(area.x + (area.w - width) * 0.5f - pad), 0, width + 2 * pad,
+                     lines.size() * line_height + 2 * pad};
+    box.y = std::round(centered ? area.y + (area.h - box.h) * 0.5f : area.y + area.h * 0.06f);
+    SDL_SetRenderDrawColor(dest, 0, 0, 0, 200);
+    SDL_RenderFillRect(dest, &box);
+    text.set_color(0xff, 0xff, 0xff, 0xff);
+    for (size_t i = 0; i < lines.size(); ++i)
+        text.render(lines[i], int(area.x + area.w * 0.5f), int(box.y + pad + i * line_height), TEXT_ALIGN_CENTER);
 }

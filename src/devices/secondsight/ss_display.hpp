@@ -17,6 +17,8 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <memory>
+#include <string>
 #include "oti087.hpp"
 #include "ss_crt.hpp" // Host monitor scan, shared by native and web.
 #include "ss_monitor.hpp"
@@ -24,6 +26,7 @@
 
 struct computer_t;
 class SSCard;
+struct TextRenderer;
 
 // Host-side monitor/window adapter; consumes Oak pixels without owning
 // Z180 time or changing video registers.
@@ -33,6 +36,8 @@ public:
     SecondSightDisplay(computer_t *computer, SSCard &card);
     // Detach callbacks, then release the owned textures and secondary window.
     ~SecondSightDisplay();
+    // Show text on the card monitor for a few seconds, over its picture.
+    void show_notice(const std::string &text);
 
     // Match video_system_t::calculate_target_rect: one centered aspect fit for
     // the complete monitor window. Sampling/cropping belongs to the scan, so
@@ -96,8 +101,16 @@ private:
     // frame: lock_since is the card frame of the change.
     bool out_of_range = false, lock_candidate = true;
     uint64_t lock_since = 0;
-    // The card frame of the last out-of-range message.
-    uint64_t message_frame = 0;
+    // The monitor's own messages, drawn over the card picture in every view
+    // that shows the card, as a real monitor shows "out of range". The steady
+    // one stays while its condition lasts; a notice ends at notice_until (ns).
+    std::string steady_message, notice;
+    uint64_t notice_until = 0;
+    // Text for each renderer that shows the card; fonts follow the picture size.
+    std::unique_ptr<TextRenderer> window_text, main_text;
+    void draw_screen_messages(SDL_Renderer *dest, std::unique_ptr<TextRenderer> &text, const SDL_FRect &area);
+    void draw_message_box(TextRenderer &text, SDL_Renderer *dest, const std::string &message, const SDL_FRect &area,
+                          bool centered);
     // A mode that needs a back-panel control turned gets one short notice:
     // hold_line and hold_field are its rates, 0 for no such mode.
     double hold_line = 0, hold_field = 0;

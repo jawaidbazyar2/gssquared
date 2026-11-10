@@ -192,8 +192,8 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
             st->card->catch_up(computer->clock->get_c14m());
             st->rgb_monitor = rgb;
             st->card->video().monitor_type_w(rgb);
-            computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
-                "Second Sight monitor changed; if blank, change mode or Restart"));
+            if (st->display)
+                st->display->show_notice("Second Sight monitor changed; if blank, change mode or Restart");
         }
         return true;
     });

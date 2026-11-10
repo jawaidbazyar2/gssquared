@@ -428,7 +428,8 @@ add_library(gs2_devices_secondsight
     src/devices/secondsight/vga_render_text_8x8_present.cpp
 )
 # Second Sight board callbacks execute the separate Z180 processor library.
-target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE} gs2_displaypp gs2_paths gs2_devices_secondsight_z180)
+# Its monitor draws its own messages with the application's text renderer.
+target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_displaypp gs2_paths gs2_devices_secondsight_z180)
 
 add_library(gs2_devices_voc src/devices/voc/voc.cpp)
 target_link_libraries(gs2_devices_voc PRIVATE gs2_displaypp)
