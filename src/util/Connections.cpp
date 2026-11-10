@@ -44,7 +44,13 @@ SerialDevice *Connections::create_device(connection_device_type_t type, const st
         case connection_device_type_t::NONE:
             return nullptr;
         case connection_device_type_t::FILE:
-            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
+            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str(), false);
+        case connection_device_type_t::PRINTER:
+#if defined(__EMSCRIPTEN__)
+            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str(), false);
+#else
+            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str(), true);
+#endif
         case connection_device_type_t::CLIPBOARD:
             return new ClipboardDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
         case connection_device_type_t::MODEM:
@@ -70,13 +76,14 @@ int Connections::register_port(connection_key_t key,
                                connection_port_kind_t kind,
                                connection_device_type_t default_device,
                                ConnectionAttachFn attach_fn,
-                               const std::string &port_id) {
+                               const std::string &port_id,
+                               bool offers_printer) {
     if (ports_.count(key)) {
         std::cerr << "Connections: duplicate register for slot " << key.slot
                   << " port " << key.port << "\n";
         return -1;
     }
-    if (!connection_device_allowed(kind, default_device) &&
+    if (!connection_device_allowed(kind, default_device, offers_printer) &&
         default_device != connection_device_type_t::NONE) {
         default_device = connection_device_type_t::FILE;
     }
@@ -86,6 +93,7 @@ int Connections::register_port(connection_key_t key,
     reg.kind = kind;
     reg.default_device = default_device;
     reg.current_device = connection_device_type_t::NONE;
+    reg.offers_printer = offers_printer;
     reg.attach_fn = std::move(attach_fn);
     reg.port_id = port_id;
     reg.device = nullptr;
@@ -107,7 +115,7 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
         type = connection_device_type_t::NONE;
     }
 #endif
-    if (!connection_device_allowed(reg.kind, type)) {
+    if (!connection_device_allowed(reg.kind, type, reg.offers_printer)) {
         std::cerr << "Connections: device " << connection_device_type_name(type)
                   << " not allowed on " << reg.display_name << "\n";
         return false;
@@ -115,7 +123,7 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
 
     // Unwire and destroy previous device first.
     if (reg.attach_fn) {
-        reg.attach_fn(nullptr);
+        reg.attach_fn(nullptr, connection_device_type_t::NONE);
     }
     delete reg.device;
     reg.device = nullptr;
@@ -128,7 +136,7 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
     reg.path = (type == connection_device_type_t::SERIAL) ? path : std::string{};
     reg.attached_once = true;
     if (reg.attach_fn) {
-        reg.attach_fn(dev);
+        reg.attach_fn(dev, type);
     }
     return true;
 }
@@ -154,7 +162,7 @@ std::vector<connection_device_type_t> Connections::allowed_devices(connection_ke
     if (it == ports_.end()) {
         return {};
     }
-    return connection_allowed_devices(it->second.kind);
+    return connection_allowed_devices(it->second.kind, it->second.offers_printer);
 }
 
 const std::vector<connection_port_info_t> &Connections::get_all_ports() const {
@@ -198,7 +206,7 @@ void Connections::clear() {
     for (auto &kv : ports_) {
         port_registration_t &reg = kv.second;
         if (reg.attach_fn) {
-            reg.attach_fn(nullptr);
+            reg.attach_fn(nullptr, connection_device_type_t::NONE);
         }
         delete reg.device;
         reg.device = nullptr;

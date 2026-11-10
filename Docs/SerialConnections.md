@@ -8,6 +8,7 @@ GSSquared treats each serial or parallel port as a jack you can plug a virtual d
 |------------|----------------------------------------|---------------|
 | **None** | Port idle | Port idle |
 | **File** | Capture TX data to a host file | Capture printer bytes to a host file |
+| **Printer** | Super Serial Card only. Same capture as File, and on native builds the same bytes go to a gs2print socket. The worker opens the ticket without blocking the emulator. Sets the card to SIC P8 so firmware does not wait for ACK. | — |
 | **Clipboard** | Capture TX to the host clipboard | Capture printer bytes to the host clipboard |
 | **Modem** | Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502). Native builds only; absent in the [browser](Web.md). | — |
 | **Serial** | Real host UART (macOS `/dev/cu.*`; Windows `COMn`; Linux `/dev/ttyS*` `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`) | — |
@@ -21,7 +22,7 @@ When a **File** attachment closes, a short on-screen message shows the filename.
 1. Press **F4** (or click the Control Panel tab).
 2. Find the **Serial / Parallel** buttons (between the slot list and the drive icons).
 3. Click a port button.
-4. Pick **None**, **File**, **Clipboard**, **Modem**, or a host serial port listed by name (Modem and host ports only on serial jacks). The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.
+4. Pick **None**, **File**, **Printer**, **Clipboard**, **Modem**, or a host serial port listed by name (Modem and host ports only on serial jacks; **Printer** only on a Super Serial Card). The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.
 
 On Apple IIgs machines you will see the built-in ports (often labeled like printer/modem). Slot cards such as Super Serial or Parallel appear as their own buttons.
 

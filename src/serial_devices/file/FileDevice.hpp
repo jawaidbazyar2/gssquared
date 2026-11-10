@@ -7,13 +7,14 @@
 #include <cstring>
 
 #include "serial_devices/SerialDevice.hpp"
+#include "serial_devices/print/Gs2PrintSession.hpp"
 #include "util/DeviceFrameDispatcher.hpp"
 #include "util/Event.hpp"
 #include "util/EventQueue.hpp"
 
 /** Status message from FileDevice worker → main. Copied by value into the SPSC ring. */
 struct FileCloseStatusMsg {
-    enum Type : uint8_t { NONE = 0, CLOSED = 1 };
+    enum Type : uint8_t { NONE = 0, CLOSED = 1, PRINTER_APP_MISSING = 2 };
     Type type = NONE;
     char text[192]{};
 };
@@ -64,6 +65,8 @@ class FileDevice : public SerialDevice {
         EventQueue *event_queue_ = nullptr;
         DeviceFrameDispatcher *frames_ = nullptr;
         size_t frame_handler_id_ = static_cast<size_t>(-1);
+        bool gs2print_ = false;
+        Gs2PrintSession session_;
 
         void notify_closed() {
             printf("file %s closed\n", filename);
@@ -72,6 +75,27 @@ class FileDevice : public SerialDevice {
             std::snprintf(msg.text, sizeof(msg.text), "File closed %s", filename);
             // Worker → main: SPSC ring only. Never touch EventQueue here.
             status_q_.send(msg);
+        }
+
+        void notify_printer_missing() {
+            FileCloseStatusMsg msg;
+            msg.type = FileCloseStatusMsg::PRINTER_APP_MISSING;
+            std::snprintf(msg.text, sizeof(msg.text), "Printer app is not installed");
+            status_q_.send(msg);
+        }
+
+        /** Accept, flush, and reap. Worker thread only. */
+        void service_print() {
+            if (!gs2print_) {
+                return;
+            }
+            session_.poll();
+            if (session_.take_app_missing()) {
+                notify_printer_missing();
+            }
+            if (session_.take_peer_closed()) {
+                close_file();
+            }
         }
 
         void mark_write() {
@@ -94,8 +118,10 @@ class FileDevice : public SerialDevice {
         }
 
     public:
-        FileDevice(EventQueue *event_queue, DeviceFrameDispatcher *frames, const char *port_id)
-            : SerialDevice("FileDevice", port_id), event_queue_(event_queue), frames_(frames) {
+        FileDevice(EventQueue *event_queue, DeviceFrameDispatcher *frames, const char *port_id,
+                   bool gs2print = false)
+            : SerialDevice("FileDevice", port_id), event_queue_(event_queue), frames_(frames),
+              gs2print_(gs2print) {
             file = NULL;
             if (frames_) {
                 frame_handler_id_ = frames_->registerHandler([this]() {
@@ -141,9 +167,15 @@ class FileDevice : public SerialDevice {
                 return;
             }
             mark_write();
+            if (gs2print_) {
+                session_.begin();
+            }
         }
 
         void close_file(bool notify = true) {
+            if (gs2print_) {
+                session_.end();
+            }
             if (file != NULL) {
                 fclose(file);
                 file = NULL;
@@ -162,6 +194,7 @@ class FileDevice : public SerialDevice {
         void device_loop() override {
             while (true) {
                 SDL_Delay(10);
+                service_print();
 
                 if (file && last_write_ticks != 0 &&
                     (SDL_GetTicks() - last_write_ticks) >= idle_close_ms) {
@@ -172,6 +205,7 @@ class FileDevice : public SerialDevice {
                     SerialMessage msg = q_host.get();
                     switch (msg.type) {
                         case MESSAGE_SHUTDOWN:
+                            close_file(false);
                             return;
                         case MESSAGE_CLOSE:
                             close_file();
@@ -179,14 +213,19 @@ class FileDevice : public SerialDevice {
                         case MESSAGE_DATA:
                             if (!file) open_file();
                             if (file) {
-                                fwrite(&msg.data, 1, 1, file);
+                                uint8_t byte = static_cast<uint8_t>(msg.data);
+                                fwrite(&byte, 1, 1, file);
                                 mark_write();
+                                if (gs2print_) {
+                                    session_.write(byte);
+                                }
                             }
                             break;
                         default:
                             break;
                     }
                 }
+                service_print();
             }
         }
 };
