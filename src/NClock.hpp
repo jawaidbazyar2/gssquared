@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include "ui/MainAtlas.hpp" 
 #include "devices/displaypp/VideoScannerII.hpp"
@@ -121,6 +122,12 @@ protected:
     uint32_t cpu_per_14m = 1;
     uint32_t cpu_div = 0;
 
+    // CPU cycles ahead that need only their own clock ticks: no video cycle,
+    // RAM refresh or bus synchronization falls in them. incr_cycles() counts
+    // these inline. slow_incr_cycles() sets the count, and a change to the
+    // next cycle clears it.
+    uint32_t fast_cycles_left = 0;
+
     VideoScannerII *video_scanner = nullptr;
     // have a predefined vector of max 8 cycle handlers.
     std::vector<std::function<void()>> cycle_handlers;
@@ -173,6 +180,7 @@ public:
         if (n > LUDICROUS_CPU_PER_14M_MAX) n = LUDICROUS_CPU_PER_14M_MAX;
         cpu_per_14m = n;
         cpu_div = 0;
+        fast_cycles_left = 0;
     }
     inline uint64_t get_c14m_per_cpu_cycle() { return current.c_14M_per_cpu_cycle; }
     inline uint64_t get_c14m_per_second() { return current.c14M_per_second; }
@@ -202,6 +210,7 @@ public:
 
     void set_video_scanner(VideoScannerII *video_scanner) {
         this->video_scanner = video_scanner;
+        fast_cycles_left = 0;
     }
 
     void select_system_clock(clock_set_t clock_set) {
@@ -216,6 +225,7 @@ public:
 
     void set_clock_mode(clock_mode_t mode) {
         clock_mode = mode;
+        fast_cycles_left = 0;
         if (mode == CLOCK_FREE_RUN) {
             // Same 14.3 physics; cpu_per_14m is owned by the calibrator.
             current = system_clock_mode_info[CLOCK_14_3MHZ];
@@ -248,6 +258,12 @@ public:
     }
     
     inline void incr_cycles() {
+        if (fast_cycles_left) {
+            fast_cycles_left--;
+            cpu.add(1);
+            c14m.add(current.c_14M_per_cpu_cycle);
+            return;
+        }
         slow_incr_cycles();
     }
 
@@ -307,7 +323,7 @@ public:
         }
     }
 
-    inline void set_slow_mode(bool value) { slow_mode = value; }
+    inline void set_slow_mode(bool value) { slow_mode = value; fast_cycles_left = 0; }
     inline bool get_slow_mode() { return slow_mode; }
 
 
@@ -325,6 +341,16 @@ protected:
     uint64_t ram_refresh_cycles = 0;
     uint64_t vidlinecycles = 0;
     uint64_t video_c14m = 0;
+    // The 14M time through which the refresh and video counts are up to
+    // date. The ticks of the cycles that incr_cycles() counted inline are
+    // added from here.
+    uint64_t counted_c14m = 0;
+
+    // Count the fast cycles ahead that reach no video cycle and no RAM refresh.
+    inline uint32_t fast_cycles_ahead() const {
+        if (!video_scanner || slow_mode || current.hz_rate == 1020484 || cpu_per_14m > 1) return 0;
+        return std::min(13 - video_cycle_14M_count, 49 - ram_refresh_cycles) / current.c_14M_per_cpu_cycle;
+    }
 
     public:
     NClockIIgs(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_2_8MHZ) : NClockII(clock_set, clock_mode) {
@@ -334,12 +360,20 @@ protected:
     cycle_type_t cycle_type = CYCLE_TYPE_FAST;
 
     /* set the next cycle type. This is called by the MMU when it knows what kind of cycle it's doing. */
-    inline void set_next_cycle_type(cycle_type_t type) { cycle_type = type; }
+    inline void set_next_cycle_type(cycle_type_t type) {
+        cycle_type = type;
+        if (type != CYCLE_TYPE_FAST) fast_cycles_left = 0;
+    }
 
     // IIgs
     // Fast path: N CPU cycles per 14M when ludicrous. SYNC / slow / 1 MHz ignore N.
     inline void slow_incr_cycles() override {
         cpu.add(1);
+        const uint64_t inline_ticks = c14m.now().v - counted_c14m;
+        counted_c14m += inline_ticks;
+        ram_refresh_cycles += inline_ticks;
+        video_cycle_14M_count += inline_ticks;
+        video_c14m += inline_ticks;
         if (slow_mode) cycle_type = CYCLE_TYPE_SYNC;
         if (current.hz_rate == 1020484) cycle_type = CYCLE_TYPE_SYNC; // also get refresh for "free" here.
 
@@ -418,11 +452,13 @@ protected:
             }
         }
         cycle_type = CYCLE_TYPE_FAST; // reset here so MMU doesn't have to set for all possible addresses
+        counted_c14m = c14m.now().v;
+        fast_cycles_left = fast_cycles_ahead();
     }
 
     virtual DebugFormatter *debug() override {
         DebugFormatter *f = NClockII::debug();
-        f->addLine("RAM Refresh Cntr: %12llu", ram_refresh_cycles);
+        f->addLine("RAM Refresh Cntr: %12llu", ram_refresh_cycles + c14m.now().v - counted_c14m);
         return f;
     }
 };
