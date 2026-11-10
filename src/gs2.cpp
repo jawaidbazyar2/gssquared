@@ -1236,6 +1236,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     switch (platform->mmu_type) {
         case MMU_MMU_II:
             state->mmu_ii = new MMU_II(256, 48*1024, (uint8_t *) rd->main_rom_data);
+            state->mmu_ii->set_clock(nclock);
             computer->cpu->set_mmu(state->mmu_ii);
             computer->set_mmu(state->mmu_ii);
             computer->debug_window->set_mmu(state->mmu_ii);
@@ -1243,6 +1244,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
         case MMU_MMU_IIE: {
             auto *mmu = new MMU_IIe2(256, 128 * 1024, (uint8_t *)rd->main_rom_data);
             mmu->set_message_bus(computer->mbus);
+            mmu->set_clock(nclock);
             state->mmu_iie = mmu;
             computer->cpu->set_mmu(mmu);
             computer->set_mmu(mmu);
