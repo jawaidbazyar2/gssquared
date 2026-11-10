@@ -583,10 +583,31 @@ void SSCard::finish_synchronize() {
     synchronized_time = published_time;
     // The completed counter is also the memory hand-off for error, capture
     // and IRQ (interrupt request) changes made by the worker.
-    if (worker->error)
-        std::rethrow_exception(worker->error);
+    if (worker->error) {
+        stop_after_failure();
+        return;
+    }
     host_pending = capture.pending;
     collect_irq();
+}
+
+// A failed check means the card's timing state is no longer valid. Report it
+// instead of ending the program: the IIgs, its monitor and the debugger keep
+// running, and the card stays stopped and off the bus.
+void SSCard::stop_after_failure() {
+    if (card_failed) return;
+    card_failed = true;
+    try {
+        std::rethrow_exception(worker->error);
+    } catch (const std::exception &error) {
+        failure_text = error.what();
+    } catch (...) {
+        failure_text = "unknown error";
+    }
+    host_pending = false;
+    irq_edges.clear();
+    if (host_irq && irq_handler) irq_handler(false);
+    host_irq = false;
 }
 
 // Move published IRQ edges without taking ownership of live card state.
@@ -612,6 +633,7 @@ void SSCard::set_observation_limit(uint64_t ticks) {
 // it delivers only the IRQ edges the worker has published so far.
 void SSCard::request_presentation(uint64_t ticks, bool exact) {
     end_presentation();
+    if (card_failed) return;
     if (!worker || presentation_mode == Presentation::Exact || exact) {
         catch_up(ticks, exact);
         return;
@@ -631,6 +653,7 @@ void SSCard::request_presentation(uint64_t ticks, bool exact) {
 // Claim the requested scan, or return false so the renderer keeps its texture.
 // Success transfers Oak ownership until end_presentation.
 bool SSCard::begin_presentation(uint64_t ticks, bool exact) {
+    if (card_failed) return false;
     if (!worker || presentation_mode == Presentation::Exact || exact) {
         catch_up(ticks);
         return true;
@@ -755,7 +778,9 @@ uint64_t SSCard::dispatch(uint64_t ticks, bool wait, megaii_transfer_t *access) 
 // Replace the EPROM, Lattice map and INT0 pull-up as a power cycle; keep the
 // display and nonvolatile EEPROM objects that the application already owns.
 void SSCard::change_hardware(uint64_t ticks, const uint8_t *image, SSCapture::LatticeMap lattice_map, bool int0_pullup) {
+    if (card_failed) return;
     catch_up(ticks);
+    if (card_failed) return;
     prepare_reset();
     std::memcpy(rom.data(), image, rom.size());
     capture.lattice_map = lattice_map;
@@ -767,9 +792,12 @@ void SSCard::change_hardware(uint64_t ticks, const uint8_t *image, SSCapture::La
 // Apple reset restarts the Z180, but does not clear the Lattice chip or host
 // latches. Only power-on clears SRAM and those board-level retained outputs.
 void SSCard::reset(uint64_t ticks, bool power_on) {
+    // A stopped card has no valid timing state to restart from.
+    if (card_failed) return;
     synchronize();
     if (!power_on)
         catch_up(ticks);
+    if (card_failed) return;
     prepare_reset();
     transfers.clear();
     queued_event = false;
@@ -1452,6 +1480,7 @@ uint64_t SSCard::run_transfers(std::vector<megaii_transfer_t> &queue, uint64_t t
 // Accept a Mega II transfer before the MMU completes it. Readback, IRQ and
 // possible RDY holds drain the queue; independent writes may be batched.
 uint64_t SSCard::observe(megaii_transfer_t &host_transfer) {
+    if (card_failed) return 0;
     // Virtual disk DMA may submit a whole block at one host tick. Mega II
     // can carry one byte per cycle: assign those bytes successive card-side
     // event times. This does not advance the IIgs clock or drop a byte.
@@ -1496,8 +1525,12 @@ uint64_t SSCard::observe(megaii_transfer_t &host_transfer) {
                 break;
             if (worker->held_sequence.load(std::memory_order_acquire) >= sequence) {
                 held = worker->held_ticks.load(std::memory_order_relaxed);
-                if (held == NO_TICKS)
+                // Only a failed card thread reports no hold result. The
+                // synchronization records the failure; this access is not held.
+                if (held == NO_TICKS) {
                     synchronize();
+                    return 0;
+                }
                 break;
             }
             cpu_relax();
@@ -1519,6 +1552,7 @@ uint64_t SSCard::observe(megaii_transfer_t &host_transfer) {
     }
     if (answer || irq || (maybe_pending && (possible_copy || possible_event))) {
         const uint64_t held = dispatch(transfer.ticks, true, &transfer);
+        if (card_failed) return 0;
         queued_event = false;
         if (possible_event) {
             event_ticks = transfer.ticks;
@@ -1554,8 +1588,9 @@ uint64_t SSCard::observe(megaii_transfer_t &host_transfer) {
 // The debugger reads the card's port as the Apple would see it, without the
 // access itself: catch the card up to the current host time, then sample U3.
 void SSCard::inspect(megaii_transfer_t &transfer, uint64_t ticks) {
-    if ((transfer.address & 0xfff0) != 0xc0b0) return;
+    if (card_failed || (transfer.address & 0xfff0) != 0xc0b0) return;
     catch_up(ticks);
+    if (card_failed) return;
     transfer.data = host_output;
     transfer.driven = true;
 }

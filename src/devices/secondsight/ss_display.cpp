@@ -337,6 +337,14 @@ void SecondSightDisplay::render() {
         SSCard &card;
         ~Release() { card.end_presentation(); }
     } release{card};
+    // A stopped card sends no picture; its monitor goes black and says why.
+    if (card.failed()) {
+        main_texture.shown = window_texture.shown = nullptr;
+        if (!failure_shown) {
+            failure_shown = true;
+            steady_message = "Second Sight stopped: " + card.failure() + ". Start the machine again.";
+        }
+    }
     auto *vs = computer->video_system;
     const int view = SystemSettings::instance().ss_view();
     const uint64_t ticks = computer->clock->get_c14m();

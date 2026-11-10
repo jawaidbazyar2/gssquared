@@ -103,6 +103,8 @@ the normal native and web resource packaging.
 
 The debugger and the [debug protocol](DebugProtocol.md) read and write memory without Apple bus cycles, so the card does not see those accesses and a paused machine stays paused. A debugger read of `$C0B0`–`$C0BF` returns the card's output latch. The debugger's `ss-z180` panel shows the Z180 and capture state.
 
+If a card timing check fails, the card stops and its monitor goes black. A message names the failed check, and the IIgs keeps running. The card stays stopped until the machine is started again.
+
 ## Related
 
 - [Displays](Displays.md)

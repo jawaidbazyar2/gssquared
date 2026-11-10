@@ -52,6 +52,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 #include "ss_capture.hpp"
@@ -92,6 +93,12 @@ public:
     // A debugger read of $C0B0-$C0BF gets the U3 Apple data-out latch at host
     // time ticks. It is not a bus cycle: no event, no copy and no RDY hold.
     void inspect(megaii_transfer_t &transfer, uint64_t ticks);
+    // True after a card timing check failed on the card thread. The card then
+    // stays stopped until the machine starts again: it holds no RDY, drives
+    // no data and keeps its Apple IRQ released. The IIgs keeps running.
+    bool failed() const { return card_failed; }
+    // The failed check's message, for the monitor, stderr and the debugger.
+    const std::string &failure() const { return failure_text; }
     // Drain captured accesses and run the card through this absolute host tick.
     // wait=false lets independent Apple presentation overlap the remaining work;
     // the presenter must synchronize or claim stopped Oak before reading it.
@@ -201,6 +208,11 @@ private:
     static constexpr uint64_t NO_TICKS = UINT64_MAX;
     // Host thread: the latest posted entry stops the card at its time.
     bool stopping_post = false;
+    // Host thread: set once from the worker's retained error; see failed().
+    bool card_failed = false;
+    std::string failure_text;
+    // Record the worker's failure, release the Apple IRQ and stop the card.
+    void stop_after_failure();
     // Publish ordinary entries together; a result or a time grant flushes
     // every earlier input first. This is host transport, not a card FIFO.
     static constexpr unsigned PUBLISH_ENTRIES = 32;

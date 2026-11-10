@@ -44,6 +44,8 @@ struct secondsight_z180_state_t {
     std::array<uint16_t, 64> eeprom_initial;
     // Card for the clock's Mega II cycle hook; cleared before the card goes.
     std::shared_ptr<std::atomic<SSCard *>> time_target;
+    // Set when a stopped card is first seen and reported.
+    bool failure_reported = false;
 };
 
 // Restore the serial EEPROM words without clocking its serial interface.
@@ -93,6 +95,8 @@ static DebugFormatter *secondsight_z180_debug(secondsight_z180_state_t *st, comp
     const auto state = card.processor().get_state();
     const auto &capture = card.capture_state();
     df->addLine("Second Sight (with Z180)");
+    if (card.failed())
+        df->addLine("Stopped: %s", card.failure().c_str());
     df->addLine("Z180 PC: %04X physical: %05X clock: %u T states: %llu", state.pc,
                 card.processor().physical_address(state.pc), card.processor().clock_hz(), state.tstates);
     df->addLine("Apple data in: %02X out: %02X event: %02X pending: %d bands: %02X", capture.host_input, card.output_latch(),
@@ -102,6 +106,17 @@ static DebugFormatter *secondsight_z180_debug(secondsight_z180_state_t *st, comp
     df->addLine("Copies: %llu events: %llu stalls: %llu held 14M ticks: %llu", card.copies, card.events, card.stalls,
                 card.stall_ticks);
     return df;
+}
+
+// A card timing check failed. Report it once, then take the stopped card off
+// the Apple bus and the clock. This runs between frames, never inside the
+// observer that it removes.
+static void secondsight_z180_stopped(secondsight_z180_state_t *st, MMU_IIgs *mmu) {
+    if (st->failure_reported) return;
+    st->failure_reported = true;
+    fprintf(stderr, "Second Sight stopped: %s\n", st->card->failure().c_str());
+    mmu->set_megaii_observer({});
+    st->time_target->store(nullptr, std::memory_order_relaxed);
 }
 
 // Load the selected 128 KiB EPROM through the normal resource path; reject
@@ -181,7 +196,12 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
     // becomes a cable-sense input. The firmware samples it when setting a
     // mode, so it cannot rescale an active mode immediately (ROM_BEEF.asm
     // monitor/mode initialization).
-    computer->device_frame_dispatcher->registerHandler([st, computer]() {
+    computer->device_frame_dispatcher->registerHandler([st, computer, mmu]() {
+        // The card monitor shows why it went black.
+        if (st->card->failed()) {
+            secondsight_z180_stopped(st, mmu);
+            return true;
+        }
         // SecondSightDisplay claims stopped Oak state or reuses its previous
         // texture. Stepping may skip rendering and therefore synchronizes here.
         st->card->request_presentation(computer->clock->get_c14m(), computer->execution_mode != EXEC_NORMAL);
@@ -202,6 +222,8 @@ void init_secondsight_z180(computer_t *computer, SlotType_t slot) {
     // a card power cycle. An ordinary Apple reset preserves the U7 Lattice chip
     // and captured RAM.
     computer->register_reset_handler([st, computer](bool cold_start) {
+        // A stopped card stays stopped until the machine starts again.
+        if (st->card->failed()) return true;
         const auto &settings = SystemSettings::instance();
         if (cold_start && (st->firmware != settings.ss_firmware() || st->lattice_v2 != settings.ss_lattice_v2() ||
                            st->int0_pullup != settings.ss_int0_pullup())) {

@@ -108,6 +108,7 @@ private:
     uint64_t notice_until = 0;
     // Text for each renderer that shows the card; fonts follow the picture size.
     std::unique_ptr<TextRenderer> window_text, main_text;
+    bool failure_shown = false;
     void draw_screen_messages(SDL_Renderer *dest, std::unique_ptr<TextRenderer> &text, const SDL_FRect &area);
     void draw_message_box(TextRenderer &text, SDL_Renderer *dest, const std::string &message, const SDL_FRect &area,
                           bool centered);
