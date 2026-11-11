@@ -5,6 +5,8 @@
 #include "mmu_ii.hpp"
 
 
+class NClock;
+
 struct C8XX_handler_t {
     void (*handler)(void *context, SlotType_t slot);
     void *context;
@@ -28,6 +30,14 @@ class MMU_II : public MMU {
         page_table_entry_t slot_rom_ptable[15]; // handle C1-CF
 
         virtual void power_on_randomize(uint8_t *ram, int ram_size);
+
+        // Bus time for a slot card's observer, where the CPU uses this MMU.
+        NClock *clock = nullptr;
+        // The CPU's write while a card holds it with RDY.
+        uint16_t held_write_address = 0;
+        uint8_t held_write_data = 0;
+        bool held_write_active = false;
+        bool observe_bus_access(uint16_t address, uint8_t &value, bool read);
         
     public:
         bool f_intcxrom = false;
@@ -37,6 +47,8 @@ class MMU_II : public MMU {
         virtual ~MMU_II();
         uint8_t read(uint32_t address) override;
         void write(uint32_t address, uint8_t value) override;
+        void set_clock(NClock *clock) { this->clock = clock; }
+        void advance_bus_hold(uint64_t ticks) override;
         
         virtual void set_C8xx_handler(SlotType_t slot, void (*handler)(void *context, SlotType_t slot), void *context);
         virtual void set_C0XX_read_handler(uint16_t address, read_handler_t handler);
