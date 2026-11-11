@@ -8,9 +8,11 @@
 #include "ui/ScreenshotWriter.hpp"
 #include "paths.hpp"
 #include "util/Event.hpp"
+#include <algorithm>
 #include <cmath>
 #include "util/dialog.hpp"
 #include "util/SystemSettings.hpp"
+#include "platform-specific/menu.h" // Reserve the native/web overlay menu strip.
 #include "display/NtscGpu.hpp"
 #include "display/GsCompositeGpu.hpp"
 #if defined(__EMSCRIPTEN__)
@@ -622,6 +624,18 @@ SDL_Surface *video_system_t::capture_screen_surface() {
     }
     SDL_Rect srect = { (int)last_srcrect.x, (int)last_srcrect.y, (int)last_srcrect.w, (int)last_srcrect.h };
     SDL_FRect trect = { last_srcrect.x, last_srcrect.y, last_srcrect.w, last_srcrect.h };
+    // A card monitor's picture can be larger than the emulated display.
+    float width = 0, height = 0;
+    SDL_GetTextureSize(screencap_texture, &width, &height);
+    if (trect.x + trect.w > width || trect.y + trect.h > height) {
+        SDL_Texture *larger = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET,
+            (int)std::ceil(std::max(width, trect.x + trect.w)), (int)std::ceil(std::max(height, trect.y + trect.h)));
+        if (!larger) {
+            return nullptr;
+        }
+        SDL_DestroyTexture(screencap_texture);
+        screencap_texture = larger;
+    }
     SDL_SetRenderTarget(renderer, screencap_texture);
     SDL_SetTextureBlendMode(last_texture, SDL_BLENDMODE_NONE);
     SDL_RenderTexture(renderer, last_texture, &trect, &trect); // ensure no scaling.
@@ -635,7 +649,7 @@ void video_system_t::copy_screen() {
     if (!surface) {
         return;
     }
-    clip->Clip(surface);
+    clip->Clip(surface, !card_picture_shown);
     SDL_DestroySurface(surface);
 }
 
@@ -653,7 +667,7 @@ void video_system_t::save_screenshot() {
         return;
     }
     const std::string path = Paths::make_screenshot_path();
-    if (!screenshot_writer->try_submit(surface, path)) {
+    if (!screenshot_writer->try_submit(surface, path, !card_picture_shown)) {
         event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Screenshot busy"));
     }
     SDL_DestroySurface(surface);
@@ -667,17 +681,53 @@ void video_system_t::update_display(bool force_full_frame) {
     // When the CRT shader is active, draw the emulator frame into the offscreen
     // scene_target so it can be post-processed during present_scene(). Otherwise
     // draw straight to the swapchain exactly as before.
-    bool use_scene = crt_shader_enabled && crt_pass.ok() && scene_target;
+    const monitor_place place = card_monitor_place();
+    bool use_scene = crt_shader_enabled && crt_pass.ok() && scene_target && place != monitor_place::replace;
     if (use_scene) {
         SDL_SetRenderTarget(renderer, scene_target);
     }
 
     clear(); // clear the current render target (scene_target or swapchain).
 
+    // A card monitor changes the layout for this frame only.
+    const SDL_FRect full_target = target;
+#if defined(__linux__) || defined(__EMSCRIPTEN__)
+    // The ImGui menu uses window points. Reserve its strip in physical output
+    // pixels before fitting either monitor, so neither scan sits under the bar.
+    if (card_monitor.draw) {
+        int points_w, points_h, pixels_w, pixels_h;
+        SDL_GetWindowSize(window, &points_w, &points_h);
+        SDL_GetCurrentRenderOutputSize(renderer, &pixels_w, &pixels_h);
+        const float top = points_h > 0 ? menuBarHeight() * pixels_h / points_h : 0;
+        if (target.y < top) {
+            const float scale = std::max(0.0f, (target.y + target.h - top) / target.h);
+            target.x += target.w * (1.0f - scale) * 0.5f;
+            target.y = top;
+            target.w *= scale;
+            target.h *= scale;
+        }
+    }
+#endif
+    if (place == monitor_place::beside) {
+        target.w *= 0.5f;
+        target.h *= 0.5f;
+        target.y += target.h * 0.5f;
+    }
     for (const auto& pair : frame_handlers) {
         if (pair.second(force_full_frame)) {
             break; // Stop processing if handler returns true
         }
+    }
+
+    // The Apple mouse keeps the emulated display's content area when the card
+    // picture is beside it.
+    card_picture_shown = false;
+    if (card_monitor.draw) {
+        const SDL_FRect apple_content = content;
+        if (place == monitor_place::beside) target.x += target.w;
+        card_picture_shown = card_monitor.draw(place == monitor_place::separate ? nullptr : &target);
+        if (place == monitor_place::beside) content = apple_content;
+        target = full_target;
     }
 
     if (use_scene) {
@@ -686,7 +736,8 @@ void video_system_t::update_display(bool force_full_frame) {
 }
 
 void video_system_t::present_scene() {
-    if (!(crt_shader_enabled && crt_pass.ok() && scene_target)) {
+    if (!(crt_shader_enabled && crt_pass.ok() && scene_target) ||
+        card_monitor_place() == monitor_place::replace) {
         return; // shader disabled/unavailable: update_display drew to the swapchain.
     }
     // Feed the CRT shader a resolution that matches the emulated source texture

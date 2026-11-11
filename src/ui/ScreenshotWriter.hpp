@@ -67,6 +67,7 @@ public:
 
 class ScreenshotWriter {
     uint8_t *buffer_ = nullptr;
+    size_t buffer_size_ = 0;
     int width_ = 0;
     int height_ = 0;
     std::string path_;
@@ -87,10 +88,11 @@ public:
     ScreenshotWriter(const ScreenshotWriter &) = delete;
     ScreenshotWriter &operator=(const ScreenshotWriter &) = delete;
 
-    /** Copy surface (with scanline doubling) into the prealloc buffer and wake the worker.
-     *  Returns false if a write is already pending or the surface is too large.
+    /** Copy surface into the buffer and wake the worker. The emulated display
+     *  gets scanline doubling; a card monitor's picture passes false.
+     *  Returns false if a write is already pending.
      *  Main thread only. */
-    bool try_submit(SDL_Surface *surface, const std::string &path);
+    bool try_submit(SDL_Surface *surface, const std::string &path, bool double_scanlines = true);
     bool is_pending() const { return pending_.load(std::memory_order_acquire); }
 
     /** Drain worker status messages into EventQueue. Main thread only; never blocks. */
