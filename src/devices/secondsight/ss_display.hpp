@@ -1,0 +1,141 @@
+/*
+ *   Present the Second Sight monitor using pixels from its Oak OTI-087X
+ *   video controller. The card has its own screen, even when the Apple's own
+ *   display shows something different. SSCard offers a stopped scan;
+ *   video_system_t then calls this adapter to upload and draw it.
+ *
+ *   SDL is the host window/graphics library. The application owns this
+ *   adapter and all SDL windows/textures. All methods run on the main thread;
+ *   render owns stopped Oak state before reading it, or reuses its last texture.
+ *   Native builds can use two windows; browser builds place both monitors on
+ *   one canvas. Input from either monitor feeds the same emulated Apple.
+ *   Source: Second Sight manual, monitor installation; Oak OTI-087 databook
+ *   pp. 39-40 describes the screen timing extensions. Window layout and input mapping
+ *   are application choices, not card registers.
+ */
+
+#pragma once
+
+#include <SDL3/SDL.h>
+#include <memory>
+#include <string>
+#include "oti087.hpp"
+#include "ss_crt.hpp" // Host monitor scan, shared by native and web.
+#include "ss_monitor.hpp"
+#include "ss_lcd_gpu.hpp"
+#include "ss_settings.hpp"
+
+struct computer_t;
+class SSCard;
+struct TextRenderer;
+enum class monitor_place;
+
+// Host-side monitor/window adapter; consumes Oak pixels without owning
+// Z180 time or changing video registers.
+class SecondSightDisplay {
+public:
+    // Borrow computer, card and settings; install main-thread render and
+    // input callbacks.
+    SecondSightDisplay(computer_t *computer, SSCard &card, SSSettings &settings);
+    // Detach callbacks, then release the owned textures and secondary window.
+    ~SecondSightDisplay();
+    // Show text on the card monitor for a few seconds, over its picture.
+    void show_notice(const std::string &text);
+
+    // Match video_system_t::calculate_target_rect: one centered aspect fit for
+    // the complete monitor window. Sampling/cropping belongs to the scan, so
+    // active video and its overscan can never receive different scale factors.
+    static SDL_FRect frame_rect(const SDL_FRect &target, float aspect) {
+        float w = target.w, h = w / aspect;
+        if (h > target.h) { h = target.h; w = h * aspect; }
+        return {target.x + (target.w - w) * 0.5f, target.y + (target.h - h) * 0.5f, w, h};
+    }
+
+private:
+    // One main-thread SDL texture plus its allocated pixel dimensions. Each
+    // renderer needs its own copy because SDL textures cannot cross renderers.
+    struct Texture {
+        SDL_Texture *value = nullptr;
+        int width = 0, height = 0;
+        // Retain the other field on the GPU; unchanged interlaced frames then
+        // alternate textures without copying or filtering their pixels again.
+        SDL_Texture *odd = nullptr;
+        SecondSightCrt crt;
+        bool filtered = false;
+        // These belong to the uploaded texture, so a missed worker handoff
+        // can draw it without reading any live Oak or interlace state.
+        SDL_Texture *shown = nullptr;
+        ss_video_timing_t timing;
+        // The picture's aspect on an LCD panel; 0 fills the monitor frame.
+        float aspect = 0;
+        // The LCD panel's picture at the size it is shown, which the texture
+        // holds on that monitor.
+        ss_lcd::Panel panel;
+        // With the GPU filter: its input, the samples and the panel's tap
+        // tables. The filter draws into value, which is then a render target.
+        SDL_Texture *lcd_source = nullptr;
+        int lcd_source_width = 0, lcd_source_height = 0;
+        // The tap rows: 0 still to write, 1 written, -1 more taps than the
+        // shader reads, so this size filters on the CPU.
+        int lcd_tables = 0;
+        bool lcd_gpu = false;
+        bool lcd_samples_changed = false;
+    };
+    computer_t *computer;
+    SSCard &card;
+    SSSettings &settings;
+    OTI087 &video;
+    SDL_Window *window = nullptr;
+    SDL_Renderer *renderer = nullptr;
+    SDL_Renderer *last_renderer = nullptr;
+    Texture main_texture, window_texture;
+    // The LCD filter on the GPU, for the main window's renderer only. A
+    // native card window, or a renderer without the pass, filters on the CPU.
+    SecondSightLcdGpu lcd_gpu;
+    bool lcd_gpu_tried = false;
+    bool use_lcd_gpu(SDL_Renderer *dest);
+    bool prepare_lcd_source(SDL_Renderer *dest, Texture &texture, bool &full);
+    SDL_FRect card_content = {};
+    bool card_mouse_down = false;
+    bool mouse_captured = false;
+    bool visible = false;
+    bool window_failed = false;
+    // The monitor cannot lock to the current signal and shows no picture.
+    // A changed lock takes effect after its timing holds for a whole card
+    // frame: lock_since is the card frame of the change.
+    bool out_of_range = false, lock_candidate = true;
+    uint64_t lock_since = 0;
+    // The monitor's own messages, drawn over the card picture in every view
+    // that shows the card, as a real monitor shows "out of range". The steady
+    // one stays while its condition lasts; a notice ends at notice_until (ns).
+    std::string steady_message, notice;
+    uint64_t notice_until = 0;
+    // Text for each renderer that shows the card; fonts follow the picture size.
+    std::unique_ptr<TextRenderer> window_text, main_text;
+    bool failure_shown = false;
+    void draw_screen_messages(SDL_Renderer *dest, std::unique_ptr<TextRenderer> &text, const SDL_FRect &area);
+    void draw_message_box(TextRenderer &text, SDL_Renderer *dest, const std::string &message, const SDL_FRect &area,
+                          bool centered);
+    // A mode that needs a back-panel control turned gets one short notice:
+    // hold_line and hold_field are its rates, 0 for no such mode.
+    double hold_line = 0, hold_field = 0;
+    uint64_t hold_since = 0;
+    bool hold_shown = false;
+    // The LCD monitor's controller and the picture shape of its last Auto.
+    ss_lcd::Monitor lcd;
+    ss_monitor::LcdShape lcd_shape;
+
+    bool missed_frame = false;
+
+    // Where the card monitor shows in the main window, from the view setting.
+    monitor_place place() const;
+    // Draw the selected monitor layout from the synchronized card frame.
+    bool render(const SDL_FRect *area);
+    // Route one SDL event; return true if consumed or handled for the card window.
+    bool handle_event(const SDL_Event &event);
+    // Update texture for dest; return it or null if geometry/upload/allocation fails.
+    // shown is the size in output pixels of the 4:3 area an LCD panel fills.
+    SDL_Texture *prepare_texture(SDL_Renderer *dest, Texture &texture, bool refresh, SDL_FPoint shown);
+    // Lazily open the second monitor; return false on failure or in a browser.
+    bool open_window();
+};
