@@ -316,6 +316,13 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)editCopyScreen:(id)sender    { getMenuInterface()->editCopyScreen(); (void)sender; }
 - (void)editPasteText:(id)sender     { getMenuInterface()->editPasteText(); (void)sender; }
 
+// The item holds its device menu entry; the menu was built when it opened.
+- (void)deviceMenuSelect:(id)sender {
+	NSValue *value = (NSValue *)[(NSMenuItem *)sender representedObject];
+	const device_menu_entry_t *entry = static_cast<const device_menu_entry_t *>([value pointerValue]);
+	if (entry && entry->select) entry->select();
+}
+
 - (void)diskToggleDrive:(id)sender {
 	NSMenuItem *item = (NSMenuItem *)sender;
 	NSNumber *keyNumber = (NSNumber *)[item representedObject];
@@ -356,11 +363,14 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 #define SETTINGS_TAG_RMB_ACCEL     3
 #define SETTINGS_TAG_PAUSE_MINIMIZED 4
 
+static void updateDeviceMenus(NSMenu *menu, device_menu_place place);
+
 @interface SettingsMenuDelegate : NSObject <NSMenuDelegate>
 @end
 
 @implementation SettingsMenuDelegate
 - (void)menuNeedsUpdate:(NSMenu *)menu {
+	updateDeviceMenus(menu, DEVICE_MENU_SETTINGS);
 	for (NSMenuItem *item in [menu itemArray]) {
 		if ([item tag] == SETTINGS_TAG_SLEEP_MODE) {
 			[item setState:getMenuInterface()->getSleepMode() ? NSControlStateValueOn : NSControlStateValueOff];
@@ -436,6 +446,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 @class DrivesMenuDelegate;
 @class ControllerMenuDelegate;
+@class DisplayMenuDelegate;
 
 static MenuActionHandler *sMenuHandler = nil;
 static SpeedMenuDelegate *sSpeedMenuDelegate = nil;
@@ -444,6 +455,51 @@ static MonitorMenuDelegate *sMonitorMenuDelegate = nil;
 static HudMenuDelegate *sHudMenuDelegate = nil;
 static DrivesMenuDelegate *sDrivesMenuDelegate = nil;
 static ControllerMenuDelegate *sControllerMenuDelegate = nil;
+static DisplayMenuDelegate *sDisplayMenuDelegate = nil;
+
+// Menus that the machine's devices add (computer_t::register_device_menu).
+// They go at the end of an application menu and are rebuilt on each pull-down.
+static const NSInteger kDeviceMenuTag = 9000;
+
+static void addDeviceMenuEntries(NSMenu *menu, const std::vector<device_menu_entry_t> &entries) {
+	for (const device_menu_entry_t &entry : entries) {
+		NSString *title = [NSString stringWithUTF8String:entry.label.c_str()];
+		NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""] autorelease];
+		[item setTag:kDeviceMenuTag];
+		if (!entry.entries.empty()) {
+			NSMenu *submenu = [[[NSMenu alloc] initWithTitle:title] autorelease];
+			addDeviceMenuEntries(submenu, entry.entries);
+			[item setSubmenu:submenu];
+		} else if (entry.select) {
+			[item setAction:@selector(deviceMenuSelect:)];
+			[item setTarget:sMenuHandler];
+			[item setRepresentedObject:[NSValue valueWithPointer:&entry]];
+			[item setState:(entry.checked && entry.checked()) ? NSControlStateValueOn : NSControlStateValueOff];
+		}
+		[menu addItem:item];
+	}
+}
+
+static void updateDeviceMenus(NSMenu *menu, device_menu_place place) {
+	for (NSInteger i = [menu numberOfItems] - 1; i >= 0; --i) {
+		if ([[menu itemAtIndex:i] tag] == kDeviceMenuTag) [menu removeItemAtIndex:i];
+	}
+	const std::vector<device_menu_entry_t> &menus = getMenuInterface()->getDeviceMenus(place);
+	if (menus.empty()) return;
+	NSMenuItem *separator = [NSMenuItem separatorItem];
+	[separator setTag:kDeviceMenuTag];
+	[menu addItem:separator];
+	addDeviceMenuEntries(menu, menus);
+}
+
+@interface DisplayMenuDelegate : NSObject <NSMenuDelegate>
+@end
+
+@implementation DisplayMenuDelegate
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	updateDeviceMenus(menu, DEVICE_MENU_DISPLAY);
+}
+@end
 
 @interface DrivesMenuDelegate : NSObject <NSMenuDelegate>
 @end
@@ -822,7 +878,9 @@ static void setupMenus(void) {
 	[settingsMenu addItem:rmbAccelItem];
 
 	// Display menu
+	sDisplayMenuDelegate = [[DisplayMenuDelegate alloc] init];
 	NSMenu *displayMenu = addMenu(NSLocalizedString(@"Display", nil));
+	[displayMenu setDelegate:sDisplayMenuDelegate];
 
 	// Monitor submenu
 	sMonitorMenuDelegate = [[MonitorMenuDelegate alloc] init];
