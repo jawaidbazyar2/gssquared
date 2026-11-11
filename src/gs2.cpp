@@ -2011,6 +2011,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/jawaidbazyar/gssquared");
     // for the scrollback in the debugger.
     SDL_SetHint(SDL_HINT_MAC_SCROLL_MOMENTUM, "1");
+    // SDL's own quit waits for the last visible window, and an open debugger
+    // window keeps that from coming. SDL_AppEvent sends the quit when the
+    // emulator window closes.
+    SDL_SetHint(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE, "0");
 
     GS2AppState *state = new GS2AppState();
     
@@ -2301,6 +2305,16 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         return SDL_APP_CONTINUE;
     }
 #endif
+
+    // Closing the emulator window quits, also while a second window is open.
+    if (event->type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && state->computer != nullptr
+        && state->computer->video_system != nullptr
+        && SDL_GetWindowFromEvent(event) == state->computer->video_system->window) {
+        SDL_Event quit = {};
+        quit.type = SDL_EVENT_QUIT;
+        SDL_PushEvent(&quit);
+        return SDL_APP_CONTINUE;
+    }
 
     // Let the platform menu consume the event first (Linux hamburger/right-click)
     if (handleMenuEvent(event)) return SDL_APP_CONTINUE;
