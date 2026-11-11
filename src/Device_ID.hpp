@@ -33,5 +33,7 @@ typedef enum device_id {
     DEVICE_ID_SUPER_SERIAL,
     DEVICE_ID_VOC,
     DEVICE_ID_RAMWORKS,
+    // Second Sight with Z180 firmware, distinct from the simulated display card.
+    DEVICE_ID_SECOND_SIGHT_Z180,
     NUM_DEVICE_IDS
 } device_id;

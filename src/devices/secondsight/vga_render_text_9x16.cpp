@@ -206,3 +206,21 @@ void vga_raster_text_9x16(const uint8_t *vram, int vram_pitch, uint32_t *pixels,
         }
     }
 }
+
+// Second Sight's Oak model supplies one font row and its resolved colors.
+// Write columns pixels; glyph bits run left to right from bit 7. Character
+// codes $C0-$DF may repeat bit 0 into column 9 for connected line drawings.
+// blink_off hides glyph pixels; cursor forces foreground across the row.
+// This helper avoids changing the simulated Second Sight card's font state.
+// Oak OTI-087 databook, Attribute Mode Control (index $10), describes the
+// ninth dot.
+void vga_raster_text_glyph_row(uint32_t *pixels, unsigned columns,
+    uint8_t glyph, uint8_t character, bool line_graphics, bool blink_off, bool cursor,
+    uint32_t foreground, uint32_t background)
+{
+    for (unsigned x = 0; x < columns; x++) {
+        bool lit = x < 8 ? ((glyph >> (7 - x)) & 1) :
+            (x == 8 && (character & 0xe0) == 0xc0 && line_graphics && (glyph & 1));
+        pixels[x] = (cursor || (lit && !blink_off)) ? foreground : background;
+    }
+}
