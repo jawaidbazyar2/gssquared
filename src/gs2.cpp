@@ -630,10 +630,15 @@ bool run_one_frame(computer_t *computer) {
                 }
 
             }
-        } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts 
+        } else if (cpu->trace) { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts
             while (clock->get_c14m() < clock->get_frame_end_c14M()) {
                 clock->process_due();
                 (cpu->cpun->execute_next)(cpu);
+            }
+        } else { // trace is off: run the TraceDisabled cores
+            while (clock->get_c14m() < clock->get_frame_end_c14M()) {
+                clock->process_due();
+                cpu->cpun->execute_next_notrace(cpu);
             }
         }
 
@@ -1112,6 +1117,11 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     //set_clock_mode(computer->cpu, platform->default_clock_mode);
 
     computer->cpu->set_processor(platform->cpu_type);
+#if defined(__EMSCRIPTEN__)
+    // The web build has no debugger. Without a debug protocol client,
+    // nothing reads the trace.
+    if (!computer->debug_protocol) computer->cpu->trace = false;
+#endif
     // important to do this before setting up the rest of the computer.
     clock_mode_t boot_speed = system_config->clock_mode;
     if (boot_speed == INVALID_CLOCK_MODE) {
