@@ -43,7 +43,7 @@ brew install glslang spirv-cross   # once
 scripts/compile_shaders_macos.sh   # default: ntsc gscomposite
 ```
 
-The script compiles HLSL → SPIR-V (glslang) → MSL (spirv-cross), then compile-checks with `xcrun metal` when Xcode's Metal Toolchain is installed (`xcodebuild -downloadComponent MetalToolchain`). DXIL/SPIR-V for `ntsc` and `gscomposite` are not built yet. `crt.frag.metal` is hand-maintained; do not regenerate it with this script.
+The script compiles HLSL → SPIR-V (glslang) → MSL (spirv-cross), then compile-checks with `xcrun metal` when Xcode's Metal Toolchain is installed (`xcodebuild -downloadComponent MetalToolchain`). DXIL and SPIR-V for `ntsc` and `gscomposite` come from `scripts/compile_crt_shader.sh` (see Windows, below). `crt.frag.metal` is hand-maintained; do not regenerate it with this script.
 
 ### Windows (MSYS2 / MinGW64)
 
@@ -74,18 +74,18 @@ C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bas
 C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc 'source ~/.profile; cmake --build build --parallel'
 ```
 
-#### CRT shader (DXIL)
+#### GPU shaders (DXIL and SPIR-V)
 
-Windows D3D12 cannot load HLSL at runtime. After editing `assets/shaders/crt.frag.hlsl`, compile DXIL on a Windows host and commit `assets/shaders/crt.frag.dxil`. Casual builders do not need DXC.
+Windows D3D12 cannot load HLSL at runtime. This machine's GPU renderer may be Vulkan and load SPIR-V instead. After editing `assets/shaders/crt.frag.hlsl`, `ntsc.frag.hlsl`, or `gscomposite.frag.hlsl`, compile on a Windows host and commit the `.dxil` and `.spv`. Casual builders do not need DXC.
 
 1. Install [DirectX Shader Compiler](https://github.com/microsoft/DirectXShaderCompiler/releases) (`dxc.exe`, `dxcompiler.dll`, `dxil.dll`) into `tools/dxc/` (gitignored) or onto `PATH`. `dxil.dll` must sit next to `dxc.exe` so the output is signed.
 2. From the repo root:
 
 ```
-C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc 'bash scripts/compile_crt_shader.sh'
+C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc 'bash scripts/compile_crt_shader.sh all crt ntsc gscomposite'
 ```
 
-Or set `DXC` to a `dxc.exe` from the Windows SDK / Vulkan SDK. CMake only copies the committed `.dxil`; it does not run DXC.
+Or set `DXC` to a `dxc.exe` from the Windows SDK / Vulkan SDK. CMake only copies the committed blobs; it does not run DXC. The HLSL is already written with the semantics SDL_shadercross rewrites, so this script calls DXC with shadercross's SPIR-V flags. Do not pass these files through the shadercross CLI.
 
 ## Debug-protocol smoke tests
 

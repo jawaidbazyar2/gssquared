@@ -923,10 +923,17 @@ int main(int argc, char **argv) {
         }
     }
     // Shaders resolve like the char roms: relative to the build directory.
+    // CharRom prepends get_base_path(). On Windows and Linux that already ends
+    // in resources/. On macOS, get_base_path(false) is the executable directory.
     gs2_app_values.base_path = "resources/";
 
+#if defined(__APPLE__)
     CharRom rom_ii("resources/roms/apple2_plus/char.rom");
     CharRom rom_iie("resources/roms/apple2e_enh/char.rom");
+#else
+    CharRom rom_ii("roms/apple2_plus/char.rom");
+    CharRom rom_iie("roms/apple2e_enh/char.rom");
+#endif
     if (!rom_ii.is_valid() || !rom_iie.is_valid()) {
         printf("Failed to load char roms (run from the build directory layout)\n");
         return 2;
