@@ -49,11 +49,31 @@ Available on macOS (Metal), Windows (D3D12), and Linux (Vulkan / SPIR-V). Works 
 
 The shader mode can be activated with Display > CRT Shader, or by pressing F7. The [`-g`](CommandLine.md) command-line flag enables it at boot.
 
+With **Second Sight (with Z180)**, the same option adds scanlines to the card's picture, also in the web build. See [Second Sight with Z180](#second-sight-with-z180).
+
 ## Second Sight Text
 
-If the current machine has a **Second Sight** card, **Display → Second Sight Text** renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.
+If the current machine has the simulated **Second Sight** card, **Display → Second Sight Text** renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.
 
 The menu item is grayed out when no Second Sight card is present. The setting is remembered in app settings. See [Second Sight](Cards_SecondSight.md).
+
+## Second Sight with Z180
+
+Second Sight with Z180 has its own monitor output, separate from the Apple's display. **Display → Second Sight → Monitor → VGA CRT**, **VGA LCD** and **AppleColor RGB** (default) select its monitor. The ROM reads the monitor sense at each card mode change and offers different modes for VGA and AppleColor RGB. The choice of cable takes effect at the next card mode change; **Machine → Restart** shows it at once. VGA CRT and VGA LCD use the same cable, so a change between them shows at once.
+
+**Display → Second Sight → View → IIgs monitor** (**IIe monitor** on a IIe), **Second Sight monitor**, and **Both** select one or both outputs. With one selected, the main window and full screen show that monitor. With both selected, the native app uses a separate card window; the browser shows both pictures side by side. **F11** cycles these three views. Both is the default.
+
+The Apple's renderer runs normally every frame, independently of the card. The card monitor shows only its own VRAM and DAC output, including any Apple picture captured and mirrored by its firmware. Hiding either monitor does not stop it. Closing the separate card window selects **IIgs monitor**.
+
+The **Second Sight** menu shows only when the machine has **Second Sight (with Z180)**. The choices are remembered in app settings, just like Second Sight Text. Browser settings last until the page is reloaded. See [Second Sight](Cards_SecondSight.md) for card selection and the included firmware.
+
+The VGA CRT shows each mode as a user sets its size and position controls for it: the picture keeps the aspect of the monitor's factory raster at the signal's scan rates and fills the screen, with its border in the programmed overscan color. Border that does not fit is cropped evenly. On AppleColor RGB, a mode with the IIgs screen's shape shows the same visible time and line window as GS2's IIgs SHR display. Other modes keep the width and position that the factory sets with the IIgs signal, because those controls are inside the case; only the picture height follows the back-panel V-HEIGHT control, within its range. A signal that a monitor cannot lock to shows no picture and an on-screen message. On AppleColor RGB, a mode that locks only after the user turns H-HOLD or V-HOLD on the back panel, or that needs V-HEIGHT turned more than half way to an end, shows its picture and a short on-screen message. The CRT monitors use GS2's aspect fitting. The browser reserves space above them for its menu bar.
+
+**VGA LCD** is a current LCD monitor, as its controller works: a Realtek RTD2556 with a 1920 x 1080 panel. It compares the signal's sync with its stored modes, samples the part of each line that the chosen mode holds with its own clock, and scales the samples to a 4:3 area of the panel with its own filter, at its factory sharpness. A 400-line mode, which can be 640 or 720 pixels wide at the same timing, gets the width setting that matches the picture. Each new mode gets the monitor's Auto adjustment, then Clock and Phase are set for a steady picture without moving bars, and a picture smaller than the mode is centered. A signal with no stored mode, or out of the monitor's range, shows no picture and an on-screen message. The panel's filter runs on the GPU where one is available. The web build offers VGA LCD only with WebGL on a hardware GPU.
+
+**F7**, the CRT effect option, adds scanlines to the whole CRT card picture, including its border. It is off by default; the LCD has no scanlines. The line spacing follows the signal: VGA has fine 400- or 480-line scanning, including doubled 200-line modes; AppleColor RGB has visible gaps between progressive lines, or alternating fields for interlaced modes such as $61. AppleColor RGB cannot display 480p VGA timing.
+
+The card effect is the same in native and web builds and reuses unchanged rows. It changes only the displayed picture; it does not change the card's pixels, timing, or monitor sense. The Apple's display keeps its existing native GPU effect.
 
 ## Pixel Modes
 

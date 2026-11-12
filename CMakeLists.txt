@@ -390,8 +390,29 @@ target_link_libraries(gs2_devices_scc8530 PUBLIC gs2_serial_devices)
 add_library(gs2_devices_ssc src/devices/ssc/ssc.cpp)
 target_link_libraries(gs2_devices_ssc PUBLIC gs2_serial_devices)
 
+# Keep Second Sight's processor/peripherals separate from SDL presentation so
+# the card's command-line timing checks can link only the required components.
+add_library(gs2_devices_secondsight_z180
+    src/devices/secondsight/z180/Z180.cpp
+    src/devices/secondsight/z180/Z180ASCI.cpp
+    src/devices/secondsight/z180/Z180CSIO.cpp
+)
+
 add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
+    # Second Sight firmware execution, board wiring, video chips and monitor.
+    src/devices/secondsight/ss_card.cpp
+    src/devices/secondsight/ss_z180.cpp
+    src/devices/secondsight/ss_settings.cpp
+    src/devices/secondsight/ss_display.cpp
+    src/devices/secondsight/ss_lcd_gpu.cpp
+    src/devices/secondsight/oti087.cpp
+    src/devices/secondsight/oti087_memory.cpp
+    src/devices/secondsight/oti087_registers.cpp
+    src/devices/secondsight/oti087_render.cpp
+    src/devices/secondsight/oti087_present.cpp
+    src/devices/secondsight/bt481.cpp
+    src/devices/secondsight/ss_eeprom.cpp
     src/devices/secondsight/ss_a2_text_sync.cpp
     src/devices/secondsight/ss_host_text.cpp
     src/devices/secondsight/ss_gpu_text.cpp
@@ -405,7 +426,9 @@ add_library(gs2_devices_secondsight
     src/devices/secondsight/vga_render_text_8x8.cpp
     src/devices/secondsight/vga_render_text_8x8_present.cpp
 )
-target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE} gs2_displaypp gs2_paths)
+# Second Sight board callbacks execute the separate Z180 processor library.
+# Its monitor draws its own messages with the application's text renderer.
+target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_displaypp gs2_paths gs2_devices_secondsight_z180)
 
 add_library(gs2_devices_voc src/devices/voc/voc.cpp)
 target_link_libraries(gs2_devices_voc PRIVATE gs2_displaypp)
@@ -820,6 +843,24 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/gs2packtest)
 
     add_subdirectory(apps/ssgputexttest)
+    # The exact half-clock test fixtures build the CPU with GS2_SS_TESTING, which
+    # adds test-only stepping and replay state. Keep that class layout out of
+    # the production library.
+    add_library(gs2_devices_secondsight_test
+        src/devices/secondsight/ss_card.cpp
+        src/devices/secondsight/z180/Z180.cpp
+        src/devices/secondsight/z180/Z180ASCI.cpp
+        src/devices/secondsight/z180/Z180CSIO.cpp)
+    target_compile_definitions(gs2_devices_secondsight_test PUBLIC GS2_SS_TESTING)
+    target_link_libraries(gs2_devices_secondsight_test PUBLIC gs2_devices_secondsight)
+    # Build maintainer checks for Second Sight reset and clock contracts.
+    add_subdirectory(apps/sscardtest)
+    add_subdirectory(apps/ssclocktest)
+    add_subdirectory(apps/ssoaktest)
+    # Verify CRT presentation from the original card firmware's mode timings.
+    add_subdirectory(apps/ssgeometrytest)
+    # Verify the VGA LCD monitor's mode choice and Auto.
+    add_subdirectory(apps/sslcdtest)
 endif()
 
 ################################################################################
