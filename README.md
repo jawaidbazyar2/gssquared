@@ -249,6 +249,10 @@ I also shamelessly copied the Disk II sound files from OpenEmulator.
 
 The mouse tracking code is based in part on the technique used in KEGS, written by Geoff Weiss, though I use a different approach for causing updates to the emulated mouse position. GPL 2.0.
 
+## MAME
+
+The IIgs Ensoniq emulation is derived from the one found in MAME.
+
 ## ThunderClock Plus
 
 The ThunderClock Plus card is derived from the protocol and hardware work in:
@@ -273,13 +277,13 @@ for cycle-accurate video framework.
 
 ## Kelvin Sherlock
 
-Kelvin wrote the Host FST and associated support code for the GSPlus emulator. GPL 2.0.
+Kelvin wrote the Host FST and associated support code for the GSPlus emulator. GPL 2.0, included with permission.
 
 https://github.com/digarok/gsplus
 
-## Wyatt Wong
+## John Kielkopf
 
-for helping test in different build environments, and providing MacOS-Intel builds.
+A number of contributions in video, Mockingboard, and Second Sight.
 
 
 ## SDL
