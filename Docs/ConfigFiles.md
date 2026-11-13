@@ -139,7 +139,7 @@ card = "bazfast3"
 Rules that bite people:
 
 - **One card per slot.** Do not list the same slot twice.
-- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight and the Video Overlay Card are IIgs-only and slot 3 only.
+- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight, the Video Overlay Card, and RGB2.0 are IIgs-only and slot 3 only.
 - **Most cards allow only one instance.** Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.
 
 ### Card types
@@ -162,6 +162,7 @@ Rules that bite people:
 | `"vidhd"` | [VIDHD](Cards_VIDHD.md) (65816 //e only) |
 | `"second_sight"` | [Second Sight](Cards_SecondSight.md) (IIgs only) |
 | `"voc"` | [Video Overlay Card](Cards_VOC.md) (IIgs only, slot 3) |
+| `"rgb2"` | [RGB2.0](Cards_RGB2.md) frame buffer (IIgs only, slot 3) |
 | `"super_serial"` | [Super Serial Card](Cards_SuperSerial.md) |
 | `"uthernet2"` | [Uthernet II](Cards_UthernetII.md) (IIe + IIgs; slots 1–7) |
 

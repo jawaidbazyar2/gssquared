@@ -33,5 +33,6 @@ typedef enum device_id {
     DEVICE_ID_SUPER_SERIAL,
     DEVICE_ID_VOC,
     DEVICE_ID_RAMWORKS,
+    DEVICE_ID_RGB2,
     NUM_DEVICE_IDS
 } device_id;

@@ -46,6 +46,7 @@
 #include "devices/ssc/ssc.hpp"
 #include "devices/voc/voc.hpp"
 #include "devices/ramworks/ramworks.hpp"
+#include "devices/rgb2/rgb2.hpp"
 
 namespace {
 
@@ -107,6 +108,7 @@ Device_t Devices[NUM_DEVICE_IDS] = {
     make_device(DEVICE_ID_SUPER_SERIAL, init_slot_ssc, NULL),
     make_device(DEVICE_ID_VOC, init_voc, NULL),
     make_device(DEVICE_ID_RAMWORKS, init_slot_ramworks, NULL),
+    make_device(DEVICE_ID_RGB2, init_rgb2, NULL),
 };
 
 Device_t *get_device(device_id id) {

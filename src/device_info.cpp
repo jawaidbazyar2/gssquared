@@ -61,6 +61,7 @@ static const DeviceInfo_t DeviceInfos[NUM_DEVICE_IDS - 1] = {
     {DEVICE_ID_VOC, "Video Overlay Card", false, 0b00001000, PLATFLAG_ANY_IIGS},
     {DEVICE_ID_RAMWORKS, "RamWorks", false, 0b00000001,
         PLATFLAG_APPLE_IIE | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
+    {DEVICE_ID_RGB2, "RGB2.0", false, 0b00001000, PLATFLAG_ANY_IIGS},
 };
 
 const DeviceInfo_t *get_device_info(device_id id) {

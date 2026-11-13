@@ -180,6 +180,7 @@ class MMU_IIgs : public MMU {
 
         inline bool is_iolc_shadowed() { return !(reg_shadow & SHADOW_INH_IOLC); }
         inline bool is_bank_latch() { return g_bank_latch; }
+        inline bool is_shr_enabled() { return g_shr_enabled; }
         /* Enabling SHR ($C029 bit 7) linearizes aux $2000-$9FFF too, not just the
            explicit linearize bit 6. GS/OS draws its boot screen with $41 (linear,
            display off) then switches to $81, and expects the mapping to persist. */

@@ -207,6 +207,7 @@ The TOML key **`device`** is reserved for `[[connections]]` — the virtual peri
 | `"bazfast3"` | `DEVICE_ID_PD_BLOCK3` | BazFast 3 (DMA Storage) | Multiple instances allowed |
 | `"second_sight"` | `DEVICE_ID_SECOND_SIGHT` | Second Sight | IIgs only, slot 3 only |
 | `"voc"` | `DEVICE_ID_VOC` | Video Overlay Card | IIgs only, slot 3 only; see [Cards_VOC.md](Cards_VOC.md) |
+| `"rgb2"` | `DEVICE_ID_RGB2` | RGB2.0 | IIgs only, slot 3 only; see [Cards_RGB2.md](Cards_RGB2.md) |
 | `"uthernet2"` | `DEVICE_ID_UTHERNET2` | Uthernet II | IIe + IIgs; slots 1–7; multiple instances allowed; see `Docs/Networking.md` |
 
 Aliases (optional, loader MAY accept):

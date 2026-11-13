@@ -760,7 +760,9 @@ void MMU_IIgs::set_ram_shadow_banks() {
         set_page_write_h(i, {nullptr, nullptr}, "MAIN_RAM");
     }
 
-    // SPEED_SHADOW_ALL shadows through $EF (not only installed RAM). Skip $E0/$E1 (Mega II).
+    // SPEED_SHADOW_ALL shadows unpopulated banks through $CF and $E2-$EF.
+    // Banks $D0-$DF stay as init_map left them (float, or an RGB2.0 window).
+    // Skip $E0/$E1 (Mega II).
     auto map_float_shadow = [this](int bank) {
         map_page_both(bank, nullptr, "Float");
         set_page_read_h(bank, {bank_shadow_read, this}, "SHADRD");
@@ -773,7 +775,7 @@ void MMU_IIgs::set_ram_shadow_banks() {
     };
 
     if (all_banks) {
-        for (int i = (int)ram_banks; i <= 0xDF; i++) {
+        for (int i = (int)ram_banks; i <= 0xCF; i++) {
             map_float_shadow(i);
         }
         for (int i = 0xE2; i <= 0xEF; i++) {
@@ -781,7 +783,7 @@ void MMU_IIgs::set_ram_shadow_banks() {
         }
     } else {
         // Restore unpopulated banks to float (same as init_map for $80-$DF / $E2+).
-        for (int i = (int)ram_banks; i <= 0xDF; i++) {
+        for (int i = (int)ram_banks; i <= 0xCF; i++) {
             map_float_plain(i);
         }
         for (int i = 0xE2; i <= 0xEF; i++) {

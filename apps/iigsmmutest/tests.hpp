@@ -650,6 +650,32 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0xE0'0400, {0x56, 0x78}},
         }
     },
+    // Banks $D0-$DF are outside the shadow-all remap (RGB2.0 window).
+    Test{
+        53,
+        "all-banks shadow does not copy unpopulated bank $D0 text page",
+        {
+            WriteOp{0xE0'0400, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0xD0'0400, {0x12, 0x34}},
+            AssertOp{0xE0'0400, {0x00, 0x00}},
+            AssertOp{0xD0'0000, 0xD0},
+            AssertOp{0xD0'0400, 0xD0},
+            AssertOp{0xD0'C000, 0xD0},
+            WriteOp{0xE0'C036, 0x84},
+        }
+    },
+    Test{
+        54,
+        "bank $D0 stays the bank number after a speed-register write",
+        {
+            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0xE0'C036, 0x84},
+            AssertOp{0xD0'0000, 0xD0},
+        }
+    },
 
     // C029 aux linearization (bit 6): E1 $2000-$9FFF interleaved when latch on.
     // Matches SHADOW.s linexp for C029=$41 / $00 / $40.
