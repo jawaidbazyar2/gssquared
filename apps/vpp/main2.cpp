@@ -25,6 +25,8 @@
 #include "mmus/mmu_iie.hpp"
 #include "util/printf_helper.hpp"
 
+uint64_t debug_level = 0;
+
 #define ASPECT_RATIO (1.28f)
 #define SCALE_X 2
 #define SCALE_Y (4*ASPECT_RATIO)

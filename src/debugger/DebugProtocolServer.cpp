@@ -261,6 +261,7 @@ bool read_domain_bytes(computer_t *computer, uint32_t domain, uint32_t address, 
     error = 0;
     megaii_reject = false;
     error_text.clear();
+    MMUDebugAccess debug_access(computer && computer->cpu ? computer->cpu->mmu : nullptr);
 
     if (domain == kMemMain) {
         if (!computer || !computer->cpu || !computer->cpu->mmu) {
@@ -563,6 +564,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
         const uint32_t domain = bridge_arg0_;
         const uint32_t address = bridge_arg1_;
         const uint32_t length = bridge_arg2_;
+        MMUDebugAccess debug_access(computer && computer->cpu ? computer->cpu->mmu : nullptr);
 
         if (domain == kMemMain) {
             if (!computer || !computer->cpu || !computer->cpu->mmu) {
@@ -1161,6 +1163,7 @@ void DebugProtocolServer::fill_live_trace(computer_t *computer, system_trace_ent
     out->p = cpu->p;
     out->unused = 0;
     if (cpu->mmu) {
+        MMUDebugAccess debug_access(cpu->mmu);
         out->opcode = cpu->mmu->read(cpu->full_pc);
     }
 }

@@ -293,6 +293,7 @@ void debug_window_t::set_mmu(MMU *mmu) {
 }
 
 void debug_window_t::execute_command(const std::string& command) {
+    MMUDebugAccess debug_access(mmu);
     int num_mem_watches = memory_watches.size();
     int num_debug_displays = debug_displays.size();
     int num_video_views = video_views_.size();
@@ -1259,6 +1260,7 @@ void debug_window_t::render() {
     if (!renderer || !window_open) {
         return;
     }
+    MMUDebugAccess debug_access(mmu);
 
     // update - I feel like this should be in handle_event, or in a different method altogether.
     // Update button states based on current tab
@@ -1460,6 +1462,7 @@ void debug_window_t::trace_scroll(float y) {
     }
 }
 bool debug_window_t::handle_event(SDL_Event &event) {
+    MMUDebugAccess debug_access(mmu);
 #if defined(__EMSCRIPTEN__)
     // Emscripten supports only one window, so the debugger has no separate OS
     // window of its own. Its window_id collides with the main window's events
