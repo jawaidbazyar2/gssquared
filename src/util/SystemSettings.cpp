@@ -132,6 +132,7 @@ bool SystemSettings::load() {
     last_disk_path_.clear();
     host_fst_dir_.clear();
     apple_keys_ = apple_key_layout_id(default_apple_key_layout());
+    device_settings_.clear();
 
     const std::string path = settings_path();
     if (!file_exists(path)) {
@@ -211,6 +212,19 @@ bool SystemSettings::load() {
                 apple_keys_ = apple_key_layout_id(apple_key_layout_from_id(*id));
             }
         }
+        if (const auto* devices = table["devices"].as_table()) {
+            for (const auto& [device, node] : *devices) {
+                const auto* settings = node.as_table();
+                if (!settings) {
+                    continue;
+                }
+                for (const auto& [key, value] : *settings) {
+                    if (const auto text = value.value<std::string>()) {
+                        device_settings_[std::string(device.str())][std::string(key.str())] = *text;
+                    }
+                }
+            }
+        }
     } catch (const toml::parse_error& err) {
         std::cerr << "Failed to parse system_settings.toml: " << err.what() << std::endl;
         recent_.clear();
@@ -275,6 +289,18 @@ bool SystemSettings::save() const {
                                       ? apple_key_layout_id(default_apple_key_layout())
                                       : apple_keys_);
     table.insert("keyboard", std::move(keyboard));
+
+    toml::table devices;
+    for (const auto& [device, settings] : device_settings_) {
+        toml::table entry;
+        for (const auto& [key, value] : settings) {
+            entry.insert(key, value);
+        }
+        devices.insert(device, std::move(entry));
+    }
+    if (!devices.empty()) {
+        table.insert("devices", std::move(devices));
+    }
 
     const std::string path = settings_path();
     try {
@@ -426,6 +452,26 @@ void SystemSettings::set_host_fst_dir(const std::string& path) {
         return;
     }
     host_fst_dir_ = normalized;
+    save();
+}
+
+std::string SystemSettings::device_setting(const std::string& device, const std::string& key,
+                                           const std::string& fallback) const {
+    const auto settings = device_settings_.find(device);
+    if (settings == device_settings_.end()) {
+        return fallback;
+    }
+    const auto value = settings->second.find(key);
+    return value == settings->second.end() ? fallback : value->second;
+}
+
+void SystemSettings::set_device_setting(const std::string& device, const std::string& key,
+                                        const std::string& value) {
+    std::string& stored = device_settings_[device][key];
+    if (stored == value) {
+        return;
+    }
+    stored = value;
     save();
 }
 

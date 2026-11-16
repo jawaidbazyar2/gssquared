@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -66,6 +67,9 @@ class SystemSettings {
      * command_open_apple, alt_open_apple, left_option_open_apple.
      */
     std::string apple_keys_;
+
+    /** Preferences that devices keep, one table per device name. */
+    std::map<std::string, std::map<std::string, std::string>> device_settings_;
 
     SystemSettings() = default;
 
@@ -141,6 +145,12 @@ public:
     void set_last_disk_path(const std::string& path);
     void set_host_fst_dir(const std::string& path);
     void set_apple_keys(const std::string& id);
+
+    /** A device's own preference, or fallback when none is stored. */
+    std::string device_setting(const std::string& device, const std::string& key,
+                               const std::string& fallback) const;
+    void set_device_setting(const std::string& device, const std::string& key,
+                            const std::string& value);
 
     /**
      * Platform-adjusted default_location for SDL open dialogs.
