@@ -5,6 +5,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,8 @@
 #define IDM_HELP_OPEN_DOCS        900
 #define IDM_HELP_DONATE           901
 #define IDM_HELP_CHECK_UPDATES    902
+// Device menu choices: IDs [IDM_DEVICE_MENU_FIRST, IDM_DEVICE_MENU_FIRST + N)
+#define IDM_DEVICE_MENU_FIRST     1000
 
 // DEPRECATED: see commented-out WM_ENTERMENULOOP/WM_EXITMENULOOP/WM_TIMER block below.
 // #define MENU_TIMER_ID   1
@@ -45,6 +48,12 @@ static HMENU g_scalingMenu    = NULL;
 static HMENU g_displayPopup   = NULL;
 static HMENU g_helpPopup      = NULL;
 static std::vector<storage_key_t> g_driveKeys;
+// Item counts of the Settings and Display popups before any device menu.
+static int g_settingsOwnItems = 0;
+static int g_displayOwnItems  = 0;
+static std::vector<const device_menu_entry_t *> g_deviceChoices;
+// Submenus of the device menus. They keep the state they are built with.
+static std::vector<HMENU> g_deviceSubmenus;
 
 // DEPRECATED: only consumed by the commented-out timer block below.
 static MenuIterateCallback g_iterateCallback = nullptr;
@@ -96,6 +105,46 @@ static void rebuildDrivesMenu()
         UINT cmdId = static_cast<UINT>(MENU_DISK_TOGGLE) + static_cast<UINT>(i);
         AppendMenuW(g_drivesMenu, MF_STRING, cmdId, toWide(label).c_str());
     }
+}
+
+// ── Device menus (rebuilt dynamically on each open) ───────────────────────────
+// Menus that the machine's devices add (computer_t::register_device_menu).
+// They go after the popup's own items.
+
+static void appendDeviceMenuEntries(HMENU menu, const std::vector<device_menu_entry_t> &entries)
+{
+    for (const device_menu_entry_t &entry : entries) {
+        std::wstring label = toWide(entry.shortcut.empty() ? entry.label
+                                                             : entry.label + "\t" + entry.shortcut);
+        if (!entry.entries.empty()) {
+            HMENU submenu = CreatePopupMenu();
+            g_deviceSubmenus.push_back(submenu);
+            appendDeviceMenuEntries(submenu, entry.entries);
+            AppendMenuW(menu, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(submenu), label.c_str());
+        } else if (entry.select) {
+            UINT cmdId = IDM_DEVICE_MENU_FIRST + static_cast<UINT>(g_deviceChoices.size());
+            g_deviceChoices.push_back(&entry);
+            bool checked = entry.checked && entry.checked();
+            AppendMenuW(menu, MF_STRING | (checked ? MF_CHECKED : MF_UNCHECKED), cmdId, label.c_str());
+        } else {
+            AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, label.c_str());
+        }
+    }
+}
+
+// own_items is the popup's item count before any device menu. Only one popup
+// is open at a time, so its choices can take all the device menu IDs.
+static void rebuildDeviceMenus(HMENU popup, int own_items, device_menu_place place)
+{
+    while (GetMenuItemCount(popup) > own_items)
+        DeleteMenu(popup, static_cast<UINT>(own_items), MF_BYPOSITION);
+    g_deviceChoices.clear();
+    g_deviceSubmenus.clear();
+
+    const std::vector<device_menu_entry_t> &menus = getMenuInterface()->getDeviceMenus(place);
+    if (menus.empty()) return;
+    AppendMenuW(popup, MF_SEPARATOR, 0, nullptr);
+    appendDeviceMenuEntries(popup, menus);
 }
 
 // ── Checkmark / enable helpers ────────────────────────────────────────────────
@@ -274,10 +323,12 @@ static void updatePopupState(HMENU popup)
 
     // ── Settings (top-level popup; contains Speed+Controller submenus + Sleep) ─
     if (popup == g_settingsPopup) {
+        rebuildDeviceMenus(g_settingsPopup, g_settingsOwnItems, DEVICE_MENU_SETTINGS);
         bool sleeping   = mi->getSleepMode();
         bool decorr_on  = mi->getAudioDecorrelation();
         bool rmb_accel  = mi->getRightMouseAccel();
-        int n = GetMenuItemCount(g_settingsPopup);
+        // The device menu entries after the popup's own items keep their state.
+        int n = g_settingsOwnItems;
         for (int i = 0; i < n; ++i) {
             UINT id = getItemId(g_settingsPopup, i);
             if (id == IDM_SETTINGS_SLEEP) {
@@ -307,9 +358,11 @@ static void updatePopupState(HMENU popup)
 
     // ── Display (top-level popup) ────────────────────────────────────────────
     if (popup == g_displayPopup) {
+        rebuildDeviceMenus(g_displayPopup, g_displayOwnItems, DEVICE_MENU_DISPLAY);
         bool has_ss = mi->hasSecondSight();
         bool ss_text_on = mi->getSsTextMode();
-        int n = GetMenuItemCount(g_displayPopup);
+        // The device menu entries after the popup's own items keep their state.
+        int n = g_displayOwnItems;
         for (int i = 0; i < n; ++i) {
             UINT id = getItemId(g_displayPopup, i);
             if (id == static_cast<UINT>(MENU_DISPLAY_SS_TEXT)) {
@@ -338,6 +391,10 @@ static void updatePopupState(HMENU popup)
             setItemEnable(g_helpPopup, i, true);
         return;
     }
+
+    // A device submenu keeps its state too: a note stays grayed.
+    if (std::find(g_deviceSubmenus.begin(), g_deviceSubmenus.end(), popup) != g_deviceSubmenus.end())
+        return;
 
     // ── Generic fallback (Edit, Machine popups) ──────────────────────────────
     // Enable/disable every non-separator item based on running state.
@@ -368,6 +425,11 @@ static void requestAppQuit()
 static void dispatchCommand(UINT id)
 {
     MenuInterface *mi = getMenuInterface();
+
+    if (id >= IDM_DEVICE_MENU_FIRST && id - IDM_DEVICE_MENU_FIRST < g_deviceChoices.size()) {
+        g_deviceChoices[id - IDM_DEVICE_MENU_FIRST]->select();
+        return;
+    }
 
     switch (id) {
     // File
@@ -657,6 +719,9 @@ static void setupMenus()
     AppendMenuW(g_helpPopup, MF_STRING, IDM_HELP_DONATE, L"Donate");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_helpPopup), L"Docs");
+
+    g_settingsOwnItems = GetMenuItemCount(g_settingsPopup);
+    g_displayOwnItems  = GetMenuItemCount(g_displayPopup);
 
     SetMenu(g_hwnd, g_menuBar);
 }

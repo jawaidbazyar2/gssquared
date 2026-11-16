@@ -265,6 +265,11 @@ std::vector<MenuDriveInfo> MenuInterface::getDriveList() {
 	return result;
 }
 
+const std::vector<device_menu_entry_t> &MenuInterface::getDeviceMenus(device_menu_place place) {
+	static const std::vector<device_menu_entry_t> none;
+	return computer_ ? computer_->device_menus[place] : none;
+}
+
 static MenuInterface sInstance;
 
 MenuInterface *getMenuInterface() {

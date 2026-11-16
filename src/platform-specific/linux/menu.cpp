@@ -37,6 +37,33 @@ static void end_menu()
     ImGui::PopStyleVar();
 }
 
+// Menus that the machine's devices add (computer_t::register_device_menu).
+static void device_menu_entries(const std::vector<device_menu_entry_t> &entries)
+{
+    for (const device_menu_entry_t &entry : entries) {
+        if (!entry.entries.empty()) {
+            if (begin_menu(entry.label.c_str())) {
+                device_menu_entries(entry.entries);
+                end_menu();
+            }
+        } else if (entry.select) {
+            const char *shortcut = entry.shortcut.empty() ? nullptr : entry.shortcut.c_str();
+            if (ImGui::MenuItem(entry.label.c_str(), shortcut, entry.checked && entry.checked()))
+                entry.select();
+        } else {
+            ImGui::MenuItem(entry.label.c_str(), nullptr, false, false);
+        }
+    }
+}
+
+static void device_menus(device_menu_place place)
+{
+    const auto &menus = getMenuInterface()->getDeviceMenus(place);
+    if (menus.empty()) return;
+    ImGui::Separator();
+    device_menu_entries(menus);
+}
+
 // ── Module state ──────────────────────────────────────────────────────────────
 
 static SDL_Window   *g_window        = nullptr;
@@ -319,6 +346,8 @@ static void build_menu_bar()
         if (ImGui::MenuItem("Right Mouse Button Accelerate", nullptr, rmb_accel))
             mi->toggleRightMouseAccel();
 
+        device_menus(DEVICE_MENU_SETTINGS);
+
         end_menu();
     }
 
@@ -392,6 +421,8 @@ static void build_menu_bar()
                 mi->toggleMonoPersistence();
             if (!persist_avail) ImGui::EndDisabled();
         }
+
+        device_menus(DEVICE_MENU_DISPLAY);
 
         if (!running) ImGui::EndDisabled();
         end_menu();

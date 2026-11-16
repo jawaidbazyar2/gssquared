@@ -375,6 +375,10 @@ void computer_t::register_debug_display_handler(std::string name, uint64_t id, D
     debug_display_handlers.push_back({name, id, handler});
 }
 
+void computer_t::register_device_menu(device_menu_place place, device_menu_entry_t menu) {
+    device_menus[place].push_back(std::move(menu));
+}
+
 DebugFormatter *computer_t::call_debug_display_handler(std::string name) {
     for (auto& handler : debug_display_handlers) {
         if (handler.name == name) {

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "util/StorageDevice.hpp"
+#include "util/DeviceMenu.hpp"
 
 struct MenuDriveInfo {
     storage_key_t key;
@@ -94,6 +95,8 @@ public:
 	int  getJoyportSelect();
 	int  getAppleKeyLayout();
 	std::vector<MenuDriveInfo> getDriveList();
+	// Menus that the machine's devices add to an application menu.
+	const std::vector<device_menu_entry_t> &getDeviceMenus(device_menu_place place);
 };
 
 MenuInterface *getMenuInterface();
