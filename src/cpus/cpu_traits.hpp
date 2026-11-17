@@ -15,6 +15,9 @@ public:
     BaseCPU(NClock *clock) { this->clock = clock; }
     virtual ~BaseCPU() = default;
     virtual int execute_next(cpu_state *cpu) = 0;
+    // Run one instruction with trace disabled, for when trace is off. A CPU
+    // without TraceDisabled cores runs its usual core.
+    virtual int execute_next_notrace(cpu_state *cpu) { return execute_next(cpu); }
     virtual void reset(cpu_state *cpu) = 0;
     virtual const char *get_name() = 0;
     virtual void set_clock(NClock *clock) { this->clock = clock; }

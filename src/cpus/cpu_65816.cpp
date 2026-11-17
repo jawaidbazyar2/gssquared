@@ -27,14 +27,21 @@ private:
     std::unique_ptr<BaseCPU> native_8_16_core;
     std::unique_ptr<BaseCPU> native_16_16_core;
 
+    // The same five cores with trace disabled, sharing cpu_state with the
+    // cores above.
+    std::unique_ptr<BaseCPU> emulation_notrace_core;
+    std::unique_ptr<BaseCPU> native_8_8_notrace_core;
+    std::unique_ptr<BaseCPU> native_16_8_notrace_core;
+    std::unique_ptr<BaseCPU> native_8_16_notrace_core;
+    std::unique_ptr<BaseCPU> native_16_16_notrace_core;
+
     BaseCPU *current_core;
 
     // Helper method to update current CPU based on processor state
+    template<bool NoTrace>
     inline void update_current_core_if_needed(cpu_state* cpu) {
-        BaseCPU *old_core = current_core;
-
         if (cpu->E == 1) {    // Check emulation mode flag (E flag)
-            current_core = emulation_core.get();
+            current_core = (NoTrace ? emulation_notrace_core : emulation_core).get();
             
         } else {
             // Native mode - check M and X flags
@@ -42,18 +49,15 @@ private:
             bool x_flag = cpu->_X; // X flag: 1 = 8-bit X/Y, 0 = 16-bit X/Y
             
             if (!m_flag && !x_flag) {
-                current_core = native_16_16_core.get(); // 16-bit A, 16-bit X/Y
+                current_core = (NoTrace ? native_16_16_notrace_core : native_16_16_core).get(); // 16-bit A, 16-bit X/Y
             } else if (!m_flag && x_flag) {
-                current_core = native_16_8_core.get();  // 16-bit A, 8-bit X/Y
+                current_core = (NoTrace ? native_16_8_notrace_core : native_16_8_core).get();  // 16-bit A, 8-bit X/Y
             } else if (m_flag && !x_flag) {
-                current_core = native_8_16_core.get();  // 8-bit A, 16-bit X/Y
+                current_core = (NoTrace ? native_8_16_notrace_core : native_8_16_core).get();  // 8-bit A, 16-bit X/Y
             } else {
-                current_core = native_8_8_core.get();   // 8-bit A, 8-bit X/Y
+                current_core = (NoTrace ? native_8_8_notrace_core : native_8_8_core).get();   // 8-bit A, 8-bit X/Y
             }
         }
-        /* if (old_core != current_core) {
-            printf("Switching to core: %s\n", current_core->get_name());
-        } */
     }
 
 public:
@@ -63,13 +67,23 @@ public:
         native_16_8_core = std::make_unique<CPU6502Core<CPU65816_N_16_8_Traits>>(clock);
         native_8_16_core = std::make_unique<CPU6502Core<CPU65816_N_8_16_Traits>>(clock);
         native_16_16_core = std::make_unique<CPU6502Core<CPU65816_N_16_16_Traits>>(clock);
+
+        emulation_notrace_core = std::make_unique<CPU6502Core<CPU65816_E_8_8_Traits, TraceDisabled>>(clock);
+        native_8_8_notrace_core = std::make_unique<CPU6502Core<CPU65816_N_8_8_Traits, TraceDisabled>>(clock);
+        native_16_8_notrace_core = std::make_unique<CPU6502Core<CPU65816_N_16_8_Traits, TraceDisabled>>(clock);
+        native_8_16_notrace_core = std::make_unique<CPU6502Core<CPU65816_N_8_16_Traits, TraceDisabled>>(clock);
+        native_16_16_notrace_core = std::make_unique<CPU6502Core<CPU65816_N_16_16_Traits, TraceDisabled>>(clock);
         
         current_core = emulation_core.get(); // Start in emulation mode
     }
 
     int execute_next(cpu_state* cpu) override {
         // Check for mode changes (REP/SEP instructions, CLC/XCE)
-        update_current_core_if_needed(cpu); // these should be done inside the cores in REP/SEP/XCE somehow rather than impact every instruction.
+        update_current_core_if_needed<false>(cpu); // these should be done inside the cores in REP/SEP/XCE somehow rather than impact every instruction.
+        return current_core->execute_next(cpu);
+    }
+    int execute_next_notrace(cpu_state* cpu) override {
+        update_current_core_if_needed<true>(cpu);
         return current_core->execute_next(cpu);
     }
     void reset(cpu_state* cpu) override {
