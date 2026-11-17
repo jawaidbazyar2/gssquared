@@ -9,7 +9,7 @@
 #include "serial_devices/host/HostSerial.hpp"
 
 constexpr bool SCDEBUG = 0;
- 
+  
 /**
  * this code is LITTLE-ENDIAN SPECIFIC.
  * IF you have a big endian machine, you will need to swap the bytes. Or cry.
@@ -355,13 +355,20 @@ class Z85C30 {
                 SerialMessage{MESSAGE_LINE, host_serial_pack_line(line)});
         }
 
-        inline bool update_tx_ip(scc_channel_t channel) {
-            bool ip = false;
-
-            if (registers[channel].r1_tx_int_enable && registers[channel].tx_irq_condition) {
-                registers[channel].tx_irq_condition = false; // we took account of this, so reset it
-                ip = true;
+        inline void clear_tx_ip(scc_channel_t channel) {
+            registers[channel].tx_irq_condition = false;
+            if (channel == SCC_CHANNEL_A) {
+                registers[SCC_CHANNEL_A].r3_a_tx_pending = 0;
+            } else {
+                registers[SCC_CHANNEL_A].r3_b_tx_pending = 0;
             }
+        }
+
+        /* Tx IP is latched on the transmit buffer going empty and is cleared only
+         * by writing the transmit buffer or WR0 Reset Tx Int Pending (cmd 5).
+         * Reading RR0/RR3 does not clear it. See Docs/SCC8530_Serial.md. */
+        inline bool update_tx_ip(scc_channel_t channel) {
+            bool ip = registers[channel].r1_tx_int_enable && registers[channel].tx_irq_condition;
             if (channel == SCC_CHANNEL_A) {
                 registers[SCC_CHANNEL_A].r3_a_tx_pending = ip;
             } else {
@@ -494,11 +501,7 @@ class Z85C30 {
                         registers[SCC_CHANNEL_A].r3_b_ext_pending = 0;
                     }
                 } else if (registers[channel].r0_cmd == 0b101) { // reset Tx int pending
-                    if (channel == SCC_CHANNEL_A) {
-                        registers[SCC_CHANNEL_A].r3_a_tx_pending = 0;
-                    } else {
-                        registers[SCC_CHANNEL_A].r3_b_tx_pending = 0;
-                    }   
+                    clear_tx_ip(channel);
                 } else if (registers[channel].r0_cmd != 0) {
                     if (SCDEBUG) printf("SCC: Unimplemented WRITE %c r0_cmd: Reg %d = %02X\n", ch_name(channel), new_register, registers[channel].r0_cmd);
                 }
@@ -828,6 +831,7 @@ class Z85C30 {
             if (registers[channel].r0_tx_buffer_empty) {
                 registers[channel].r0_tx_buffer_empty = false;
                 registers[channel].tx_in_progress = true;
+                clear_tx_ip(channel);
                 
                 // Calculate timing and schedule TX completion
                 uint64_t cycles_per_char = get_cycles_per_char(channel, true);
