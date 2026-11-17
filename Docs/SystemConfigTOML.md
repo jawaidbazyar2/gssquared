@@ -324,7 +324,7 @@ Aligned with `src/serial_devices/`:
 |-------|-------------|
 | `"none"` | No attachment |
 | `"file"` | Capture / file sink (`path` optional) |
-| `"printer"` | Super Serial Card only. Same capture as `"file"` (`GS2.SSCn.*`, idle close, toast). On native builds the printer worker also opens a gs2print ticket and copies the same bytes to that socket; the OS open is spawned from the worker and not waited on. If the printer app is missing, a toast says so and the dump continues. While attached, DIPSW1 mode bits are SIC P8 (`$ED` at the 9600 default) so firmware does not send ETX or wait for ACK. Not valid on SCC or parallel. The web build writes the dump only. |
+| `"printer"` | Super Serial Card only. Same capture as `"file"` (`GS2.SSCn.*`, toast), with a 60-second idle close instead of 10. On native builds the printer worker also opens a gs2print ticket and copies the same bytes to that socket; the OS open is spawned from the worker and not waited on. If the printer app is missing, a toast says so and the dump continues. While attached, DIPSW1 mode bits are SIC P8 (`$ED` at the 9600 default) so firmware does not send ETX or wait for ACK. Not valid on SCC or parallel. The web build writes the dump only. |
 | `"clipboard"` | Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file) |
 | `"echo"` | Loopback for testing (schema only; not offered in UI) |
 | `"modem"` | Hayes-compatible virtual modem (native builds; serial ports only) |
