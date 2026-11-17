@@ -33,6 +33,7 @@ Gs2PrintSession::~Gs2PrintSession() = default;
 void Gs2PrintSession::begin() {}
 void Gs2PrintSession::write(uint8_t) {}
 void Gs2PrintSession::poll() {}
+size_t Gs2PrintSession::take_rx(uint8_t *, size_t) { return 0; }
 void Gs2PrintSession::end() {}
 bool Gs2PrintSession::take_app_missing() { return false; }
 bool Gs2PrintSession::take_peer_closed() { return false; }
@@ -223,6 +224,8 @@ struct Gs2PrintSession::Impl {
     std::string ticket_path;
     std::vector<uint8_t> outbound;
     size_t out_off = 0;
+    std::vector<uint8_t> inbound;
+    size_t in_off = 0;
     uint64_t start_ticks = 0;
     bool active = false;
     bool waiting = false;
@@ -316,8 +319,25 @@ struct Gs2PrintSession::Impl {
         unlink_path(ticket_path);
         outbound.clear();
         out_off = 0;
+        inbound.clear();
+        in_off = 0;
         waiting = false;
         active = false;
+    }
+
+    size_t take_rx(uint8_t *buf, size_t cap) {
+        if (!buf || cap == 0 || in_off >= inbound.size()) {
+            return 0;
+        }
+        const size_t avail = inbound.size() - in_off;
+        const size_t n = avail < cap ? avail : cap;
+        std::memcpy(buf, inbound.data() + in_off, n);
+        in_off += n;
+        if (in_off >= inbound.size()) {
+            inbound.clear();
+            in_off = 0;
+        }
+        return n;
     }
 
     bool take_app_missing() {
@@ -488,21 +508,41 @@ private:
     }
 
     void drain_inbound() {
-        if (client_fd == kInvalidSock || !ready_read(client_fd)) {
+        if (client_fd == kInvalidSock) {
             return;
         }
-        char buf[256];
+        for (;;) {
+            char buf[256];
 #if defined(_WIN32)
-        const int n = ::recv(client_fd, buf, sizeof(buf), 0);
-        if (n == 0 || (n == SOCKET_ERROR && ::WSAGetLastError() != WSAEWOULDBLOCK)) {
+            const int n = ::recv(client_fd, buf, sizeof(buf), 0);
+            if (n > 0) {
+                inbound.insert(inbound.end(), buf, buf + n);
+                continue;
+            }
+            if (n < 0 && ::WSAGetLastError() == WSAEINTR) {
+                continue;
+            }
+            if (n < 0 && ::WSAGetLastError() == WSAEWOULDBLOCK) {
+                return;
+            }
             note_peer_closed();
-        }
+            return;
 #else
-        const ssize_t n = ::recv(client_fd, buf, sizeof(buf), 0);
-        if (n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)) {
+            const ssize_t n = ::recv(client_fd, buf, sizeof(buf), 0);
+            if (n > 0) {
+                inbound.insert(inbound.end(), buf, buf + n);
+                continue;
+            }
+            if (n < 0 && errno == EINTR) {
+                continue;
+            }
+            if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                return;
+            }
             note_peer_closed();
-        }
+            return;
 #endif
+        }
     }
 
     void note_peer_closed() {
@@ -563,6 +603,7 @@ Gs2PrintSession::~Gs2PrintSession() = default;
 void Gs2PrintSession::begin() { impl_->begin(); }
 void Gs2PrintSession::write(uint8_t byte) { impl_->write(byte); }
 void Gs2PrintSession::poll() { impl_->poll(); }
+size_t Gs2PrintSession::take_rx(uint8_t *buf, size_t cap) { return impl_->take_rx(buf, cap); }
 void Gs2PrintSession::end() { impl_->end(); }
 bool Gs2PrintSession::take_app_missing() { return impl_->take_app_missing(); }
 bool Gs2PrintSession::take_peer_closed() { return impl_->take_peer_closed(); }

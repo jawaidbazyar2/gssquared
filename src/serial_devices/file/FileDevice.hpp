@@ -92,6 +92,13 @@ class FileDevice : public SerialDevice {
                 return;
             }
             session_.poll();
+            uint8_t byte = 0;
+            while (!q_dev.is_full()) {
+                if (session_.take_rx(&byte, 1) == 0) {
+                    break;
+                }
+                q_dev.send(SerialMessage{MESSAGE_DATA, byte});
+            }
             if (session_.take_app_missing()) {
                 notify_printer_missing();
             }
