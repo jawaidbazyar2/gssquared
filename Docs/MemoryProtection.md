@@ -3,6 +3,8 @@
 
 This document specifies the software design for the Memory Management Unit (MMU) of the **GSSquared** emulator. The architecture is optimized for a low-overhead software implementation while remaining strictly implementable in hardware (e.g., FPGA) to interface with a physical 65816 processor.
 
+A separate two-level proposal (flags in bits 31:28, terminal 64 KB superpages, 4 KB pages in a second level) is [TwoLevelPageTables.md](TwoLevelPageTables.md). This document is the single-level flat table.
+
 ---
 
 ## 1. Architectural Overview & Core Parameters
