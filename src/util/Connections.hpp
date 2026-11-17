@@ -78,7 +78,7 @@ struct connection_port_spec_t {
     connection_port_kind_t kind = connection_port_kind_t::SERIAL;
     connection_device_type_t device = connection_device_type_t::NONE;
     std::string path;
-    /** Super Serial Card only. Printer is a file capture plus SIC P8 DIP switches. */
+    /** SSC and IIgs SCC. Printer is a file capture plus gs2print; SSC also sets SIC P8. */
     bool offers_printer = false;
 };
 

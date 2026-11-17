@@ -6,7 +6,7 @@ The Super Serial Card (SSC) is Apple’s classic slot serial card. In GSSquared 
 
 - Emulates the Apple Super Serial Card (MOS 6551 ACIA + stock firmware ROM).
 - Works in slots **1–7** on Apple II, II+, //e, and IIgs.
-- Adds **Printer** on top of the IIgs built-in serial ports’ **None**, **File**, **Clipboard**, **Modem**, and listed **host serial port**. Printer is not offered on the built-in ports.
+- Adds **Printer** (file capture plus SIC P8). The IIgs built-in serial ports offer the same Printer attachment without the DIP-switch change.
 
 Use it with ProTERM, Spectrum, ADTPro, printer-to-file capture, or any software that talks to an SSC.
 

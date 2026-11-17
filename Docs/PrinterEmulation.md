@@ -26,11 +26,9 @@ The parallel card (`card = "parallel"`, slots 1–7) is output-only. Guest write
 
 ### Super Serial Card printer
 
-`device = "printer"` is offered only on a Super Serial Card. It uses the same `FileDevice` as `device = "file"`: the dump is `GS2.SSCn.YYYYMMDDHHMMSS`, the file opens on the first byte, and it closes after about 10 seconds of idle or on Ctrl-Reset. Each guest byte is written to that dump and, on native builds, to a gs2print socket. On the first byte the printer worker binds a fresh local socket, writes a `.gs2print` ticket, and asks the OS to open the ticket. That open is spawned on the worker (`open` / `xdg-open` via `SDL_CreateProcess`, or `ShellExecuteEx` on Windows) and is not waited on, so the emulator thread keeps running and the worker keeps draining guest bytes into the dump. Bytes that arrive before the sidecar connects are sent when it does. If the open fails or nothing connects within about 5 seconds, an OSD toast says the printer app is not installed and the dump continues. The web build writes the dump only.
+On a Super Serial Card, `device = "printer"` uses the same `FileDevice` as `device = "file"`: the dump is `GS2.SSCn.YYYYMMDDHHMMSS`, the file opens on the first byte, and it closes after about 10 seconds of idle. Each guest byte is written to that dump and, on native builds, to a gs2print socket. On the first byte the printer worker binds a fresh local socket, writes a `.gs2print` ticket, and asks the OS to open the ticket. That open is spawned on the worker (`open` / `xdg-open` via `SDL_CreateProcess`, or `ShellExecuteEx` on Windows) and is not waited on, so the emulator thread keeps running and the worker keeps draining guest bytes into the dump. Bytes that arrive before the sidecar connects are sent when it does. If the open fails or nothing connects within about 5 seconds, an OSD toast says the printer app is not installed and the dump continues. The web build writes the dump only.
 
 While Printer is attached, DIPSW1 mode bits are SIC P8 (SW1-5 ON, SW1-6 OFF). With the 9600 default that value is `$ED`. Stock SSC firmware then does not send ETX (`$83`) or wait for ACK (`$86`). Other attachments leave DIPSW1 at `$EF`, which is SIC P8A, so a File capture of `PR#` output can be only `$83`. Firmware latches the P8 auto-CR flag at `PR#` / card init, so reset after selecting Printer.
-
-The sidecar app, PDF rendering, and offering this attachment on SCC or parallel are not implemented. SCC and parallel ports do not offer `printer`.
 
 ```toml
 [[cards]]
@@ -41,6 +39,18 @@ card = "super_serial"
 slot = 1
 device = "printer"
 ```
+
+### IIgs SCC printer
+
+The same `device = "printer"` attachment is offered on both built-in SCC ports (Serial Slot 1 / channel A, Serial Slot 2 / channel B). Capture files are `GS2.A.YYYYMMDDHHMMSS` and `GS2.B.YYYYMMDDHHMMSS`. Idle close, native gs2print ticket, missing-app toast, and web dump-only behavior match SSC. There is no DIP-switch / ETX-ACK equivalent; File and Printer already assert CTS/CD.
+
+```toml
+[[connections]]
+slot = 1
+device = "printer"
+```
+
+The sidecar app and PDF rendering are not implemented. Parallel ports do not offer `printer`.
 
 There is no ImageWriter, Epson, or PDF emulation in the emulator. The IIgs printer port (SCC channel A) uses the same device interface, so `gs2print` below covers it as well as the parallel card.
 
@@ -86,7 +96,7 @@ libHaru writes the PDF. As each page is committed, the core adds it to the open 
 
 ## Connection
 
-The attachment is a `[[connections]]` device named `gs2print`, next to `file` and `clipboard`. The user picks it in the config editor and in the Control Panel port button. File and clipboard capture stay as they are. That device name is not implemented. The SSC attachment `device = "printer"` (above) is what opens the ticket today, and it still writes the dump. There is no `device = "gs2print"` config value yet.
+The attachment is a `[[connections]]` device named `gs2print`, next to `file` and `clipboard`. The user picks it in the config editor and in the Control Panel port button. File and clipboard capture stay as they are. That device name is not implemented. The `device = "printer"` attachment (above) is what opens the ticket today, and it still writes the dump. There is no `device = "gs2print"` config value yet.
 
 ```toml
 [[cards]]

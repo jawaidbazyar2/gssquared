@@ -515,7 +515,7 @@ Main versus auxiliary mapping for the IIe family lives on `MMU_IIe2`. It is not 
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
-| `device.scc.printer-port` | GS printer on serial | Partial | all | IIgs | Print to file | manual | Not full printer |
+| `device.scc.printer-port` | GS printer on serial | Partial | all | IIgs | `device = "printer"` | manual | Capture + gs2print ticket; not ImageWriter |
 | `device.scc.modem-b` | Modem on port B | Complete | macOS, win, linux | IIgs | Hayes TCP | manual | Absent on web |
 
 ### Motherboard: RTC / PRAM (`rtc_pram`)

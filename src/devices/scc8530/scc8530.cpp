@@ -90,7 +90,8 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
             st->channel_a_device = dev;
             st->scc->set_device_channel(SCC_CHANNEL_A, dev);
         },
-        "A");
+        "A",
+        true);
 
     computer->connections->register_port(
         connection_key_t{2, "a"},
@@ -101,7 +102,8 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
             st->channel_b_device = dev;
             st->scc->set_device_channel(SCC_CHANNEL_B, dev);
         },
-        "B");
+        "B",
+        true);
 
     computer->register_shutdown_handler([st]() {
         // SerialDevices are owned by Connections; only clear chip pointers here.

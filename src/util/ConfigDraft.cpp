@@ -130,8 +130,8 @@ std::vector<connection_port_spec_t> derive_ports_from_config(
     std::vector<connection_port_spec_t> out;
 
     if (platform_is_iigs(platform_id)) {
-        push_port(out, 1, "Serial Slot 1", connection_port_kind_t::SERIAL);
-        push_port(out, 2, "Serial Slot 2", connection_port_kind_t::SERIAL);
+        push_port(out, 1, "Serial Slot 1", connection_port_kind_t::SERIAL, true);
+        push_port(out, 2, "Serial Slot 2", connection_port_kind_t::SERIAL, true);
     }
 
     for (int slot = 0; slot < NUM_SLOTS; ++slot) {
