@@ -59,6 +59,8 @@ class FileDevice : public SerialDevice {
         FILE *file;
         uint64_t last_write_ticks = 0;
         static constexpr uint64_t idle_close_ms = 10'000;
+        /** Printer raw dumps stay open longer than a File capture. */
+        static constexpr uint64_t printer_idle_close_ms = 60'000;
         char filename[256]{};
         char display_msg_[256]{}; // main-thread only; pointed at by EventQueue OSD events
         FileCloseStatusQueue status_q_;
@@ -196,8 +198,9 @@ class FileDevice : public SerialDevice {
                 SDL_Delay(10);
                 service_print();
 
+                const uint64_t close_after_ms = gs2print_ ? printer_idle_close_ms : idle_close_ms;
                 if (file && last_write_ticks != 0 &&
-                    (SDL_GetTicks() - last_write_ticks) >= idle_close_ms) {
+                    (SDL_GetTicks() - last_write_ticks) >= close_after_ms) {
                     close_file();
                 }
 
