@@ -101,8 +101,9 @@ public:
     void seed_recent_if_empty(const std::vector<std::string>& paths);
 
     /**
-     * Up to kMaxDisplay entries: [0] = MRU by last_used; [1..] = highest score
-     * excluding the MRU. Skips missing files.
+     * All stored entries whose files still exist, ranked for the selector:
+     * [0] = MRU by last_used; [1..] = highest score excluding the MRU.
+     * Callers take up to kMaxDisplay after their own load/filter.
      */
     std::vector<RecentConfigEntry> display_entries() const;
 

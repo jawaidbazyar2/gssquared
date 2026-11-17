@@ -638,7 +638,7 @@ std::vector<RecentConfigEntry> SystemSettings::display_entries() const {
         });
 
     std::vector<RecentConfigEntry> out;
-    out.reserve(static_cast<size_t>(kMaxDisplay));
+    out.reserve(candidates.size());
     out.push_back(*mru_it);
 
     std::vector<RecentConfigEntry> others;
@@ -657,9 +657,6 @@ std::vector<RecentConfigEntry> SystemSettings::display_entries() const {
               });
 
     for (const auto& e : others) {
-        if (static_cast<int>(out.size()) >= kMaxDisplay) {
-            break;
-        }
         out.push_back(e);
     }
     return out;

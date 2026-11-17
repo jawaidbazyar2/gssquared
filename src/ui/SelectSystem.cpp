@@ -117,8 +117,12 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         container->add(button);
     }
 
-    // Recent custom configs: MRU + up to 4 by usage score.
+    // Recent custom configs: ranked list (MRU + by usage score). Keep loading
+    // until we have kMaxDisplay tiles or run out of candidates.
     for (const auto& entry : SystemSettings::instance().display_entries()) {
+        if (static_cast<int>(recent_loaded_.size()) >= SystemSettings::kMaxDisplay) {
+            break;
+        }
         auto loaded = std::make_unique<SystemConfig>();
         std::string error;
         std::filesystem::path pack_config;
