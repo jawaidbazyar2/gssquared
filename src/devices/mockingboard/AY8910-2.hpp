@@ -51,16 +51,15 @@ struct AyBusResult {
 constexpr uint32_t OUTPUT_SAMPLE_RATE_INT = 44100;
 constexpr uint32_t SAMPLES_PER_FRAME_INT = 740;
 
-// Event to represent register changes with timestamps
+// Event to represent register changes with video-cycle timestamps
 struct RegisterEvent {
-    double timestamp;      // Time in seconds when this event occurs
+    uint64_t cycle;        // Video cycle when this event occurs
     uint8_t chip_index;    // Which AY chip (0 or 1)
     uint8_t register_num;  // Which register (0-13)
     uint8_t value;         // New value for the register
     
-    // For sorting events by timestamp
     bool operator<(const RegisterEvent& other) const {
-        return timestamp < other.timestamp;
+        return cycle < other.cycle;
     }
 };
 
@@ -107,10 +106,8 @@ static const float normalized_levels[16] = {
 
  class AY8910s {
     private:
-        // Constants
-        static constexpr double MASTER_CLOCK = /* 1020500.0 */ 1020484.0; // 1MHz
-        static constexpr int CLOCK_DIVIDER = 16;
-        static constexpr double CHIP_FREQUENCY = MASTER_CLOCK / CLOCK_DIVIDER; // 62.5kHz
+        // AY master clock is the video rail; one chip cycle is 16 video cycles.
+        static constexpr uint64_t CLOCK_DIVIDER = 16;
         static constexpr float FILTER_CUTOFF = 0.3f; // Filter coefficient (0-1) (lower is more aggressive)
         
         float get_volume(uint8_t volsetting) {
@@ -119,7 +116,11 @@ static const float normalized_levels[16] = {
 
     public:
         AY8910s(std::vector<float>* buffer, NClock *clock, AudioSystem *audio_system /* , InterruptController *irq_control, uint8_t slot */) 
-            : current_time(0.0), time_accumulator(0.0), audio_buffer(buffer), audio_system(audio_system) {
+            : clock_(clock),
+              sample_vid_(clock ? clock->get_vid_cycles() : 0),
+              chip_vid_(clock ? clock->get_vid_cycles() : 0),
+              sample_accum_(0),
+              audio_buffer(buffer), audio_system(audio_system) {
             // Initialize per-chip bus address latch to "invalid / no register
             // selected" so writes without a preceding LATCH are ignored
             // (matches AY8913 power-on/reset behavior; audited by mb-audit
@@ -207,6 +208,11 @@ static const float normalized_levels[16] = {
                 reg_num[c] = 0xFF;
             }
             pending_events.clear();
+            if (clock_) {
+                sample_vid_ = clock_->get_vid_cycles();
+                chip_vid_ = sample_vid_;
+            }
+            sample_accum_ = 0;
             // Zero the R-channel decorrelation delay line so reset produces
             // a clean output with no residual samples from the previous run.
             for (size_t i = 0; i < MONO_DECORR_DELAY; i++) r_delay_buf[i] = 0.0f;
@@ -225,16 +231,16 @@ static const float normalized_levels[16] = {
         //
         // Returns { drove_data=true, data } on read cycles so the board
         // can latch the byte into the matching VIA IRA.
-        AyBusResult busCycle(uint8_t chip_index, uint8_t pa, uint8_t pb, double time_seconds) {
+        AyBusResult busCycle(uint8_t chip_index, uint8_t pa, uint8_t pb, uint64_t cycle) {
             if (chip_index > 1) return { false, 0 };
 
-            // ~RESET asserted: zero all 16 registers at this timestamp and
+            // ~RESET asserted: zero all 16 registers at this cycle and
             // invalidate the address latch. A subsequent WRITE (without a new
             // LATCH) must be ignored, and a subsequent READ must produce HiZ
             // (no data driven onto Port A).
             if ((pb & 0b100) == 0) {
                 for (uint8_t r = 0; r < AY_8913_REGISTER_COUNT; r++) {
-                    queueRegisterChange(time_seconds, chip_index, r, 0);
+                    queueRegisterChange(cycle, chip_index, r, 0);
                 }
                 reg_num[chip_index] = 0xFF;
                 return { false, 0 };
@@ -252,8 +258,8 @@ static const float normalized_levels[16] = {
                     return { false, 0 };
                 case 0b10: // write
                     if (reg_num[chip_index] < AY_8913_REGISTER_COUNT) {
-                        queueRegisterChange(time_seconds, chip_index, reg_num[chip_index], pa);
-                        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("AY busCycle: write [%lf] chip %u reg %02x val %02x\n", time_seconds, chip_index, reg_num[chip_index], pa);
+                        queueRegisterChange(cycle, chip_index, reg_num[chip_index], pa);
+                        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("AY busCycle: write [%llu] chip %u reg %02x val %02x\n", (unsigned long long)cycle, chip_index, reg_num[chip_index], pa);
                     } else {
                         if (DEBUG(DEBUG_MOCKINGBOARD)) printf("AY busCycle: write ignored (unlatched) chip %u latch=%02x val %02x\n", chip_index, reg_num[chip_index], pa);
                     }
@@ -277,26 +283,24 @@ static const float normalized_levels[16] = {
         }
     
         // Add a register change event
-        void queueRegisterChange(double timestamp, uint8_t chip_index, uint8_t reg, uint8_t value) {
+        void queueRegisterChange(uint64_t cycle, uint8_t chip_index, uint8_t reg, uint8_t value) {
             RegisterEvent event;
-            event.timestamp = timestamp;
+            event.cycle = cycle;
             event.chip_index = chip_index;
             event.register_num = reg;
             event.value = value;
 
             pending_events.push_back(event);
-            // Keep events sorted by timestamp
-            //std::sort(pending_events.begin(), pending_events.end()); // TODO: say what now?
     
             AY3_8910& chip = chips[event.chip_index];
             chip.live_registers[event.register_num] = event.value;
     
-            // for debugging, store the timestamp of event and current emulated time.
-            dbg_last_event = event.timestamp;
-            dbg_last_time = current_time;
+            dbg_last_event = event.cycle;
+            dbg_last_time = chip_vid_;
     
-            if (dbg_last_event < current_time) {
-                printf("[Current Time: %12.6f] Event timestamp is in the past: %12.6f\n", current_time, dbg_last_event);
+            if (event.cycle < chip_vid_) {
+                printf("[chip_vid: %llu] Event cycle is in the past: %llu\n",
+                       (unsigned long long)chip_vid_, (unsigned long long)event.cycle);
             }
         }
         
@@ -309,7 +313,6 @@ static const float normalized_levels[16] = {
             AY3_8910& chip = chips[event.chip_index];
             chip.registers[event.register_num] = event.value;
             
-            //debug_register_change(current_time, event.chip_index, event.register_num, event.value);
             if (DEBUG(DEBUG_MOCKINGBOARD)) display_registers();
             
             // Update internal state based on register change
@@ -371,7 +374,7 @@ static const float normalized_levels[16] = {
 #if 0
                         chip.tone_channels[channel].use_envelope = (event.value & 0x10) != 0;
                         chip.tone_channels[channel].volume = normalized_levels[volsetting];
-                        //printf("%12.4f|chip %d channel %d use_envelope %d volume %d/%f\n", event.timestamp, event.chip_index, channel, chip.tone_channels[channel].use_envelope, volsetting, chip.tone_channels[channel].volume);
+                        //printf("%llu|chip %d channel %d use_envelope %d volume %d/%f\n", (unsigned long long)event.cycle, event.chip_index, channel, chip.tone_channels[channel].use_envelope, volsetting, chip.tone_channels[channel].volume);
 #endif
 #if 1
                         if (event.value & 0x10) {
@@ -389,10 +392,9 @@ static const float normalized_levels[16] = {
             }
         }
         
-        // Process a single chip clock cycle
-        void processChipCycle(double cycle_time) {
-            // Process any pending register changes that should happen by this time
-            while (!pending_events.empty() && pending_events.front().timestamp <= cycle_time) {
+        // Process a single chip clock cycle (16 video cycles).
+        void processChipCycle() {
+            while (!pending_events.empty() && pending_events.front().cycle <= chip_vid_) {
                 processRegisterChange(pending_events.front());
                 pending_events.pop_front();
             }
@@ -550,36 +552,49 @@ static const float normalized_levels[16] = {
             }
         }
         
-        // Generate audio samples at 44.1kHz
-        void generateSamples(int num_samples) {
-            if (!audio_buffer) {
-                return;  // No buffer to write to
+        // Generate audio samples covering video cycles up to frame_end_vid.
+        void generateSamples(uint64_t frame_end_vid) {
+            if (!audio_buffer || !clock_) {
+                return;
             }
-            
-            // Debug output for envelope level at start of each call
-            if (0 && DEBUG(DEBUG_MOCKINGBOARD)) std::cout << "[" << current_time << "] Envelope status - Level: " << static_cast<int>(chips[0].envelope_output) 
-                      << " (counter: " << static_cast<int>(chips[0].envelope_counter) 
-                      << "/" << static_cast<int>(chips[0].envelope_period) 
-                      << ", shape: " << static_cast<int>(chips[0].envelope_shape)
-                      << ", attack: " << (chips[0].envelope_attack ? "true" : "false")
-                      << ", hold: " << (chips[0].envelope_hold ? "true" : "false")
-                      << ")" << std::endl;
-            
-            const double output_time_step = 1.0f / OUTPUT_SAMPLE_RATE_INT;
-            const double chip_time_step = 1.0 / CHIP_FREQUENCY;
-            
-            for (int i = 0; i < num_samples; i++) {
-                // Track current time based on the sample index and output time step
-                double sample_time = current_time + (i * output_time_step);
-                time_accumulator += output_time_step;
-                
-                // Process all chip cycles that should occur during this output sample
-                while (time_accumulator >= chip_time_step) {
-                    double cycle_time = sample_time - time_accumulator;
-                    processChipCycle(cycle_time);
-                    time_accumulator -= chip_time_step;
+
+            const uint64_t vid_per_sec = clock_->get_vid_cycles_per_second();
+            const uint64_t vid_per_frame = clock_->get_vid_cycles_per_frame();
+
+            // Ludicrous speed / stall: do not synthesize the missed span.
+            if (frame_end_vid > sample_vid_ &&
+                (frame_end_vid - sample_vid_) > vid_per_frame * 3) {
+                pending_events.clear();
+                sample_vid_ = frame_end_vid - vid_per_frame;
+                chip_vid_ = sample_vid_;
+                sample_accum_ = 0;
+            }
+
+            if (frame_end_vid <= sample_vid_) {
+                return;
+            }
+
+            while (sample_vid_ < frame_end_vid) {
+                sample_accum_ += vid_per_sec;
+                uint64_t cycles = sample_accum_ / OUTPUT_SAMPLE_RATE_INT;
+                sample_accum_ %= OUTPUT_SAMPLE_RATE_INT;
+                if (cycles == 0) {
+                    continue;
                 }
-                
+                // Do not run chip_vid_ past the live video clock. The last
+                // sample of a frame would otherwise overshoot frame_end_vid
+                // by up to one sample (~23 cycles), and the next CPU write
+                // would land in the past.
+                uint64_t sample_end = sample_vid_ + cycles;
+                if (sample_end > frame_end_vid) {
+                    sample_end = frame_end_vid;
+                }
+
+                while (chip_vid_ + CLOCK_DIVIDER <= sample_end) {
+                    chip_vid_ += CLOCK_DIVIDER;
+                    processChipCycle();
+                }
+
                 // Do envelope interpolation at audio rate. This makes changes to envelope levels transition smoothly on a per-sample basis.
                 for (int c = 0; c < 2; c++) {
                     AY3_8910& chip = chips[c];
@@ -598,10 +613,10 @@ static const float normalized_levels[16] = {
                     chip.current_envelope_level += (chip.target_envelope_level - chip.current_envelope_level) * interpolation_speed;
                     
                     // Update channel volumes with interpolated value
-                    for (int i = 0; i < 3; i++) {
-                        if (chip.tone_channels[i].use_envelope) {
+                    for (int ch = 0; ch < 3; ch++) {
+                        if (chip.tone_channels[ch].use_envelope) {
                             // Keep as float, divide by 15 here to normalize to 0-1 range
-                            chip.tone_channels[i].volume = chip.current_envelope_level; // target_envelope_level is already normalized to 0-1
+                            chip.tone_channels[ch].volume = chip.current_envelope_level; // target_envelope_level is already normalized to 0-1
                         }
                     }
                 }
@@ -655,10 +670,9 @@ static const float normalized_levels[16] = {
                     audio_buffer->push_back(mixed_output[0]);
                     audio_buffer->push_back(mixed_output[1]);
                 }
+
+                sample_vid_ = sample_end;
             }
-            
-            // Update current_time for the next call
-            current_time += num_samples * output_time_step;
         }
         
         // Write audio samples to a WAV file
@@ -790,12 +804,14 @@ static const float normalized_levels[16] = {
     public:
         AY3_8910 chips[2];
     
-        double dbg_last_event =0.0f;
-        double dbg_last_time =0.0f;
+        uint64_t dbg_last_event = 0;
+        uint64_t dbg_last_time = 0;
 
     private:
-        double current_time;
-        double time_accumulator;
+        NClock *clock_ = nullptr;
+        uint64_t sample_vid_ = 0;
+        uint64_t chip_vid_ = 0;
+        uint64_t sample_accum_ = 0;
         std::deque<RegisterEvent> pending_events;
         std::vector<float>* audio_buffer;  // Pointer to external audio buffer
         AudioSystem *audio_system = nullptr;  // Shared audio settings (decorrelation, etc.)

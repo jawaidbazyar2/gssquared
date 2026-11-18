@@ -51,8 +51,8 @@ const char *register_names[] = {
     "Unknown 15",
 };
 
-void debug_register_change(double current_time, uint8_t chip_index, uint8_t reg, uint8_t value) {
-    std::cout << "[" << current_time << "] Register " << register_names[reg] << " set to: " << static_cast<int>(value) << std::endl;
+void debug_register_change(uint64_t cycle, uint8_t chip_index, uint8_t reg, uint8_t value) {
+    std::cout << "[" << cycle << "] Register " << register_names[reg] << " set to: " << static_cast<int>(value) << std::endl;
 }
 
 #if 0
@@ -97,7 +97,7 @@ DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
     df->addLine("Ampl A: %02X  Ampl B: %02X  Ampl C: %02X", mb->read_register(1, Ampl_A), mb->read_register(1, Ampl_B), mb->read_register(1, Ampl_C));
     df->addLine("Env Period: %04X  Env Shape: %02X", mb->chips[1].envelope_period, mb->chips[1].envelope_shape);
     df->addLine("--------------------------------");
-    df->addLine("Last event: %14.6f  Last time: %14.6f", mb->dbg_last_event, mb->dbg_last_time);
+    df->addLine("Last event: %llu  Last time: %llu", (unsigned long long)mb->dbg_last_event, (unsigned long long)mb->dbg_last_time);
     return df;
 }
 #endif
@@ -107,18 +107,10 @@ private:
     N6522 *n6522[2];
     AY8910s *ay8910s;
     SDL_AudioStream *stream;
-    uint64_t last_cycle;
     uint8_t slot;
     VidRail *vid;
     InterruptController *irq_control = nullptr;
     AudioSystem *audio_system;
-
-    float samples_accumulated = 0.0f;
-    float frame_rate;
-    float samples_per_frame;
-    uint32_t samples_per_frame_int;
-    float samples_per_frame_remainder;
-    uint64_t vid_cycles_rate;
 
     NClock *clock;
 
@@ -152,13 +144,6 @@ public:
         this->vid = vid;
         this->slot = slot;
         this->audio_system = audio_system;
-        last_cycle = 0;
-
-        frame_rate = (double)clock->get_vid_cycles_per_second() / (double)clock->get_vid_cycles_per_frame();
-        samples_per_frame = (float)OUTPUT_SAMPLE_RATE_INT / frame_rate;
-        samples_per_frame_int = (int32_t)samples_per_frame;
-        samples_per_frame_remainder = samples_per_frame - samples_per_frame_int;
-        vid_cycles_rate = clock->get_vid_cycles_per_second();
 
         stream = audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
 
@@ -193,8 +178,7 @@ public:
         if (reg == MB_6522_ORB) {
             uint8_t pa = n6522[chip]->get_ora() & n6522[chip]->get_ddra();
             uint8_t pb = n6522[chip]->get_orb() & n6522[chip]->get_ddrb();
-            double  t  = (double)clock->get_vid_cycles() / (double)vid_cycles_rate;
-            AyBusResult r = ay8910s->busCycle(chip, pa, pb, t);
+            AyBusResult r = ay8910s->busCycle(chip, pa, pb, clock->get_vid_cycles());
             if (r.drove_data) {
                 n6522[chip]->set_ira(r.data);
             } else {
@@ -218,22 +202,12 @@ public:
     void generate_frame() {
         static int frames = 0;
 
-        samples_accumulated += samples_per_frame_remainder;
-        uint32_t samples_this_frame = samples_per_frame_int;
-        if (samples_accumulated >= 1.0f) {
-            samples_this_frame = samples_per_frame_int+1;
-            samples_accumulated -= 1.0f;
-        }
-    
-        last_cycle = clock->get_vid_cycles();
-    
-        ay8910s->generateSamples(samples_this_frame);
+        ay8910s->generateSamples(clock->get_vid_cycles());
     
         // Clear the audio buffer after each frame to prevent memory buildup
         // Send the generated audio data to the SDL audio stream
         int abs = audio_buffer.size();
         if (abs > 0) {
-            //printf("generate_mockingboard_frame: %zu\n", mb_d->audio_buffer.size());
             SDL_PutAudioStreamData(stream, audio_buffer.data(), audio_buffer.size() * sizeof(float));
         }
         audio_buffer.clear();
@@ -241,12 +215,11 @@ public:
         if (DEBUG(DEBUG_MOCKINGBOARD)) {
             if (frames++ > 60) {
                 frames = 0;
-                // Get the number of samples in SDL audio stream buffer
                 int samples_in_buffer = 0;
                 if (stream) {
                     samples_in_buffer = SDL_GetAudioStreamAvailable(stream) / sizeof(float);
                 }
-                printf("MB Status: buffer: %d, audio buffer size: %d, samples_per_frame: %d\n", samples_in_buffer, abs, samples_this_frame);
+                printf("MB Status: buffer: %d, audio buffer size: %d\n", samples_in_buffer, abs);
             }
         }
     }
