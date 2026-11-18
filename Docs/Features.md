@@ -201,7 +201,8 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `workflow.docs.online` | Online Documentation | Complete | all | Network | Browser opens docs | manual | [Menus.md](Menus.md) |
 | `workflow.docs.donate` | Donate link | Complete | all | Network | Browser opens | manual | |
-| `workflow.docs.check-updates` | Check For Updates | Complete | all | Network | Releases page | manual | Docs menu |
+| `workflow.docs.check-updates` | Check For Updates | Complete | all | Network | Updates page | manual | Docs menu |
+| `workflow.docs.notify-update` | New-version button on System Select | Complete | macOS, win, linux | Network; behind latest release | Button under + New / Launch / Edit...; click opens HTML updates page | manual | Fail-closed; not on web. [NotifyUpdate.md](NotifyUpdate.md) |
 
 ---
 

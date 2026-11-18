@@ -28,6 +28,8 @@ struct HttpsGetResult {
     /** Response header X-GS2-Save-Token, when the server sent one. */
     std::string save_token;
     std::string error;
+    /** Filled by https_get_to_string. Empty for file downloads. */
+    std::string body;
 };
 
 /**
@@ -36,6 +38,15 @@ struct HttpsGetResult {
  */
 bool https_get_to_file(const std::string& url, const std::string& dest_path, uint64_t max_bytes,
                        const std::atomic<bool> *cancel, HttpsGetResult& out);
+
+/**
+ * GET `url` into `out.body`. HTTPS only. `timeout_ms` covers connect and the whole
+ * transfer (pack downloads keep their own longer timeouts). Oversize bodies fail.
+ * `user_agent` may be empty (defaults to "GSSquared"). `cancel` may be null.
+ */
+bool https_get_to_string(const std::string& url, uint64_t max_bytes, int timeout_ms,
+                         const std::string& user_agent, const std::atomic<bool> *cancel,
+                         HttpsGetResult& out);
 
 /** Desktop HTTPS PUT of one file. Success is status 204. `cancel` may be null. */
 struct HttpsPutResult {

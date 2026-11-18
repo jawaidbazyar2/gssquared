@@ -139,4 +139,4 @@ Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor
   * Online Documentation
   * Donate
 
-**Check For Updates** opens the GitHub Releases page so you can download a newer package. **Online Documentation** opens the GSSquared user docs in your browser. **Donate** opens the project donation page.
+**Check For Updates** opens the gssquared.net updates page for this version, build, and platform so you can download a newer package. **Online Documentation** opens the GSSquared user docs in your browser. **Donate** opens the project donation page. If a newer desktop release is available, System Select may also show **Click to get new version** under + New / Launch / Edit... — same HTML page.

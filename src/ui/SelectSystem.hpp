@@ -45,6 +45,8 @@ protected:
     class Button_t *new_btn_ = nullptr;
     class Button_t *launch_btn_ = nullptr;
     class Button_t *edit_btn_ = nullptr;
+    /** Separate from action_con_ so a wide label does not restack New/Launch/Edit. */
+    class Button_t *update_btn_ = nullptr;
 
 public:
     
@@ -99,4 +101,7 @@ public:
 
     /** Reset selection back to pending (after consuming NEW / OPEN_LAUNCH / OPEN_EDIT). */
     void clear_selection() { selected_system = SELECT_PENDING; }
+
+    /** Show or hide the "Click to get new version" button. Hidden by default. */
+    void set_update_visible(bool visible);
 };
