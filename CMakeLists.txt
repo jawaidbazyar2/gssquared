@@ -372,7 +372,21 @@ target_link_libraries(gs2_devices_parallel PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/videx_80x24.cpp )
 
-add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb2.cpp )
+add_library(gs2_devices_mockingboard
+    src/devices/mockingboard/mb2.cpp
+    src/devices/mockingboard/ssi263/ssi263.c
+    src/devices/mockingboard/ssi263/ssi263dsp.c
+)
+set_source_files_properties(
+    src/devices/mockingboard/ssi263/ssi263.c
+    src/devices/mockingboard/ssi263/ssi263dsp.c
+    PROPERTIES LANGUAGE C
+)
+target_include_directories(gs2_devices_mockingboard PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/devices/mockingboard
+)
+# Static link: don't dllexport/visibility-default the engine symbols.
+target_compile_definitions(gs2_devices_mockingboard PRIVATE SSI263_API=)
 
 # Apple Mouse III (PIA+6805 / Apple ROM). Former BazMouse sources remain under
 # src/devices/applemouseii/ but are not built.

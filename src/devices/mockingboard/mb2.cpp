@@ -25,12 +25,16 @@
 
 #include "AY8910-2.hpp"
 #include "W6522.hpp"
+#include "Ssi263.hpp"
 
 #include "gs2.hpp"
 #include "mb2.hpp"
 #include "debug.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
+
+#include <algorithm>
+#include <cstddef>
 
 const char *register_names[] = {
     "A_Tone_Low",
@@ -106,6 +110,7 @@ class Mockingboard {
 private:
     N6522 *n6522[2];
     AY8910s *ay8910s;
+    Ssi263 *ssi263;
     SDL_AudioStream *stream;
     uint8_t slot;
     VidRail *vid;
@@ -117,6 +122,105 @@ private:
     // TODO: this is an undimensioned vector, which will be doing all kinds of memory allocation
     std::vector<float> audio_buffer;
 
+    // SSI-263 sample horizon (vid-cycles), matching AY sample_vid_.
+    uint64_t speech_vid_ = 0;
+    uint64_t speech_accum_ = 0;
+    std::vector<float> speech_pending;
+
+    // Engine peaks ~0.24–0.54 at AMP=15 (RMS ~0.08–0.19). AY one channel
+    // max is 0.25 (RMS ~0.18); speaker default vol 6 is 4125/32767 ≈ 0.13.
+    // 0.85 puts loud phonemes next to a full-scale AY channel without
+    // clipping the engine. Mixed to L+R: the card sums SSI with both AYs.
+    static constexpr float SPEECH_MIX_GAIN = 0.85f;
+
+    void note_ar() {
+        // SSI-263 A/R is active-low, wired to CA1 of the 6522 at $Cn80.
+        n6522[0]->set_ca1(!ssi263->request());
+    }
+
+    void catchup_speech() {
+        if (!clock || !ssi263) {
+            return;
+        }
+        const uint64_t now = clock->get_vid_cycles();
+        const uint64_t vid_per_sec = clock->get_vid_cycles_per_second();
+        const uint64_t vid_per_frame = clock->get_vid_cycles_per_frame();
+
+        ssi263->set_xck((double)vid_per_sec);
+
+        if (now <= speech_vid_) {
+            note_ar();
+            return;
+        }
+
+        // Same stall window as the AY: drop a multi-frame gap instead of
+        // synthesizing a catch-up burst. Skip chip time so A/R stays honest.
+        if ((now - speech_vid_) > vid_per_frame * 3) {
+            const uint64_t new_vid = now - vid_per_frame;
+            const double skip_s =
+                (double)(new_vid - speech_vid_) / (double)vid_per_sec;
+            ssi263->skip(skip_s);
+            speech_pending.clear();
+            speech_vid_ = new_vid;
+            speech_accum_ = 0;
+            note_ar();
+        }
+
+        if (now <= speech_vid_) {
+            return;
+        }
+
+        long nsamples = 0;
+        uint64_t vid = speech_vid_;
+        uint64_t accum = speech_accum_;
+        while (vid < now) {
+            accum += vid_per_sec;
+            uint64_t cycles = accum / OUTPUT_SAMPLE_RATE_INT;
+            accum %= OUTPUT_SAMPLE_RATE_INT;
+            if (cycles == 0) {
+                continue;
+            }
+            uint64_t sample_end = vid + cycles;
+            if (sample_end > now) {
+                sample_end = now;
+            }
+            vid = sample_end;
+            nsamples++;
+        }
+        speech_vid_ = vid;
+        speech_accum_ = accum;
+
+        if (nsamples > 0) {
+            std::vector<float> tmp((size_t)nsamples + 1, 0.0f);
+            long got = ssi263->run(nsamples, tmp.data());
+            if (got < 0) {
+                got = 0;
+            }
+            speech_pending.insert(speech_pending.end(),
+                                  tmp.begin(), tmp.begin() + got);
+        }
+        note_ar();
+    }
+
+    void mix_speech() {
+        const size_t nframes = audio_buffer.size() / 2;
+        const size_t nspeech = speech_pending.size();
+        const size_t n = std::min(nframes, nspeech);
+        for (size_t i = 0; i < n; i++) {
+            float s = speech_pending[i] * SPEECH_MIX_GAIN;
+            if (s > 1.0f) {
+                s = 1.0f;
+            } else if (s < -1.0f) {
+                s = -1.0f;
+            }
+            audio_buffer[i * 2] += s;
+            audio_buffer[i * 2 + 1] += s;
+        }
+        if (n > 0) {
+            speech_pending.erase(speech_pending.begin(),
+                                 speech_pending.begin() + (std::ptrdiff_t)n);
+        }
+    }
 
 public:
     Mockingboard(NClock *clock, InterruptController *irq_control, VidRail *vid, AudioSystem *audio_system, uint8_t slot) {
@@ -145,11 +249,17 @@ public:
         this->slot = slot;
         this->audio_system = audio_system;
 
+        const double xck = clock ? (double)clock->get_vid_cycles_per_second() : 1020484.0;
+        ssi263 = new Ssi263(xck, (double)OUTPUT_SAMPLE_RATE_INT);
+        speech_vid_ = clock ? clock->get_vid_cycles() : 0;
+        speech_accum_ = 0;
+
         stream = audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
 
         // Port A pull-ups hold the bus high at power-on; match reset().
         n6522[0]->set_ira(0xFF);
         n6522[1]->set_ira(0xFF);
+        n6522[0]->set_ca1(true); // A/R idle (pin high)
     }
     ~Mockingboard() {
         audio_system->destroy_stream(stream);
@@ -157,6 +267,7 @@ public:
         delete n6522[0];
         delete n6522[1];
         delete ay8910s;
+        delete ssi263;
     }
 
     void insert_empty_frame() {
@@ -167,6 +278,8 @@ public:
     void debug_registers();
 
     void write(uint32_t addr, uint8_t data) {   // this is address & 0xFF
+        catchup_speech();
+
         uint8_t reg = addr & 0x0F;
         uint8_t chip = (addr & 0x80) ? 0 : 1;
     
@@ -190,9 +303,18 @@ public:
                 n6522[chip]->set_ira(0xFF);
             }
         }
+
+        // Mockingboard C: A6 selects the primary SSI-263. The VIA is still
+        // selected (aliased); this write is additional.
+        if (addr & 0x40) {
+            ssi263->write(addr & 0x07, data);
+            note_ar();
+        }
     }
     
     uint8_t read(uint32_t addr) {               // this is address & 0xFF
+        catchup_speech();
+
         uint8_t reg = addr & 0x0F;
         uint8_t chip = (addr & 0x80) ? 0 : 1;
     
@@ -227,7 +349,9 @@ public:
         }
         int abs = 0;
         if (queued_frames < MAX_QUEUE) {
+            catchup_speech();
             ay8910s->generateSamples(frame_end_vid);
+            mix_speech();
 
             abs = (int)audio_buffer.size();
             if (abs > 0) {
@@ -252,23 +376,49 @@ public:
 
     void syncHorizon() {
         ay8910s->syncHorizon();
+        if (!clock || !ssi263) {
+            return;
+        }
+        const uint64_t frame_end_vid = clock->get_vid_cycles();
+        const uint64_t vid_per_frame = clock->get_vid_cycles_per_frame();
+        const uint64_t vid_per_sec = clock->get_vid_cycles_per_second();
+        const uint64_t new_vid = (frame_end_vid > vid_per_frame)
+                                     ? frame_end_vid - vid_per_frame
+                                     : 0;
+        if (new_vid > speech_vid_ && vid_per_sec) {
+            ssi263->skip((double)(new_vid - speech_vid_) / (double)vid_per_sec);
+        }
+        speech_pending.clear();
+        speech_vid_ = new_vid;
+        speech_accum_ = 0;
+        note_ar();
     }
 
     void reset() {
         n6522[0]->reset();
         n6522[1]->reset();
         ay8910s->reset();
+        const double xck = clock ? (double)clock->get_vid_cycles_per_second() : 1020484.0;
+        ssi263->reset(xck, (double)OUTPUT_SAMPLE_RATE_INT);
+        speech_pending.clear();
+        speech_vid_ = clock ? clock->get_vid_cycles() : 0;
+        speech_accum_ = 0;
         // Port A pull-ups on the Mockingboard hold the bus high whenever
         // neither the AY nor the VIA is driving. Pre-seed IRA so the CPU
         // sees $FF on the very first ORA read (before any bus cycle).
         n6522[0]->set_ira(0xFF);
         n6522[1]->set_ira(0xFF);
+        n6522[0]->set_ca1(true);
     }
 
     DebugFormatter *debug() {
         DebugFormatter *df = new DebugFormatter();
         n6522[0]->debug(df);
         n6522[1]->debug(df);
+        df->addLine("====== SSI-263 (primary $Cn40) ======");
+        df->addLine("R0: %02X  R1: %02X  R2: %02X  R3: %02X  A/R: %d  CA1 pin: %d",
+                    ssi263->reg(0), ssi263->reg(1), ssi263->reg(2), ssi263->reg(3),
+                    (int)ssi263->request(), (int)n6522[0]->get_ca1());
         // TODO: add AY-8910s debug
         return df;
     }

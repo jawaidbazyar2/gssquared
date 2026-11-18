@@ -267,6 +267,11 @@ Firmware image is the Thunderware 2716 (MAME CRC `1b99c4e3`).
 
 The Apple Mouse II Interface Card emulation (PIA + 6805 protocol) is adapted from the [A2Pico mouse-interface](https://github.com/oliverschmidt/mouse-interface) firmware by Thorsten Brehm and Oliver Schmidt (MIT License).
 
+## Mockingboard SSI-263 Speech
+
+These SSI-263 speech sources are vendored from the `ssi263-speech` project by
+Tamas Geczy (https://github.com/lprazdnik/ssi263-speech), **MIT License**.
+
 ## Mike Neil
 
 for the lookup table approach to the new DisplayNG code.
