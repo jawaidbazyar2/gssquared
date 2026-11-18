@@ -202,26 +202,56 @@ public:
     void generate_frame() {
         static int frames = 0;
 
-        ay8910s->generateSamples(clock->get_vid_cycles());
-    
-        // Clear the audio buffer after each frame to prevent memory buildup
-        // Send the generated audio data to the SDL audio stream
-        int abs = audio_buffer.size();
-        if (abs > 0) {
-            SDL_PutAudioStreamData(stream, audio_buffer.data(), audio_buffer.size() * sizeof(float));
+        const uint64_t frame_end_vid = clock->get_vid_cycles();
+        const uint64_t vid_per_frame = clock->get_vid_cycles_per_frame();
+        const uint64_t sample_vid = ay8910s->sampleVid();
+
+        // Speaker-style stall: a stale SDL backlog (sleep / paused device)
+        // keeps the queue above MAX_QUEUE every frame and would permanently
+        // block generation unless we discard it when the synth horizon is
+        // this far behind. generateSamples still snaps sample_vid_ and
+        // drops pending register events.
+        if (frame_end_vid > sample_vid &&
+            (frame_end_vid - sample_vid) > vid_per_frame * 3) {
+            SDL_ClearAudioStream(stream);
         }
-        audio_buffer.clear();
-    
+
+        // Use SDL_GetAudioStreamQueued (input-format bytes) rather than
+        // SDL_GetAudioStreamAvailable (output-format bytes). Stereo F32:
+        // two floats per frame. 4410 frames is ~100ms at 44.1kHz.
+        const size_t MAX_QUEUE = 4410;
+        size_t queued_frames = 0;
+        if (stream) {
+            queued_frames = audio_system->get_stream_queued(stream) /
+                            (sizeof(float) * 2);
+        }
+        int abs = 0;
+        if (queued_frames < MAX_QUEUE) {
+            ay8910s->generateSamples(frame_end_vid);
+
+            abs = (int)audio_buffer.size();
+            if (abs > 0) {
+                audio_system->put_stream_data(stream, audio_buffer.data(),
+                                              audio_buffer.size() * sizeof(float));
+            }
+            audio_buffer.clear();
+        }
+
         if (DEBUG(DEBUG_MOCKINGBOARD)) {
             if (frames++ > 60) {
                 frames = 0;
-                int samples_in_buffer = 0;
                 if (stream) {
-                    samples_in_buffer = SDL_GetAudioStreamAvailable(stream) / sizeof(float);
+                    queued_frames = audio_system->get_stream_queued(stream) /
+                                    (sizeof(float) * 2);
                 }
-                printf("MB Status: buffer: %d, audio buffer size: %d\n", samples_in_buffer, abs);
+                printf("MB Status: queued frames: %zu, audio buffer size: %d\n",
+                       queued_frames, abs);
             }
         }
+    }
+
+    void syncHorizon() {
+        ay8910s->syncHorizon();
     }
 
     void reset() {
@@ -273,6 +303,14 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     computer->mmu->map_c1cf_page_read_h(0xC0 + slot, { mb_read_Cx00, mb_d }, "MB_IO");
 
     mb_d->mockingboard->insert_empty_frame();
+
+    // When the audio device format changes, AudioSystem clears all streams
+    // and then invokes these callbacks so each generator can snap its
+    // timing state forward. Without this, the cleared stream would
+    // immediately refill with catch-up audio.
+    computer->audio_system->register_device_reset_callback([mb_d]() {
+        mb_d->mockingboard->syncHorizon();
+    });
 
     // this can move to the class
     // set up a reset handler to reset the chips on mockingboard

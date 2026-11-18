@@ -229,6 +229,25 @@ static const float normalized_levels[16] = {
             r_delay_idx = 0;
         }
 
+        uint64_t sampleVid() const { return sample_vid_; }
+
+        // Snap the sample horizon to the start of the current video frame
+        // without zeroing chip state. Used after AudioSystem clears streams
+        // on a device format change, so generateSamples does not dump a
+        // catch-up burst into the empty queue.
+        void syncHorizon() {
+            pending_events.clear();
+            sample_accum_ = 0;
+            if (!clock_) {
+                return;
+            }
+            const uint64_t frame_end_vid = clock_->get_vid_cycles();
+            const uint64_t vid_per_frame = clock_->get_vid_cycles_per_frame();
+            sample_vid_ = (frame_end_vid > vid_per_frame)
+                              ? frame_end_vid - vid_per_frame
+                              : 0;
+        }
+
         // Handle one Mockingboard bus cycle as driven by the paired 6522's
         // Port B (control) and Port A (data) lines. This owns the AY bus
         // protocol (BDIR/BC1/~RESET) so the VIA stays a generic MOS 6522.
