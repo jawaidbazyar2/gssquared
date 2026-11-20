@@ -363,15 +363,17 @@ Shaders Galore to move a lot of rendering into GPU:
 
 [ ] Eliminate some Code Smells (display could use some reorg)
 
-[ ] GS MMU performance improvement by using LUTs instead of tons of IFs.
+[X] GS MMU performance improvement by using LUTs instead of tons of IFs.
 
-[ ] correctly model colorburst change latency
+[X] correctly model colorburst change latency
 
 [ ] pass IWM test suite
 
+[ ] pass Ensoniq test suite
+
 [ ] pass SWITCHES test suite
 
-[ ] don't drop trace files all the time
+[X] don't drop trace files all the time
 
 ## V1.x Optimizations
 

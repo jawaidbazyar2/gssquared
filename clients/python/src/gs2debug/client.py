@@ -40,6 +40,7 @@ from .types import (
     GET_TRACE,
     HELLO,
     KEYEVENT,
+    LOADMEM,
     PASTE_TEXT,
     PAUSE,
     PING,
@@ -487,7 +488,7 @@ class Client:
 
     def write_mem(self, domain: int, address: int, data: bytes) -> None:
         """Send WRITEMEM; poke `data` at domain/address.
-        Domains: MAIN, MEGAII (IIgs), MAIN_RAW, MEGAII_RAW (IIgs)."""
+        Domains: MAIN, MEGAII (IIgs), ENSONIQ (IIgs), MAIN_RAW, MEGAII_RAW (IIgs)."""
         if not self._handshaked:
             raise RuntimeError("hello() required before write_mem()")
         if not data:
@@ -496,6 +497,37 @@ class Client:
         reply = self.request(WRITEMEM, payload)
         if reply:
             raise ProtocolError(0, f"WRITEMEM reply not empty ({len(reply)} bytes)")
+
+    def load_mem(
+        self,
+        domain: int,
+        address: int,
+        path: str | bytes,
+        *,
+        file_offset: int = 0,
+        max_length: int = 0,
+    ) -> int:
+        """Send LOADMEM; load binary file at ``path`` into domain/address.
+
+        ``file_offset`` skips leading bytes in the file (0 = start).
+        ``max_length`` caps bytes read (0 = load through EOF).
+        Prefer an absolute ``path``. Returns bytes loaded.
+        """
+        if not self._handshaked:
+            raise RuntimeError("hello() required before load_mem()")
+        if file_offset < 0:
+            raise ValueError("file_offset must be non-negative")
+        if max_length < 0:
+            raise ValueError("max_length must be non-negative")
+        path_b = path.encode("utf-8") if isinstance(path, str) else path
+        if not path_b:
+            raise ValueError("path must be non-empty")
+        payload = struct.pack("<IIII", domain, address, file_offset, max_length) + path_b
+        reply = self.request(LOADMEM, payload)
+        if len(reply) != 4:
+            raise ProtocolError(0, f"LOADMEM reply length {len(reply)}, expected 4")
+        (bytes_loaded,) = struct.unpack("<I", reply)
+        return bytes_loaded
 
     def mount(self, slot: int, unit: int, path: str | bytes) -> int:
         """MOUNT media at slot/unit (0-based). Prefer an absolute ``path``. Returns MEDIA_* status."""

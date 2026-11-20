@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / PASTE_TEXT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / LOADMEM / BP_* / KEYEVENT / PASTE_TEXT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.
 
 ---
 
@@ -185,6 +185,7 @@ Rules:
 | `READMEM` | 3 | 1 | `0x00000301` | main | `length` data bytes |
 | `WRITEMEM` | 3 | 2 | `0x00000302` | main | empty |
 | `FINDMEM` | 3 | 3 | `0x00000303` | main | `hit_count` + addresses |
+| `LOADMEM` | 3 | 4 | `0x00000304` | protocol (file I/O) + main (write) | 4 bytes: `bytes_loaded` |
 | `BP_SET` | 4 | 1 | `0x00000401` | main | 4 bytes: `id` |
 | `BP_CLEAR` | 4 | 2 | `0x00000402` | main | empty |
 | `BP_CLEAR_ALL` | 4 | 3 | `0x00000403` | main | empty |
@@ -531,6 +532,44 @@ Search a memory window for a byte pattern (optional per-byte mask for wildcards)
 | 4 | `4 × hit_count` | addresses (`uint32` each) |
 
 **Bounds:** handshake required; payload size mismatch; zero/`>65536` window; wrap; bad `pattern_len` / `max_hits` / flags → `E_BAD_LENGTH`. Domain / platform errors match `READMEM` (`unsupported domain`, `MEGAII only on Apple IIgs`, `out of range`, …). Allowed while running or paused.
+
+#### `LOADMEM` — main 3, sub 4 (`0x00000304`)
+
+Load binary bytes from a host filesystem file into a memory domain at `address`. Avoids transferring large binaries inline over the socket or hex-encoding them through an MCP/LLM host. Same domain table and write semantics as `WRITEMEM`.
+
+File open/stat/read runs on the **protocol thread** so disk I/O does not stall the main emulation loop; writing the loaded bytes into emulated memory runs on the **main thread**.
+
+**Request payload** (`16 + N` bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `domain` | Memory domain (`uint32`), same table as `READMEM` / `WRITEMEM`. |
+| 4 | 4 | `address` | Destination base address (`uint32`), little-endian. |
+| 8 | 4 | `file_offset` | Byte offset into host file (`uint32`). `0` = start of file. |
+| 12 | 4 | `max_length` | Max bytes to load (`uint32`). `0` = load from `file_offset` to EOF. |
+| 16 | N | `path` | UTF-8 host filesystem path (remainder of payload; not NUL-terminated). |
+
+Clients should pass an **absolute path** so success does not depend on the emulator process cwd.
+
+If `max_length > 0` and fewer than `max_length` bytes remain after `file_offset`, the server loads through EOF and reports the actual byte count in `bytes_loaded`.
+
+**Success reply** (same `type=LOADMEM`, echoed `seq`), payload (4 bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `bytes_loaded` | Number of bytes read from the file and written to memory (`uint32`). |
+
+**Bounds:**
+
+- Handshake required; payload `< 16` → `E_BAD_LENGTH`.
+- `path` empty, `> 4096` bytes, or containing NUL → `E_BAD_LENGTH`.
+- Invalid `domain` → `E_BAD_LENGTH`.
+- `max_length > 0x01000000` (16 MiB) or resulting byte count `> 0x01000000` → `E_BAD_LENGTH`.
+- `file_offset > file_size` → `E_BAD_LENGTH` (`LOADMEM file_offset past EOF`).
+- Reject if `address + bytes_loaded` wraps `uint32` → `E_BAD_LENGTH`.
+- File missing, not a regular file, unreadable, or read failure → `E_INTERNAL`.
+- Domain / platform / range checks match `WRITEMEM` (`MAIN` / `MEGAII` checked against MMU address space size; `MAIN_RAW` / `MEGAII_RAW` checked against `get_memory_size()`; `ENSONIQ` checked against `0x10000`; out-of-range → `E_BAD_LENGTH` / `out of range`; `MEGAII` / `MEGAII_RAW` on non-IIgs → `E_INTERNAL` / `MEGAII only on Apple IIgs`; `ADBMICRO` or `ENSONIQ` on non-IIgs → `E_INTERNAL` / `unsupported domain`).
+- Allowed while running or paused.
 
 ### Input (`main == 5`)
 
