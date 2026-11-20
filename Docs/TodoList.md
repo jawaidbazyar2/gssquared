@@ -241,7 +241,7 @@ From [CPUs.md](CPUs.md), [DevelopLog.md](DevelopLog.md), [Documentation.md](Docu
 - [ ] Check 65c02 vs NMOS differences thoroughly
 - [ ] IIe reset conditions vs Understanding the Apple IIe tables 5.4 and 7.1
 - [X] Bank latch / direct bank `$E1` tests and analysis
-- [ ] MMU SoA + static aligned page table experiment (perf)
+- [X] MMU SoA + static aligned page table experiment (perf)
 - [ ] Address mask + debug OOB warnings on MMU
 - [X] Thunderclock: interrupts, writing clock, more testing
 - [X] Fast accesses for IIgs memory softswitches ([AppleIIgs-Memory.md](AppleIIgs-Memory.md))
