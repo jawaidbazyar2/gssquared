@@ -75,6 +75,14 @@ void MenuInterface::toggleAudioDecorrelation() {
 	if (computer_ && computer_->audio_system) computer_->audio_system->toggle_decorrelation();
 }
 
+void MenuInterface::setAyWaveform(int waveform) {
+	if (!computer_ || !computer_->audio_system) return;
+	if (waveform < 0 || waveform >= static_cast<int>(ay::Waveform::Count)) {
+		waveform = static_cast<int>(ay::Waveform::Square);
+	}
+	computer_->audio_system->set_ay_waveform(static_cast<ay::Waveform>(waveform));
+}
+
 void MenuInterface::toggleRightMouseAccel() {
 	gs2_app_values.right_mouse_accelerate = !gs2_app_values.right_mouse_accelerate;
 }
@@ -142,6 +150,11 @@ bool MenuInterface::getPauseWhenMinimized() {
 
 bool MenuInterface::getAudioDecorrelation() {
 	return computer_ && computer_->audio_system ? computer_->audio_system->get_decorrelation() : false;
+}
+
+int MenuInterface::getAyWaveform() {
+	if (!computer_ || !computer_->audio_system) return static_cast<int>(ay::Waveform::Square);
+	return static_cast<int>(computer_->audio_system->get_ay_waveform());
 }
 
 bool MenuInterface::getRightMouseAccel() {

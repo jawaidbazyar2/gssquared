@@ -280,6 +280,30 @@ static void build_menu_bar()
             end_menu();
         }
 
+        if (begin_menu("Mockingboard")) {
+            bool ad_on = mi->getAudioDecorrelation();
+            if (ImGui::MenuItem("Mono Helper", nullptr, ad_on))
+                mi->toggleAudioDecorrelation();
+
+            if (begin_menu("Timbre")) {
+                int cur_wf = mi->getAyWaveform();
+                struct { const char *label; int wf; } waveforms[] = {
+                    { "Square",      0 },
+                    { "Soft Square", 1 },
+                    { "Warm Sine",   2 },
+                    { "Organ",       3 },
+                    { "Sawtooth",    4 },
+                };
+                for (auto &w : waveforms) {
+                    bool checked = (cur_wf == w.wf);
+                    if (ImGui::MenuItem(w.label, nullptr, checked))
+                        mi->setAyWaveform(w.wf);
+                }
+                end_menu();
+            }
+            end_menu();
+        }
+
         if (!running) ImGui::EndDisabled();
 
         ImGui::Separator();
@@ -309,11 +333,6 @@ static void build_menu_bar()
         bool pause_minimized = mi->getPauseWhenMinimized();
         if (ImGui::MenuItem("Pause when Minimized", nullptr, pause_minimized))
             mi->togglePauseWhenMinimized();
-
-        // R-Channel Decorrelation — available regardless of running state
-        bool ad_on = mi->getAudioDecorrelation();
-        if (ImGui::MenuItem("Mono Helper", nullptr, ad_on))
-            mi->toggleAudioDecorrelation();
 
         bool rmb_accel = mi->getRightMouseAccel();
         if (ImGui::MenuItem("Right Mouse Button Accelerate", nullptr, rmb_accel))
