@@ -8,7 +8,7 @@ GSSquared treats each serial or parallel port as a jack you can plug a virtual d
 |------------|----------------------------------------|---------------|
 | **None** | Port idle | Port idle |
 | **File** | Capture TX data to a host file | Capture printer bytes to a host file |
-| **Printer** | IIgs SCC and Super Serial. Same capture as File, and on native builds the same bytes go to a gs2print socket. The worker opens the ticket without blocking the emulator. On SSC, sets the card to SIC P8 so firmware does not wait for ACK. | — |
+| **Printer** | Works with [GS2Print](https://github.com/jawaidbazyar2/gs2print) Color ImageWriter II emulator. IIgs SCC and Super Serial. | — |
 | **Clipboard** | Capture TX to the host clipboard | Capture printer bytes to the host clipboard |
 | **Modem** | Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502). Native builds only; absent in the [browser](Web.md). | — |
 | **Net Printer** | Raw TCP client to a host:port (often 9100). Opens on the first guest byte, closes after 60 seconds idle. Native builds only; absent in the [browser](Web.md). Spec: [NetPrinter.md](NetPrinter.md). | — |
