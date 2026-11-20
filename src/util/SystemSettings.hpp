@@ -51,6 +51,10 @@ class SystemSettings {
     bool scaling_sharp_ = false;
     /** Freeze the guest while the main window is minimized. */
     bool pause_when_minimized_ = false;
+    /** Record CPU instruction trace into the ring buffer (default: true). */
+    bool cpu_trace_ = true;
+    /** Write gssquared-trace.bin to Documents when exiting emulation/app (default: false). */
+    bool save_trace_on_exit_ = false;
 
     /** Last .gs2 open/save selection (full file path when known). */
     std::string last_config_path_;
@@ -117,6 +121,8 @@ public:
     bool mono_persistence() const { return mono_persistence_; }
     bool scaling_sharp() const { return scaling_sharp_; }
     bool pause_when_minimized() const { return pause_when_minimized_; }
+    bool cpu_trace() const { return cpu_trace_; }
+    bool save_trace_on_exit() const { return save_trace_on_exit_; }
 
     void set_hud_stats(bool enabled);
     void set_hud_drives(bool enabled);
@@ -126,12 +132,16 @@ public:
     void set_mono_persistence(bool enabled);
     void set_scaling_sharp(bool sharp);
     void set_pause_when_minimized(bool enabled);
+    void set_cpu_trace(bool enabled);
+    void set_save_trace_on_exit(bool enabled);
 
     void toggle_hud_stats();
     void toggle_hud_drives();
     void toggle_disconnected_when_no_gamepad();
     void toggle_ss_text_mode();
     void toggle_pause_when_minimized();
+    void toggle_cpu_trace();
+    void toggle_save_trace_on_exit();
 
     const std::string& last_config_path() const { return last_config_path_; }
     const std::string& last_disk_path() const { return last_disk_path_; }

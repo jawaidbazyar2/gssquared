@@ -118,6 +118,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)speed14_3:(id)sender;
 - (void)toggleSleepMode:(id)sender;
 - (void)togglePauseWhenMinimized:(id)sender;
+- (void)toggleCpuTrace:(id)sender;
+- (void)toggleSaveTraceOnExit:(id)sender;
 - (void)toggleAudioDecorrelation:(id)sender;
 - (void)ayWaveform:(id)sender;
 - (void)toggleRightMouseAccel:(id)sender;
@@ -221,6 +223,17 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if ([[menuItem title] isEqualToString:NSLocalizedString(@"Apple Keys", nil)]) {
 		return YES;
 	}
+	if ([[menuItem title] isEqualToString:NSLocalizedString(@"Debug", nil)]) {
+		return YES;
+	}
+	if (menuItem.action == @selector(toggleCpuTrace:)) {
+		[menuItem setState:getMenuInterface()->getCpuTrace() ? NSControlStateValueOn : NSControlStateValueOff];
+		return YES;
+	}
+	if (menuItem.action == @selector(toggleSaveTraceOnExit:)) {
+		[menuItem setState:getMenuInterface()->getSaveTraceOnExit() ? NSControlStateValueOn : NSControlStateValueOff];
+		return YES;
+	}
 	if (menuItem.action == @selector(toggleDisconnectedWhenNoGamepad:)) {
 		[menuItem setState:getMenuInterface()->getDisconnectedWhenNoGamepad() ? NSControlStateValueOn : NSControlStateValueOff];
 	}
@@ -286,6 +299,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 - (void)toggleSleepMode:(id)sender { getMenuInterface()->toggleSleepMode(); (void)sender; }
 - (void)togglePauseWhenMinimized:(id)sender { getMenuInterface()->togglePauseWhenMinimized(); (void)sender; }
+- (void)toggleCpuTrace:(id)sender { getMenuInterface()->toggleCpuTrace(); (void)sender; }
+- (void)toggleSaveTraceOnExit:(id)sender { getMenuInterface()->toggleSaveTraceOnExit(); (void)sender; }
 - (void)toggleAudioDecorrelation:(id)sender { getMenuInterface()->toggleAudioDecorrelation(); (void)sender; }
 - (void)ayWaveform:(id)sender {
 	NSMenuItem *item = (NSMenuItem *)sender;
@@ -841,6 +856,30 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[appleKeysMenuItem setSubmenu:appleKeysMenu];
 	[settingsMenu addItem:appleKeysMenuItem];
+
+	NSMenu *debugMenu = [[[NSMenu alloc]
+		initWithTitle:NSLocalizedString(@"Debug", nil)] autorelease];
+
+	NSMenuItem *cpuTraceItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"CPU Trace", nil)
+		       action:@selector(toggleCpuTrace:)
+		keyEquivalent:@""] autorelease];
+	[cpuTraceItem setTarget:sMenuHandler];
+	[debugMenu addItem:cpuTraceItem];
+
+	NSMenuItem *saveTraceOnExitItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Write Trace File on Exit", nil)
+		       action:@selector(toggleSaveTraceOnExit:)
+		keyEquivalent:@""] autorelease];
+	[saveTraceOnExitItem setTarget:sMenuHandler];
+	[debugMenu addItem:saveTraceOnExitItem];
+
+	NSMenuItem *debugMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Debug", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[debugMenuItem setSubmenu:debugMenu];
+	[settingsMenu addItem:debugMenuItem];
 
 	NSMenuItem *sleepItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Sleep / Busy Wait", nil)

@@ -276,7 +276,7 @@ For everyday software debugging, use the **Video pane** or **Static** main-windo
 
 ## Trace file on exit
 
-When you quit emulation (or exit the application while a machine is running), GSSquared automatically saves the instruction trace ring buffer to a binary file named **`gssquared-trace.bin`** in your documents folder. The file contains raw `system_trace_entry_t` records for offline analysis.
+When **Settings → Debug → Write Trace File on Exit** is enabled (off by default; stored as `debug.save_trace_on_exit` in `system_settings.toml`), quitting emulation or exiting the application while a machine is running saves the instruction trace ring buffer to a binary file named **`gssquared-trace.bin`** in your documents folder. The file contains raw `system_trace_entry_t` records for offline analysis.
 
 There is not yet a built-in menu command to save or reload a trace mid-session; use the automatic save on exit, or the external debug protocol for scripted capture.
 

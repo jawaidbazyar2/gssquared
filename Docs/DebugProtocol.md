@@ -345,7 +345,7 @@ Commands in this family run on the **main emulation thread**.
 
 #### `GET_TRACE` — main 2, sub 1 (`0x00000201`)
 
-Read a window from the CPU instruction trace ring buffer (`cpu->trace_buffer`, capacity 100000, 40-byte `system_trace_entry_t` records — same layout as `EVT_STOPPED.trace`).
+Read a window from the CPU instruction trace ring buffer (`cpu->trace_buffer`, default capacity 131072 / 128K, 40-byte `system_trace_entry_t` records — same layout as `EVT_STOPPED.trace`).
 
 **Request payload** (8 bytes):
 

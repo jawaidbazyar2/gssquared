@@ -71,6 +71,18 @@ void MenuInterface::togglePauseWhenMinimized() {
 	SystemSettings::instance().toggle_pause_when_minimized();
 }
 
+void MenuInterface::toggleCpuTrace() {
+	const bool next = !getCpuTrace();
+	SystemSettings::instance().set_cpu_trace(next);
+	if (computer_ && computer_->cpu) {
+		computer_->cpu->trace = next;
+	}
+}
+
+void MenuInterface::toggleSaveTraceOnExit() {
+	SystemSettings::instance().toggle_save_trace_on_exit();
+}
+
 void MenuInterface::toggleAudioDecorrelation() {
 	if (computer_ && computer_->audio_system) computer_->audio_system->toggle_decorrelation();
 }
@@ -146,6 +158,15 @@ bool MenuInterface::getSleepMode() {
 
 bool MenuInterface::getPauseWhenMinimized() {
 	return SystemSettings::instance().pause_when_minimized();
+}
+
+bool MenuInterface::getCpuTrace() {
+	return (computer_ && computer_->cpu) ? computer_->cpu->trace
+	                                     : SystemSettings::instance().cpu_trace();
+}
+
+bool MenuInterface::getSaveTraceOnExit() {
+	return SystemSettings::instance().save_trace_on_exit();
 }
 
 bool MenuInterface::getAudioDecorrelation() {

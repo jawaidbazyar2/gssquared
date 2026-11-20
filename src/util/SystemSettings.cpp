@@ -128,6 +128,8 @@ bool SystemSettings::load() {
     mono_persistence_ = true;
     scaling_sharp_ = false;
     pause_when_minimized_ = false;
+    cpu_trace_ = true;
+    save_trace_on_exit_ = false;
     last_config_path_.clear();
     last_disk_path_.clear();
     host_fst_dir_.clear();
@@ -206,6 +208,10 @@ bool SystemSettings::load() {
         if (const auto* emulation = table["emulation"].as_table()) {
             pause_when_minimized_ = (*emulation)["pause_when_minimized"].value_or(false);
         }
+        if (const auto* debug = table["debug"].as_table()) {
+            cpu_trace_ = (*debug)["cpu_trace"].value_or(true);
+            save_trace_on_exit_ = (*debug)["save_trace_on_exit"].value_or(false);
+        }
         if (const auto* kb = table["keyboard"].as_table()) {
             if (const auto id = (*kb)["apple_keys"].value<std::string>()) {
                 apple_keys_ = apple_key_layout_id(apple_key_layout_from_id(*id));
@@ -269,6 +275,11 @@ bool SystemSettings::save() const {
     toml::table emulation;
     emulation.insert("pause_when_minimized", pause_when_minimized_);
     table.insert("emulation", std::move(emulation));
+
+    toml::table debug;
+    debug.insert("cpu_trace", cpu_trace_);
+    debug.insert("save_trace_on_exit", save_trace_on_exit_);
+    table.insert("debug", std::move(debug));
 
     toml::table keyboard;
     keyboard.insert("apple_keys", apple_keys_.empty()
@@ -382,6 +393,32 @@ void SystemSettings::toggle_ss_text_mode() {
 
 void SystemSettings::toggle_pause_when_minimized() {
     pause_when_minimized_ = !pause_when_minimized_;
+    save();
+}
+
+void SystemSettings::set_cpu_trace(bool enabled) {
+    if (cpu_trace_ == enabled) {
+        return;
+    }
+    cpu_trace_ = enabled;
+    save();
+}
+
+void SystemSettings::set_save_trace_on_exit(bool enabled) {
+    if (save_trace_on_exit_ == enabled) {
+        return;
+    }
+    save_trace_on_exit_ = enabled;
+    save();
+}
+
+void SystemSettings::toggle_cpu_trace() {
+    cpu_trace_ = !cpu_trace_;
+    save();
+}
+
+void SystemSettings::toggle_save_trace_on_exit() {
+    save_trace_on_exit_ = !save_trace_on_exit_;
     save();
 }
 

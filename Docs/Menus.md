@@ -80,6 +80,9 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
     * Command = Open Apple
     * Alt = Open Apple
     * Left Option = Open Apple
+  * Debug
+    * CPU Trace
+    * Write Trace File on Exit
   * Sleep / Busy Wait
   * Mono Helper
   * Right Mouse Button Accelerate
@@ -91,6 +94,10 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
 **Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
 
 **Apple Keys** chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See [Using a Keyboard](KeyboardShortcuts.md).
+
+**Debug → CPU Trace** enables or disables CPU instruction trace recording into the ring buffer (on by default). Toggling it here updates the live machine (if running) and saves the default in `system_settings.toml` (`debug.cpu_trace`). You can still toggle tracing temporarily inside the debugger window with **T**.
+
+**Debug → Write Trace File on Exit** controls whether `gssquared-trace.bin` is written to your documents folder when closing emulation or exiting (off by default, stored in `system_settings.toml` as `debug.save_trace_on_exit`).
 
 **Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag.
 
@@ -130,7 +137,8 @@ There is no Debug menu on the native menu bar. Open the debugger with **F10** or
 See [Using the Debugger](UsingTheDebugger.md) for the full guide (panes, monitor commands, breakpoints, video views, and workflows).
 
   * **F10** or the hover **Debug** button — show/hide the debugger window
-  * On exit, the instruction trace is saved automatically as `gssquared-trace.bin` in your documents folder
+  * **Settings → Debug → CPU Trace** — enable/disable instruction trace recording (on by default)
+  * **Settings → Debug → Write Trace File on Exit** — save `gssquared-trace.bin` in your documents folder on exit (off by default)
 
 Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor commands (`sload`, `sclear`, `slookup`) and the automatic trace save on quit for now.
 

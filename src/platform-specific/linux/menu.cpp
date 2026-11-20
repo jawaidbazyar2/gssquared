@@ -323,6 +323,16 @@ static void build_menu_bar()
             end_menu();
         }
 
+        if (begin_menu("Debug")) {
+            bool trace_on = mi->getCpuTrace();
+            if (ImGui::MenuItem("CPU Trace", nullptr, trace_on))
+                mi->toggleCpuTrace();
+            bool save_trace = mi->getSaveTraceOnExit();
+            if (ImGui::MenuItem("Write Trace File on Exit", nullptr, save_trace))
+                mi->toggleSaveTraceOnExit();
+            end_menu();
+        }
+
         ImGui::Separator();
 
         // Sleep / Busy Wait — available regardless of running state

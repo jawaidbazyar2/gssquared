@@ -692,7 +692,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             const uint32_t ago = bridge_arg0_;
             const uint32_t want = bridge_arg1_;
             system_trace_buffer *tb = computer->cpu->trace_buffer;
-            const uint32_t available = static_cast<uint32_t>(tb->count);
+            const uint32_t available = static_cast<uint32_t>(tb->count());
             uint32_t returned = 0;
             if (ago < available && want > 0) {
                 const uint32_t max_from_ago = available - ago;
@@ -702,16 +702,14 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             std::memcpy(bridge_reply_.data() + 0, &available, 4);
             std::memcpy(bridge_reply_.data() + 4, &returned, 4);
             if (returned > 0) {
-                const size_t sz = tb->size;
-                size_t idx = (tb->head + sz - static_cast<size_t>(ago) - static_cast<size_t>(returned)) % sz;
+                const size_t mask = tb->mask;
+                size_t idx = static_cast<size_t>(
+                    tb->head - static_cast<uint64_t>(ago) - static_cast<uint64_t>(returned)) & mask;
                 uint8_t *out = bridge_reply_.data() + 8;
                 for (uint32_t i = 0; i < returned; ++i) {
                     std::memcpy(out + static_cast<size_t>(i) * kTraceEntrySize,
                                 &tb->entries[idx], kTraceEntrySize);
-                    idx++;
-                    if (idx >= sz) {
-                        idx = 0;
-                    }
+                    idx = (idx + 1) & mask;
                 }
             }
         }

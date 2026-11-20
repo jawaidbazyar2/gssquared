@@ -220,7 +220,7 @@ struct cpu_state {
     /* WDM ($42) operand dispatch — 256 handlers keyed by signature byte */
     wdm_handler_t wdm_handlers[256] = {};
 
-    cpu_state(processor_type cpu_type);
+    cpu_state(processor_type cpu_type, size_t trace_capacity = kDefaultTraceBufferCapacity);
     ~cpu_state();
 
     void set_processor(processor_type new_cpu_type);

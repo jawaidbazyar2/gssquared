@@ -22,6 +22,8 @@
 #define IDM_SETTINGS_RMB_ACCEL    804
 #define IDM_FILE_OPEN_CONFIG      805
 #define IDM_SETTINGS_PAUSE_MINIMIZED 806
+#define IDM_SETTINGS_CPU_TRACE       807
+#define IDM_SETTINGS_SAVE_TRACE_EXIT 808
 #define IDM_HELP_OPEN_DOCS        900
 #define IDM_HELP_DONATE           901
 #define IDM_HELP_CHECK_UPDATES    902
@@ -39,6 +41,7 @@ static HMENU g_speedMenu      = NULL;
 static HMENU g_controllerMenu = NULL;
 static HMENU g_joyportSelectMenu = NULL;
 static HMENU g_appleKeysMenu = NULL;
+static HMENU g_debugMenu     = NULL;
 static HMENU g_mockingboardMenu = NULL;
 static HMENU g_ayWaveformMenu = NULL;
 static HMENU g_monitorMenu    = NULL;
@@ -230,6 +233,21 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
+    if (popup == g_debugMenu) {
+        int n = GetMenuItemCount(g_debugMenu);
+        for (int i = 0; i < n; ++i) {
+            UINT id = getItemId(g_debugMenu, i);
+            if (id == IDM_SETTINGS_CPU_TRACE) {
+                setItemCheck(g_debugMenu, i, mi->getCpuTrace());
+                setItemEnable(g_debugMenu, i, true);
+            } else if (id == IDM_SETTINGS_SAVE_TRACE_EXIT) {
+                setItemCheck(g_debugMenu, i, mi->getSaveTraceOnExit());
+                setItemEnable(g_debugMenu, i, true);
+            }
+        }
+        return;
+    }
+
     if (popup == g_mockingboardMenu) {
         bool decorr_on = mi->getAudioDecorrelation();
         int n = GetMenuItemCount(g_mockingboardMenu);
@@ -325,8 +343,8 @@ static void updatePopupState(HMENU popup)
                 mii.cbSize = sizeof(mii);
                 mii.fMask  = MIIM_SUBMENU;
                 GetMenuItemInfoW(g_settingsPopup, static_cast<UINT>(i), TRUE, &mii);
-                // Apple Keys is a host preference; Speed and Game Controller need a machine.
-                bool enable = running || (mii.hSubMenu == g_appleKeysMenu);
+                // Apple Keys and Debug are host preferences; Speed, Game Controller, and Mockingboard need a machine.
+                bool enable = running || (mii.hSubMenu == g_appleKeysMenu) || (mii.hSubMenu == g_debugMenu);
                 setItemEnable(g_settingsPopup, i, enable);
             }
         }
@@ -455,6 +473,8 @@ static void dispatchCommand(UINT id)
     // Settings
     case IDM_SETTINGS_SLEEP:        mi->toggleSleepMode();         return;
     case IDM_SETTINGS_PAUSE_MINIMIZED: mi->togglePauseWhenMinimized(); return;
+    case IDM_SETTINGS_CPU_TRACE:    mi->toggleCpuTrace();          return;
+    case IDM_SETTINGS_SAVE_TRACE_EXIT: mi->toggleSaveTraceOnExit(); return;
     case IDM_SETTINGS_AUDIO_DECORR: mi->toggleAudioDecorrelation(); return;
     case IDM_SETTINGS_RMB_ACCEL:    mi->toggleRightMouseAccel();    return;
 
@@ -659,6 +679,12 @@ static void setupMenus()
     AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_appleKeysMenu), L"Apple Keys");
 
+    g_debugMenu = CreatePopupMenu();
+    AppendMenuW(g_debugMenu, MF_STRING, IDM_SETTINGS_CPU_TRACE,       L"CPU Trace");
+    AppendMenuW(g_debugMenu, MF_STRING, IDM_SETTINGS_SAVE_TRACE_EXIT, L"Write Trace File on Exit");
+    AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_debugMenu), L"Debug");
+
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_SLEEP,        L"Sleep / Busy Wait");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_PAUSE_MINIMIZED, L"Pause when Minimized");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_RMB_ACCEL,    L"Right Mouse Button Accelerate");
@@ -734,6 +760,8 @@ void initMenu(SDL_Window *window)
     g_settingsPopup  = NULL;
     g_speedMenu      = NULL;
     g_controllerMenu = NULL;
+    g_appleKeysMenu  = NULL;
+    g_debugMenu      = NULL;
     g_monitorMenu    = NULL;
     g_helpPopup      = NULL;
     g_driveKeys.clear();
