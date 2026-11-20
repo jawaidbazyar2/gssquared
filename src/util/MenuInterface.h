@@ -45,6 +45,7 @@ public:
 	void toggleSleepMode();
 	void togglePauseWhenMinimized();
 	void toggleAudioDecorrelation();
+	void setAyWaveform(int waveform);
 	void toggleRightMouseAccel();
 	void toggleCrtShader();
 	void toggleMonoPersistence();
@@ -74,6 +75,7 @@ public:
 	bool getSleepMode();
 	bool getPauseWhenMinimized();
 	bool getAudioDecorrelation();
+	int  getAyWaveform();
 	bool getRightMouseAccel();
 	bool getCrtShader();
 	bool getCrtShaderAvailable();

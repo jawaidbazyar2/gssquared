@@ -1,11 +1,131 @@
 #pragma once
 
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 
 // Integer phase clocks for AY tone, noise, and envelope.
 // Pitch/period changes recompute the increment and leave phase (synth5).
 
 namespace ay {
+
+enum class Waveform : uint8_t {
+    Square     = 0,
+    SoftSquare = 1,
+    WarmSine   = 2,
+    Organ      = 3,
+    Sawtooth   = 4,
+    Count      = 5,
+};
+
+namespace detail {
+
+constexpr double PI = 3.1415926535897932384626433832795;
+constexpr double TWO_PI = 2.0 * PI;
+constexpr uint64_t NYQUIST_PHASE_INC = 1ULL << 31;
+
+// Fundamental amplitude of a [0, 1] square wave is 2/pi (~0.6366).
+// Additive waveforms center at 0.5 (matching square wave's DC midpoint so
+// live switching produces no DC pop) and scale to stay within 3-channel headroom.
+constexpr float SINE_FUND_AMP = static_cast<float>(2.0 / PI); // ~0.63662
+
+// 1024-step (+1 guard entry) bipolar sine lookup table in [-1.0, 1.0],
+// phase-aligned with the AY square wave:
+//   [0, pi)   -> > 0 (peak +1 at pi/2)
+//   [pi, 2pi) -> < 0 (trough -1 at 3pi/2)
+struct SineTable {
+    static constexpr uint32_t BITS = 10;
+    static constexpr uint32_t SIZE = 1U << BITS;        // 1024
+    static constexpr uint32_t SHIFT = 32 - BITS;        // 22
+    static constexpr uint32_t FRAC_MASK = (1U << SHIFT) - 1U;
+    static constexpr float INV_FRAC_SCALE = 1.0f / static_cast<float>(1U << SHIFT);
+
+    float data[SIZE + 1];
+
+    SineTable() {
+        for (uint32_t i = 0; i < SIZE; ++i) {
+            data[i] = static_cast<float>(
+                std::sin(TWO_PI * static_cast<double>(i) / static_cast<double>(SIZE)));
+        }
+        data[SIZE] = data[0];
+    }
+};
+
+inline float evalSinBipolar(uint32_t phase) {
+    static const SineTable lut;
+    const uint32_t idx = phase >> SineTable::SHIFT;
+    const float frac = static_cast<float>(phase & SineTable::FRAC_MASK) * SineTable::INV_FRAC_SCALE;
+    return lut.data[idx] + frac * (lut.data[idx + 1] - lut.data[idx]);
+}
+
+struct Harmonic {
+    uint32_t order;
+    float weight;
+};
+
+// Band-limited additive synthesis from the shared sine LUT. Each harmonic is
+// included only while order * f_tone < sample_rate / 2, preventing aliasing.
+template <size_t N>
+inline float evalAdditive(uint32_t phase, uint64_t phase_inc,
+                          const Harmonic (&harmonics)[N], float gain) {
+    float sum = 0.0f;
+    for (size_t i = 0; i < N; ++i) {
+        const uint32_t k = harmonics[i].order;
+        if (phase_inc * k < NYQUIST_PHASE_INC) {
+            sum += harmonics[i].weight * evalSinBipolar(phase * k);
+        }
+    }
+    return 0.5f + gain * sum;
+}
+
+// Warm Sine: smooth sine body with gentle 2nd & 3rd harmonics for presence.
+inline float evalWarmSine(uint32_t phase, uint64_t phase_inc) {
+    static constexpr Harmonic kHarmonics[] = {
+        { 1, 1.00f },
+        { 2, 0.25f },
+        { 3, 0.12f },
+    };
+    return evalAdditive(phase, phase_inc, kHarmonics, SINE_FUND_AMP);
+}
+
+// Organ: drawbar-style blend of fundamental + 2nd, 3rd, 4th harmonics.
+inline float evalOrgan(uint32_t phase, uint64_t phase_inc) {
+    static constexpr Harmonic kHarmonics[] = {
+        { 1, 1.00f },
+        { 2, 0.50f },
+        { 3, 0.30f },
+        { 4, 0.20f },
+    };
+    return evalAdditive(phase, phase_inc, kHarmonics, 0.56f);
+}
+
+// Soft Square: band-limited odd harmonics 1, 3, 5, 7 (Fourier series of square).
+inline float evalSoftSquare(uint32_t phase, uint64_t phase_inc) {
+    static constexpr Harmonic kHarmonics[] = {
+        { 1, 1.0f },
+        { 3, 1.0f / 3.0f },
+        { 5, 1.0f / 5.0f },
+        { 7, 1.0f / 7.0f },
+    };
+    return evalAdditive(phase, phase_inc, kHarmonics, SINE_FUND_AMP);
+}
+
+// Sawtooth: band-limited harmonics 1..8 (bright strings / harpsichord character).
+inline float evalSawtooth(uint32_t phase, uint64_t phase_inc) {
+    static constexpr Harmonic kHarmonics[] = {
+        { 1,  1.0f },
+        { 2, -1.0f / 2.0f },
+        { 3,  1.0f / 3.0f },
+        { 4, -1.0f / 4.0f },
+        { 5,  1.0f / 5.0f },
+        { 6, -1.0f / 6.0f },
+        { 7,  1.0f / 7.0f },
+        { 8, -1.0f / 8.0f },
+    };
+    return evalAdditive(phase, phase_inc, kHarmonics, 0.48f);
+}
+
+} // namespace detail
 
 class Oscillator {
 protected:
@@ -43,9 +163,13 @@ public:
 
     uint32_t getPeriod() const { return period_; }
 
+    uint32_t getPhase() const { return phase_counter_; }
+
     void resetPhase() { phase_counter_ = 0; }
 
     bool output() const { return phase_counter_ < PHASE_COUNTER_HALF; }
+
+    bool isAboveNyquist() const { return phase_increment_ >= PHASE_COUNTER_HALF; }
 
     void advance() {
         const uint64_t next = (uint64_t)phase_counter_ + phase_increment_;
@@ -65,6 +189,35 @@ public:
 
     int16_t generateSample() override {
         return step() ? 1 : 0;
+    }
+};
+
+class ToneOscillator : public Oscillator {
+public:
+    float sample(Waveform waveform) const {
+        switch (waveform) {
+            case Waveform::SoftSquare:
+                return detail::evalSoftSquare(phase_counter_, phase_increment_);
+            case Waveform::WarmSine:
+                return detail::evalWarmSine(phase_counter_, phase_increment_);
+            case Waveform::Organ:
+                return detail::evalOrgan(phase_counter_, phase_increment_);
+            case Waveform::Sawtooth:
+                return detail::evalSawtooth(phase_counter_, phase_increment_);
+            case Waveform::Square:
+            default:
+                return output() ? 1.0f : 0.0f;
+        }
+    }
+
+    float step(Waveform waveform) {
+        const float s = sample(waveform);
+        advance();
+        return s;
+    }
+
+    int16_t generateSample() override {
+        return static_cast<int16_t>(step(Waveform::Square) * 32767.0f);
     }
 };
 

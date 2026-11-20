@@ -113,8 +113,8 @@ static const float normalized_levels[16] = {
 
         struct ToneChannel {
             uint16_t period = 0;
-            ay::SquareWaveOscillator osc;
-            bool output = false;
+            ay::ToneOscillator osc;
+            float output = 0.0f;
             float volume = 0;
             bool use_envelope = false;
         };
@@ -157,7 +157,7 @@ static const float normalized_levels[16] = {
                 
                 for (int i = 0; i < 3; i++) {
                     chips[c].tone_channels[i].period = 0;
-                    chips[c].tone_channels[i].output = false;
+                    chips[c].tone_channels[i].output = 0.0f;
                     chips[c].tone_channels[i].volume = 0;
                     chips[c].tone_channels[i].use_envelope = false;
                 }
@@ -201,7 +201,7 @@ static const float normalized_levels[16] = {
                 // straight through, so stale volumes would become a DC step.
                 for (int i = 0; i < 3; i++) {
                     chips[c].tone_channels[i].period = 0;
-                    chips[c].tone_channels[i].output = false;
+                    chips[c].tone_channels[i].output = 0.0f;
                     chips[c].tone_channels[i].volume = 0;
                     chips[c].tone_channels[i].use_envelope = false;
                 }
@@ -452,11 +452,22 @@ static const float normalized_levels[16] = {
             }
         }
 
+        void setWaveform(ay::Waveform wf) {
+            waveform_ = wf;
+            if (audio_system) {
+                audio_system->set_ay_waveform(wf);
+            }
+        }
+
+        ay::Waveform getWaveform() const {
+            return audio_system ? audio_system->get_ay_waveform() : waveform_;
+        }
+
         void resetChipClocks(AY3_8910& chip) {
             for (int i = 0; i < 3; i++) {
                 chip.tone_channels[i].osc.resetPhase();
                 chip.tone_channels[i].osc.setPeriod(chip.tone_channels[i].period);
-                chip.tone_channels[i].output = false;
+                chip.tone_channels[i].output = 0.0f;
             }
             chip.noise.resetPhase();
             chip.noise.setPeriod(chip.noise_period);
@@ -559,10 +570,12 @@ static const float normalized_levels[16] = {
 
                 applyDueEvents(sample_end);
 
+                const ay::Waveform waveform = getWaveform();
+
                 for (int c = 0; c < 2; c++) {
                     AY3_8910& chip = chips[c];
                     for (int ch = 0; ch < 3; ch++) {
-                        chip.tone_channels[ch].output = chip.tone_channels[ch].osc.step();
+                        chip.tone_channels[ch].output = chip.tone_channels[ch].osc.step(waveform);
                     }
                     chip.noise_output = chip.noise.step();
                     const uint32_t env_steps = chip.envelope.step();
@@ -593,8 +606,10 @@ static const float normalized_levels[16] = {
                         if (!tone_dis && tone.period == 0) {
                             continue;
                         }
-                        bool gate = (tone.output || tone_dis) && (chip.noise_output || noise_dis);
-                        mixed_output[c] += gate ? tone.volume : 0.0f;
+                        if (chip.noise_output || noise_dis) {
+                            const float tone_level = tone_dis ? 1.0f : tone.output;
+                            mixed_output[c] += tone_level * tone.volume;
+                        }
                     }
                     
                 }
@@ -737,7 +752,8 @@ static const float normalized_levels[16] = {
         uint64_t sample_accum_ = 0;
         std::deque<RegisterEvent> pending_events;
         std::vector<float>* audio_buffer;  // Pointer to external audio buffer
-        AudioSystem *audio_system = nullptr;  // Shared audio settings (decorrelation, etc.)
+        AudioSystem *audio_system = nullptr;  // Shared audio settings (decorrelation, waveform, etc.)
+        ay::Waveform waveform_ = ay::Waveform::Square;  // Fallback when audio_system is null
         float alpha;
 
         // Mono-compatibility decorrelation delay on the R output channel.

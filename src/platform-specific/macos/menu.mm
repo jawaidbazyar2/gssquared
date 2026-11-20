@@ -119,6 +119,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleSleepMode:(id)sender;
 - (void)togglePauseWhenMinimized:(id)sender;
 - (void)toggleAudioDecorrelation:(id)sender;
+- (void)ayWaveform:(id)sender;
 - (void)toggleRightMouseAccel:(id)sender;
 - (void)controllerMode:(id)sender;
 - (void)joyportSelect:(id)sender;
@@ -208,6 +209,15 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
 		return YES;
 	}
+	if (menuItem.action == @selector(toggleAudioDecorrelation:)) {
+		[menuItem setState:getMenuInterface()->getAudioDecorrelation() ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning();
+	}
+	if (menuItem.action == @selector(ayWaveform:)) {
+		int current = getMenuInterface()->getAyWaveform();
+		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning();
+	}
 	if ([[menuItem title] isEqualToString:NSLocalizedString(@"Apple Keys", nil)]) {
 		return YES;
 	}
@@ -277,6 +287,10 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleSleepMode:(id)sender { getMenuInterface()->toggleSleepMode(); (void)sender; }
 - (void)togglePauseWhenMinimized:(id)sender { getMenuInterface()->togglePauseWhenMinimized(); (void)sender; }
 - (void)toggleAudioDecorrelation:(id)sender { getMenuInterface()->toggleAudioDecorrelation(); (void)sender; }
+- (void)ayWaveform:(id)sender {
+	NSMenuItem *item = (NSMenuItem *)sender;
+	getMenuInterface()->setAyWaveform((int)[item tag]);
+}
 - (void)toggleRightMouseAccel:(id)sender { getMenuInterface()->toggleRightMouseAccel(); (void)sender; }
 
 - (void)controllerMode:(id)sender {
@@ -352,7 +366,6 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 @end
 
 #define SETTINGS_TAG_SLEEP_MODE    1
-#define SETTINGS_TAG_AUDIO_DECORR  2
 #define SETTINGS_TAG_RMB_ACCEL     3
 #define SETTINGS_TAG_PAUSE_MINIMIZED 4
 
@@ -366,8 +379,6 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 			[item setState:getMenuInterface()->getSleepMode() ? NSControlStateValueOn : NSControlStateValueOff];
 		} else if ([item tag] == SETTINGS_TAG_PAUSE_MINIMIZED) {
 			[item setState:getMenuInterface()->getPauseWhenMinimized() ? NSControlStateValueOn : NSControlStateValueOff];
-		} else if ([item tag] == SETTINGS_TAG_AUDIO_DECORR) {
-			[item setState:getMenuInterface()->getAudioDecorrelation() ? NSControlStateValueOn : NSControlStateValueOff];
 		} else if ([item tag] == SETTINGS_TAG_RMB_ACCEL) {
 			[item setState:getMenuInterface()->getRightMouseAccel() ? NSControlStateValueOn : NSControlStateValueOff];
 		}
@@ -766,6 +777,48 @@ static void setupMenus(void) {
 	[controllerMenuItem setSubmenu:controllerMenu];
 	[settingsMenu addItem:controllerMenuItem];
 
+	NSMenu *mockingboardMenu = [[[NSMenu alloc]
+		initWithTitle:NSLocalizedString(@"Mockingboard", nil)] autorelease];
+
+	NSMenuItem *audioDecorrItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Mono Helper", nil)
+		       action:@selector(toggleAudioDecorrelation:)
+		keyEquivalent:@""] autorelease];
+	[audioDecorrItem setTarget:sMenuHandler];
+	[mockingboardMenu addItem:audioDecorrItem];
+
+	NSMenu *ayWaveformMenu = [[[NSMenu alloc]
+		initWithTitle:NSLocalizedString(@"Timbre", nil)] autorelease];
+	struct { NSString *title; NSInteger tag; } ayWaveformItems[] = {
+		{ @"Square",      0 },
+		{ @"Soft Square", 1 },
+		{ @"Warm Sine",   2 },
+		{ @"Organ",       3 },
+		{ @"Sawtooth",    4 },
+	};
+	for (auto &wf : ayWaveformItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:NSLocalizedString(wf.title, nil)
+			       action:@selector(ayWaveform:)
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:wf.tag];
+		[ayWaveformMenu addItem:item];
+	}
+	NSMenuItem *ayWaveformMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Timbre", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[ayWaveformMenuItem setSubmenu:ayWaveformMenu];
+	[mockingboardMenu addItem:ayWaveformMenuItem];
+
+	NSMenuItem *mockingboardMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Mockingboard", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[mockingboardMenuItem setSubmenu:mockingboardMenu];
+	[settingsMenu addItem:mockingboardMenuItem];
+
 	NSMenu *appleKeysMenu = [[[NSMenu alloc]
 		initWithTitle:NSLocalizedString(@"Apple Keys", nil)] autorelease];
 	struct { NSString *title; NSInteger tag; } appleKeyItems[] = {
@@ -804,14 +857,6 @@ static void setupMenus(void) {
 	[pauseMinimizedItem setTarget:sMenuHandler];
 	[pauseMinimizedItem setTag:SETTINGS_TAG_PAUSE_MINIMIZED];
 	[settingsMenu addItem:pauseMinimizedItem];
-
-	NSMenuItem *audioDecorrItem = [[[NSMenuItem alloc]
-		initWithTitle:NSLocalizedString(@"Mono Helper", nil)
-		       action:@selector(toggleAudioDecorrelation:)
-		keyEquivalent:@""] autorelease];
-	[audioDecorrItem setTarget:sMenuHandler];
-	[audioDecorrItem setTag:SETTINGS_TAG_AUDIO_DECORR];
-	[settingsMenu addItem:audioDecorrItem];
 
 	NSMenuItem *rmbAccelItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Right Mouse Button Accelerate", nil)
