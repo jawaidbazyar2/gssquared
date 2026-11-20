@@ -24,11 +24,16 @@ card = "mockingboard"
 
 Boot software that expects a Mockingboard in that slot. Drive seek sounds are separate (motherboard / floppy); Mockingboard is the AY/6522 path.
 
-**Settings → Mono Helper** decorrelates the right channel so Mockingboard stereo is easier to hear on a single speaker or a mixed-down recording. See [Menus](Menus.md).
+**Settings → Mockingboard** (while a machine is running):
+
+- **Mono Helper** decorrelates the right channel so Mockingboard stereo is easier to hear on a single speaker or a mixed-down recording.
+- **Timbre** chooses the AY waveform. **Square** is the real chip. Soft Square, Warm Sine, Organ, and Sawtooth are host-side flavors for listening, not extra hardware.
+
+A Mockingboard **C** also has an SSI-263 speech chip. GSSquared emulates it, so titles that talk through that chip can speak. No extra setting is required once the card is in a slot.
 
 There is no Sound menu and no master-volume slider. Use the host OS volume.
 
 ## Related
 
-- [Menus](Menus.md) — Mono Helper
+- [Menus](Menus.md) — Mockingboard submenu (Mono Helper, Timbre)
 - [Writing Config Files Manually](ConfigFiles.md)

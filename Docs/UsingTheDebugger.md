@@ -100,7 +100,7 @@ The `M` and `X` flag columns reflect the current accumulator/index width on the 
 
 Each traced instruction appears on one line with columns for cycle count, registers, program counter, opcode bytes (optional), mnemonic, effective address, access direction (`R`/`W`), data byte, and an optional symbol label.
 
-- **Tracing** is **on by default**. Press **T** to disable recording new entries (useful if you only care about breakpoints and want less overhead).
+- **Tracing** is **on by default**. **Settings → Debug → CPU Trace** sets the default for new sessions; press **T** in the debugger to disable recording new entries (useful if you only care about breakpoints and want less overhead).
 - Press **B** to hide or show raw opcode bytes (`B)ytes: ON/OFF` in the status line).
 - Scroll backward through up to 100,000 retained instructions.
 
@@ -239,7 +239,6 @@ For everyday software debugging, use the **Video pane** or **Static** main-windo
 
 **Speed setting matters.** Use fixed clock rates (especially 1 MHz), not Ludicrous Speed, when debugging raster effects.
 
-**Useful main-window keys:** **F2** (display engine), **F5** (scaling), **F4** (Control Panel / speed).
 
 **Beam counters** — enable the Watch pane **`display`** panel (`debug "display"`) for H/V position, soft switches, and VBL/HBL flags.
 
@@ -285,7 +284,7 @@ To save the trace buffer mid-session, run `trsave "filename"` in the Monitor pan
 
 ## External debug protocol (optional)
 
-Launch GSSquared with a Unix domain socket to allow external tools to pause, step, read memory, set breakpoints, inject keystrokes, and more — without using the debugger UI:
+Launch GSSquared with a Unix domain socket to allow external tools to pause, step, read memory, load a host file into memory (`LOADMEM` / `load_mem`), set breakpoints, inject keystrokes, and more — without using the debugger UI:
 
 ```bash
 ./build/GSSquared --debug /tmp/gs2.sock -p 3

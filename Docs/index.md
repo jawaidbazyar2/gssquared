@@ -12,7 +12,7 @@
 
 * [Using a Mouse](Mouse.md)
 
-* [Displays](Displays.md)
+* [Displays](Displays.md) — Composite, GS Composite, RGB, mono, Shadow Mask, phosphor persistence
 
 * [Storage & Disks](Storage.md)
 
@@ -22,7 +22,7 @@
 
 * [Joysticks](Joysticks.md)
 
-* [Serial & Parallel Connections](SerialConnections.md)
+* [Serial & Parallel Connections](SerialConnections.md) — File, Printer, Net Printer, Modem, clipboard, host serial
 
 * [Serial / Modem](Serial_Modem.md)
 
@@ -46,7 +46,7 @@ Slot cards and how to use them:
 
 * [Uthernet II](Cards_UthernetII.md) — Ethernet / TCP/IP
 
-* [Super Serial Card](Cards_SuperSerial.md) — serial port: modem, file, clipboard, or host serial port
+* [Super Serial Card](Cards_SuperSerial.md) — serial port: modem, file, Printer, Net Printer, clipboard, or host serial port
 
 * [Apple Mouse III](Cards_AppleMouse.md) — mouse card for //e
 
@@ -56,7 +56,9 @@ Slot cards and how to use them:
 
 * [Second Sight](Cards_SecondSight.md) — IIgs VGA path and Second Sight Text
 
-* [Mockingboard](Cards_Mockingboard.md) — AY/6522 sound
+* [Mockingboard](Cards_Mockingboard.md) — AY/6522 sound, timbres, Mockingboard C speech
+
+* [RamWorks](Cards_RamWorks.md) — 8MB auxiliary RAM on //e (Aux slot)
 
 * [Videx VideoTerm](Cards_Videx.md) — 80-column text for II / II+
 

@@ -76,6 +76,14 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
       * Center
       * Right
     * Disconnected When No Gamepad
+  * Mockingboard
+    * Mono Helper
+    * Timbre
+      * Square
+      * Soft Square
+      * Warm Sine
+      * Organ
+      * Sawtooth
   * Apple Keys
     * Command = Open Apple
     * Alt = Open Apple
@@ -84,7 +92,7 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
     * CPU Trace
     * Write Trace File on Exit
   * Sleep / Busy Wait
-  * Mono Helper
+  * Pause when Minimized
   * Right Mouse Button Accelerate
 
 **Speed** sets the host CPU throttle. **Ludicrous / Unlimited** (video still runs at about 1 MHz so speaker, Ensoniq, and disks keep working) is not in this submenu — use **F9**, the Control Panel speed row, or the hover speed button. See [On-Screen Display](OSD.md) and [Command Line](CommandLine.md).
@@ -93,15 +101,17 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
 
 **Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
 
+**Mockingboard** is available while a machine is running. **Mono Helper** decorrelates the right channel so certain Mockingboard sounds don't interfere with each other. **Timbre** chooses the "voice": **Square** is the default; the others (Soft Square, Warm Sine, Organ, Sawtooth) are "reimaginings" of Mockingboard sound. See [Mockingboard](Cards_Mockingboard.md).
+
 **Apple Keys** chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See [Using a Keyboard](KeyboardShortcuts.md).
 
 **Debug → CPU Trace** enables or disables CPU instruction trace recording into the ring buffer (on by default). Toggling it here updates the live machine (if running) and saves the default in `system_settings.toml` (`debug.cpu_trace`). You can still toggle tracing temporarily inside the debugger window with **T**.
 
 **Debug → Write Trace File on Exit** controls whether `gssquared-trace.bin` is written to your documents folder when closing emulation or exiting (off by default, stored in `system_settings.toml` as `debug.save_trace_on_exit`).
 
-**Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag.
+**Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag. When the emulator and debugger windows are both unfocused, GSSquared sleeps between frames anyway, so an idle window does not spin the host CPU.
 
-**Mono Helper** widens Mockingboard stereo (decorrelates the right channel) so it is easier to hear on a mono speaker or mixed-down recording. Available whether or not a machine is running. See [Mockingboard](Cards_Mockingboard.md).
+**Pause when Minimized** — when checked, the guest pauses while the main window is minimized (dock / taskbar). A focused debugger window still counts as being in the app. Off by default; stored in `system_settings.toml`.
 
 **Right Mouse Button Accelerate** — hold the right mouse button to run at a faster CPU speed (same idea as the INS accelerate path). See [Using a Mouse](Mouse.md).
 
@@ -111,22 +121,32 @@ Drive seek/activity sounds play in stereo (drive 1 toward the left, drive 2 towa
   * Monitor
     * Composite
     * GS RGB
+    * GS Composite
     * Monochrome - Green
     * Monochrome - Amber
     * Monochrome - White
+  * Scaling
+    * Smooth
+    * Sharp
   * HUD
     * Stats
     * Drives
   * Full Screen
   * Second Sight Text
-  * CRT Shader
+  * Shadow Mask
+  * Phosphor Persistence
 
 **HUD → Stats** toggles the small performance/stats overlay (off by default).  
 **HUD → Drives** toggles the drive-activity strip at the bottom of the screen (on by default).  
 Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.
 
+**GS Composite** (IIgs only) shows IIgs RGB through a composite encoder, like a real GS on an AppleColor composite monitor. **F2** skips it on II / //e. See [Displays](Displays.md).
+
+**Scaling → Smooth / Sharp** is how Apple II dots are upscaled to the window (**F5** toggles). Smooth is a little more analog; Sharp is square pixels.
+
 **Second Sight Text** (IIgs with a Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).  
-**CRT Shader** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. See [Displays](Displays.md).
+**Shadow Mask** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. Same as the [`-g`](CommandLine.md) flag at boot.  
+**Phosphor Persistence** keeps a short glow on green / amber / white monitors. On by default when the GPU decoder is available. See [Displays](Displays.md).
 
 Hover speed and display widgets appear automatically when the mouse is over the window and is not captured. There is no Hover Enable menu item. See [On-Screen Display](OSD.md).
 

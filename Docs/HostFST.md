@@ -19,8 +19,8 @@ You only need to do this once per GS/OS boot volume (or after you rebuild that S
 ## Choose the host-side folder
 
 1. With the IIgs running, press **F4** (or open the Control Panel tab).
-2. Click **Host Folder…**.
-3. Pick the folder on your Mac / PC / Linux machine that you want GS/OS to see as `:Host`.
+2. In the **Serial / Parallel** row, find the **Host Folder** card.
+3. Click the pencil on that card and pick the folder on your Mac / PC / Linux machine that you want GS/OS to see as `:Host`.
 
 If you never pick a folder, GSSquared shares your **Documents** folder. The choice is remembered in app settings.
 
@@ -34,7 +34,7 @@ After the FST is installed and loaded, the shared folder appears in the GS/OS Fi
 
 - Requires an **Apple IIgs** platform and **GS/OS** (not plain ProDOS 8 on a //e).
 - On **Windows**, Host FST stores ProDOS type/auxtype, Finder info, and resource forks in NTFS Alternate Data Streams (`:AFP_AfpInfo` and `:AFP_Resource`, the same convention as CiderPress and Services for Macintosh). Use an **NTFS** folder; FAT/exFAT and some network shares will not keep that metadata.
-- The **Host Folder…** picker is not available in the [GSSquared Live!](Web.md).
+- The **Host Folder** picker is not available in the [GSSquared Live!](Web.md).
 - Mount Drivers only supplies the installer disk; you use it to install the drivers/FST on each bootable GS/OS volume you use.
 
 ## Related
