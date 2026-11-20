@@ -101,7 +101,7 @@ struct system_trace_buffer {
         return &entries[index & mask];
     }
 
-    void save_to_file(const std::string &filename);
+    bool save_to_file(const std::string &filename);
 
     void read_from_file(const std::string &filename);
 

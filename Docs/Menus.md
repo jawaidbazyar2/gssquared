@@ -140,7 +140,7 @@ See [Using the Debugger](UsingTheDebugger.md) for the full guide (panes, monitor
   * **Settings → Debug → CPU Trace** — enable/disable instruction trace recording (on by default)
   * **Settings → Debug → Write Trace File on Exit** — save `gssquared-trace.bin` in your documents folder on exit (off by default)
 
-Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor commands (`sload`, `sclear`, `slookup`) and the automatic trace save on quit for now.
+Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor commands (`trsave`, `sload`, `sclear`, `slookup`) and the automatic trace save on quit for now.
 
 ### Docs
   * Check For Updates

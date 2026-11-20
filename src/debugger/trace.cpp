@@ -211,12 +211,16 @@ system_trace_buffer::~system_trace_buffer() {
     }
 }
 
-void system_trace_buffer::save_to_file(const std::string &filename) {
+bool system_trace_buffer::save_to_file(const std::string &filename) {
     size_t n = count();
     size_t start = tail_index();
     printf("Saving trace to file: %s\n", filename.c_str());
     printf("Head: %zu, Tail: %zu, Count: %zu, Size: %zu\n", head_index(), start, n, size);
     std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        fprintf(stderr, "Warning: Could not open trace file for writing: %s\n", filename.c_str());
+        return false;
+    }
     if (n > 0) {
         size_t first = n < (size - start) ? n : (size - start);
         file.write(reinterpret_cast<const char *>(&entries[start]),
@@ -228,6 +232,7 @@ void system_trace_buffer::save_to_file(const std::string &filename) {
         }
     }
     file.close();
+    return static_cast<bool>(file);
 }
 
 void system_trace_buffer::read_from_file(const std::string &filename) {
