@@ -3331,14 +3331,14 @@
 <h2 id="play-in-the-browser">Play in the browser<a class="headerlink" href="#play-in-the-browser" title="Permanent link">&para;</a></h2>
 <p>No install: the same emulator runs at <a href="https://gssquared.net/live">gssquared.net/live</a>.</p>
 <hr />
-<p>This release is about looking and sounding like the machine on your desk. Composite video moves onto the GPU, so NTSC color is both faster and closer to an AppleColor monitor. An Apple IIgs can show <strong>GS Composite</strong> — the IIgs RGB picture put through a composite encoder, the way a real GS looks on a composite display. Green, amber, and white monitors keep a phosphor glow. Mockingboard music is in tune, you can pick a timbre, and Mockingboard C can speak. A //e can take <strong>8 MB of RamWorks</strong> memory. Serial ports can send a print job to a network printer or to a printer app on this computer. The window is gentler on the host when you look away: it sleeps when unfocused, and it can pause when minimized.</p>
+<p>This release is about looking and sounding like the machine on your desk. Composite video moves onto the GPU, so NTSC color is both faster and closer to an AppleColor monitor. An Apple IIgs can show <strong>GS Composite</strong> — the IIgs RGB picture put through a composite encoder, the way a real GS looks on a composite display. Green, amber, and white monitors keep a phosphor glow. Mockingboard music is in tune, you can pick a timbre, and now has Speech synthesis. A //e can have an <strong>8 MB RamWorks</strong> card. Serial ports can send a print job to a network printer or to a printer app on your computer. The window is gentler on the host when you look away: it uses less of your computer's CPU when it's not the top window, and it can pause when minimized.</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
-<p><strong>Faster, sharper composite.</strong> NTSC and monochrome pictures are decoded on the GPU when your computer has one (macOS Metal, Windows D3D12, Linux Vulkan). The same picture still works in the browser and on machines without that GPU path.</p>
+<p><strong>Faster, sharper composite.</strong> NTSC and monochrome pictures are rendered with a GPU when your computer has one (macOS Metal, Windows D3D12, Linux Vulkan), especially on a high-DPI display like an Apple Retina. The GPU improves rendering performance by 200%. The existing code is unchanged if you don't have a GPU.</p>
 </li>
 <li>
-<p><strong>GS Composite.</strong> On an Apple IIgs, <strong>Display → Monitor → GS Composite</strong> shows the IIgs RGB output as composite color, like a real GS on an AppleColor screen. <strong>F2</strong> cycles through the engines; this one is skipped on II / //e. Choose it from the Display menu (the hover color buttons do not include it yet).</p>
+<p><strong>GS Composite.</strong> If you have a GPU, an emulated Apple IIgs, <strong>Display → Monitor → GS Composite</strong> shows the IIgs RGB output as composite color, like a real GS on an AppleColor screen. <strong>F2</strong> cycles through the engines; this one is skipped on II / //e. Choose it from the Display menu (the hover color buttons do not include it yet).</p>
 </li>
 <li>
 <p><strong>Phosphor persistence.</strong> Green, amber, and white monitors keep a short glow from the previous frame. <strong>Display → Phosphor Persistence</strong> turns it off. It is on by default when the GPU decoder is in use.</p>
@@ -3350,25 +3350,22 @@
 <p><strong>RamWorks.</strong> On a //e, //e Enhanced, or 65816 //e, put <strong>RamWorks</strong> in the <strong>Aux</strong> slot (slot 0 in a <code>.gs2</code>). That is a fixed <strong>8 MB</strong> of extra auxiliary RAM (128 banks of 64K). Software that talks to <code>$C073</code> can use it as a RAM disk; the screen still comes from the first 64K of auxiliary memory. It is not the Slinky Memory Expansion card (that one stays in slots 1–7).</p>
 </li>
 <li>
-<p><strong>Mockingboard in tune, and speech.</strong> Music that writes tones or envelopes to the AY chips plays at the right pitch. Samples poked into the volume registers work. <strong>Settings → Mockingboard → Timbre</strong> chooses Square (the real chip), Soft Square, Warm Sine, Organ, or Sawtooth. <strong>Mono Helper</strong> lives in that same submenu. A Mockingboard C also speaks (SSI-263), so titles that used the speech chip can talk.</p>
+<p><strong>Dramatic Mockingboard fidelity improvements, and speech.</strong> Programs that use the "volume control trick" to play samples, now work. (E.g. DigiDream) <strong>Settings → Mockingboard → Timbre</strong> chooses Square (default), Soft Square, Warm Sine, Organ, or Sawtooth. Now also supports speech synthesis (SSI-263 chip).</p>
 </li>
 <li>
-<p><strong>IIgs volume.</strong> The Ensoniq sound chip follows the IIgs system volume (<code>$C03C</code>). Loud titles are closer to a real GS. If the host audio queue fills up, a frame is dropped instead of stretching.</p>
+<p><strong>Printer on serial.</strong> On a Super Serial Card or a IIgs serial port, attach <strong>Printer</strong>. On Mac and Windows, GSSquared now works with a companion app GS2Print, that provides Color ImageWriter II -&gt; PDF generation. See https://github.com/jawaidbazyar2/gs2print</p>
 </li>
 <li>
-<p><strong>Printer on serial.</strong> On a Super Serial Card or a IIgs serial port, attach <strong>Printer</strong>. Output is still saved to a file. On Mac, Windows, and Linux, GSSquared also opens a printer ticket for a companion app if you have one; replies such as the ImageWriter identity come back to the Apple. There is still no built-in ImageWriter drawing inside GSSquared, and the parallel card is still file or clipboard only.</p>
+<p><strong>Net Printer.</strong> Serial ports can attach <strong>Net Printer</strong>: type a host and TCP port (often 9100). Bytes go out as a raw TCP stream, the way a JetDirect-style port works, so if you have a PCL compatible printer, you can print directly to it from GS/OS and IIe PCL drivers.</p>
 </li>
 <li>
-<p><strong>Net Printer.</strong> The same serial ports can attach <strong>Net Printer</strong>: type a host and TCP port (often 9100). Bytes go out as a raw TCP stream, the way a JetDirect-style port works. The connection opens on the first printed byte and closes after a minute idle. Not in the browser.</p>
-</li>
-<li>
-<p><strong>Connections panel.</strong> Serial, parallel, Net Printer, and (on a IIgs) the Host Folder share one Control Panel row of cards. Click the pencil on <strong>Host Folder</strong> to pick the folder GS/OS sees as <code>:Host</code>.</p>
+<p><strong>Connections panel.</strong> Serial, parallel, Net Printer, and (on a IIgs) the Host Folder configuration uses nice new UI widgets. Click the pencil on <strong>Host Folder</strong> to pick the folder GS/OS sees as <code>:Host</code>.</p>
 </li>
 <li>
 <p><strong>Pause when minimized.</strong> <strong>Settings → Pause when Minimized</strong> (off by default) freezes the Apple while the window is in the dock or taskbar. The debugger window still counts as “you are here.” When you switch to another app, GSSquared sleeps between frames so it uses less CPU, even if Sleep / Busy Wait is off. The screen saver is allowed unless a machine is running and the window is focused.</p>
 </li>
 <li>
-<p><strong>A newer version, if there is one.</strong> At System Select, a <strong>Click to get new version</strong> button appears under + / Launch / Edit when this desktop build is behind the latest release. It opens the same updates page as <strong>Docs → Check For Updates</strong>. Nothing is installed for you. The browser player does not show the button.</p>
+<p><strong>A newer version, if there is one.</strong> When GSSquared starts, you will be notified when a new version of GSSquared is available. A button will appear which opens the same updates page as <strong>Docs → Check For Updates</strong>.</p>
 </li>
 <li>
 <p><strong>Save in the config editor.</strong> <strong>Save</strong> writes over the <code>.gs2</code> you are editing. <strong>Save As</strong> asks for a new name (and a new machine identity on a IIgs). Right-click a recent machine tile — or Cmd-click / Alt-click — to edit it.</p>
@@ -3388,26 +3385,29 @@
 <li>
 <p>On a IIgs, ROMBANK is implemented, language-card banks sit in the right places, and shadowing of auxiliary hi-res only happens when hi-res is actually on. Ludicrous speed is a bit faster because the memory map uses lookup tables.</p>
 </li>
-<li>
-<p>GS/OS printing to the IIgs printer port no longer hangs waiting for a transmit interrupt that never stayed pending.</p>
-</li>
-<li>
-<p>Mounting a partitioned CD (APM) no longer marks your other hard-disk images write-protected.</p>
-</li>
-<li>
-<p>Inbound modem listen on Windows starts correctly, so a telnet client can ring the guest.</p>
-</li>
 </ul>
 <h2 id="bug-fixes">Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
-<p>After you leave System Select, the Apple picture is sized from the real window pixels, so a resized or Retina window does not show a stale letterbox.</p>
+<p>GS/OS printing to the IIgs printer port no longer hangs waiting for a transmit interrupt that never stayed pending.</p>
+</li>
+<li>
+<p><strong>IIgs volume.</strong> The Ensoniq sound chip follows the IIgs system volume (<code>$C03C</code>). Loud titles are closer to a real GS. If the host audio queue fills up, a frame is dropped instead of stretching.</p>
+</li>
+<li>
+<p>If you resized the System Select windows, emulation display is now sized/scaled correctly.</p>
 </li>
 <li>
 <p>Debug builds label the window <strong>[debug]</strong> so you can tell them from a release build.</p>
 </li>
 <li>
 <p>The debugger can save the instruction trace with <strong><code>trsave</code></strong>, and <strong>Settings → Debug</strong> chooses whether tracing starts on and whether a trace file is written when you leave the machine.</p>
+</li>
+<li>
+<p>Mounting a partitioned CD (APM) no longer marks your other hard-disk images write-protected.</p>
+</li>
+<li>
+<p>Inbound modem listen on Windows starts correctly, so a telnet client can ring the guest.</p>
 </li>
 </ul>
 

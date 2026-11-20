@@ -1007,6 +1007,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ramworks-ramworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RamWorks (ramworks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#thunderclock-plus-thunder_clock" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4359,6 +4370,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ramworks-ramworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RamWorks (ramworks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#thunderclock-plus-thunder_clock" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5008,7 +5030,7 @@
 </tr>
 <tr>
 <td><code>start.cli-crt-boot</code></td>
-<td>CLI: <code>-g</code> CRT shader at boot</td>
+<td>CLI: <code>-g</code> Shadow Mask at boot</td>
 <td>Complete</td>
 <td>all</td>
 <td>Native GPU</td>
@@ -5345,7 +5367,7 @@
 <td>—</td>
 <td>CPU usage changes</td>
 <td>cli</td>
-<td><code>-s</code></td>
+<td><code>-s</code>; also sleeps when unfocused</td>
 </tr>
 <tr>
 <td><code>workflow.settings.gamepad-mode</code></td>
@@ -5395,7 +5417,27 @@
 <td>—</td>
 <td>Menu toggle</td>
 <td>manual</td>
-<td>Settings → Mono Helper; <a href="../Menus/">Menus.md</a></td>
+<td>Settings → Mockingboard → Mono Helper; <a href="../Menus/">Menus.md</a></td>
+</tr>
+<tr>
+<td><code>workflow.settings.mb-timbre</code></td>
+<td>Mockingboard Timbre</td>
+<td>Complete</td>
+<td>all</td>
+<td>Running + card</td>
+<td>Square / Soft Square / Warm Sine / Organ / Sawtooth</td>
+<td>manual</td>
+<td>Settings → Mockingboard → Timbre</td>
+</tr>
+<tr>
+<td><code>workflow.settings.pause-minimized</code></td>
+<td>Pause when Minimized</td>
+<td>Complete</td>
+<td>macOS, win, linux</td>
+<td>—</td>
+<td>Guest frozen while window minimized</td>
+<td>manual</td>
+<td>Off by default</td>
 </tr>
 <tr>
 <td><code>workflow.settings.rmb-accel</code></td>
@@ -5440,9 +5482,9 @@
 <td>Complete</td>
 <td>all</td>
 <td>—</td>
-<td>Composite/RGB/mono</td>
+<td>Composite/RGB/mono/GS Composite</td>
 <td>manual</td>
-<td></td>
+<td>GS Composite skipped on II / IIe</td>
 </tr>
 <tr>
 <td><code>input.shortcut.f3-fullscreen</code></td>
@@ -5466,7 +5508,7 @@
 </tr>
 <tr>
 <td><code>input.shortcut.f5-ntsc-mode</code></td>
-<td>F5 pixel-blur vs rectangular</td>
+<td>F5 Smooth vs Sharp scaling</td>
 <td>Complete</td>
 <td>all</td>
 <td>—</td>
@@ -5496,13 +5538,13 @@
 </tr>
 <tr>
 <td><code>input.shortcut.f7-crt</code></td>
-<td>F7 CRT shader</td>
+<td>F7 Shadow Mask</td>
 <td>Complete</td>
 <td>all</td>
-<td>—</td>
+<td>GPU shader</td>
 <td>Shader toggles</td>
 <td>manual</td>
-<td></td>
+<td>Display → Shadow Mask; <code>-g</code> at boot</td>
 </tr>
 <tr>
 <td><code>input.shortcut.f9-speed</code></td>
@@ -5582,6 +5624,36 @@
 <td></td>
 </tr>
 <tr>
+<td><code>display.engine.gs-composite</code></td>
+<td>GS Composite monitor</td>
+<td>Complete</td>
+<td>all</td>
+<td>IIgs</td>
+<td>Menu / F2</td>
+<td>manual</td>
+<td>RGB through composite encoder; <a href="../Displays/">Displays.md</a></td>
+</tr>
+<tr>
+<td><code>display.scaling</code></td>
+<td>Smooth / Sharp scaling</td>
+<td>Complete</td>
+<td>all</td>
+<td>—</td>
+<td>F5 / Display → Scaling</td>
+<td>manual</td>
+<td></td>
+</tr>
+<tr>
+<td><code>display.phosphor</code></td>
+<td>Phosphor persistence</td>
+<td>Complete</td>
+<td>all</td>
+<td>GPU decoder</td>
+<td>Display → Phosphor Persistence</td>
+<td>manual</td>
+<td>Mono green/amber/white; on by default</td>
+</tr>
+<tr>
 <td><code>display.hud.stats</code></td>
 <td>HUD → Stats overlay</td>
 <td>Complete</td>
@@ -5623,13 +5695,13 @@
 </tr>
 <tr>
 <td><code>display.crt-shader</code></td>
-<td>CRT GPU shader</td>
+<td>Shadow Mask (CRT GPU)</td>
 <td>Complete</td>
 <td>all</td>
-<td>Native GL/D3D12</td>
+<td>Native GPU</td>
 <td>F7 toggles</td>
 <td>cli</td>
-<td><code>-g</code> at boot; <a href="../Displays/">Displays.md</a></td>
+<td><code>-g</code> at boot; Display → Shadow Mask; <a href="../Displays/">Displays.md</a></td>
 </tr>
 <tr>
 <td><code>display.hover-controls</code></td>
@@ -5716,7 +5788,7 @@
 <td>Mockingboard</td>
 <td>Wider stereo image</td>
 <td>manual</td>
-<td>Settings → Mono Helper</td>
+<td>Settings → Mockingboard → Mono Helper</td>
 </tr>
 </tbody>
 </table>
@@ -5818,19 +5890,19 @@
 <td>Complete</td>
 <td>all</td>
 <td>Ports present</td>
-<td>File/modem/clipboard/serial/netprinter</td>
+<td>File/Printer/modem/clipboard/serial/netprinter</td>
 <td>manual</td>
 <td><a href="../SerialConnections/">SerialConnections.md</a></td>
 </tr>
 <tr>
 <td><code>workflow.osd.host-folder</code></td>
-<td>Host Folder… (Host FST)</td>
+<td>Host Folder card (Host FST)</td>
 <td>Complete</td>
 <td>macOS, win, linux</td>
 <td>IIgs running</td>
 <td><code>:Host</code> path changes</td>
 <td>manual</td>
-<td>Not on web</td>
+<td>Pencil on connections row; not on web</td>
 </tr>
 <tr>
 <td><code>workflow.osd.slot-view</code></td>
@@ -6188,6 +6260,26 @@
 <td>Strip bit 7; CR→LF</td>
 </tr>
 <tr>
+<td><code>conn.printer</code></td>
+<td>Serial → Printer (file + gs2print ticket)</td>
+<td>Complete</td>
+<td>macOS, win, linux</td>
+<td>SSC or IIgs SCC</td>
+<td>Dump file; sidecar if installed</td>
+<td>manual</td>
+<td>Parallel has no Printer; no in-app ImageWriter</td>
+</tr>
+<tr>
+<td><code>conn.netprinter</code></td>
+<td>Serial → raw TCP printer</td>
+<td>Complete</td>
+<td>macOS, win, linux</td>
+<td>SSC or IIgs SCC</td>
+<td>Host:port under button</td>
+<td>manual</td>
+<td><a href="../SerialConnections/">SerialConnections.md</a>; not on web</td>
+</tr>
+<tr>
 <td><code>conn.modem</code></td>
 <td>Hayes modem (SCC / SSC)</td>
 <td>Complete</td>
@@ -6229,7 +6321,7 @@
 </tr>
 </tbody>
 </table>
-<p><code>.gs2</code> <code>[[connections]]</code>: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>clipboard</code>, <code>serial</code>, <code>none</code> — <a href="../SystemConfigTOML/">SystemConfigTOML.md</a>.</p>
+<p><code>.gs2</code> <code>[[connections]]</code>: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>clipboard</code>, <code>serial</code>, <code>printer</code>, <code>netprinter</code>, <code>none</code> — <a href="../SystemConfigTOML/">SystemConfigTOML.md</a>.</p>
 <hr />
 <h2 id="audio-emulator-angles">Audio (emulator angles)<a class="headerlink" href="#audio-emulator-angles" title="Permanent link">&para;</a></h2>
 <table>
@@ -6274,7 +6366,7 @@
 <td>Card(s)</td>
 <td>mb-audit; games</td>
 <td>manual</td>
-<td><a href="../Cards_Mockingboard/">Cards_Mockingboard.md</a></td>
+<td><a href="../Cards_Mockingboard/">Cards_Mockingboard.md</a>; SSI-263 speech on Mockingboard C</td>
 </tr>
 <tr>
 <td><code>audio.ensoniq-stereo</code></td>
@@ -6424,13 +6516,13 @@
 </tr>
 <tr>
 <td><code>debug.protocol.mem-regs</code></td>
-<td>READMEM / WRITEMEM / GET_REGS</td>
+<td>READMEM / WRITEMEM / GET_REGS / LOADMEM</td>
 <td>Complete</td>
 <td>macOS, linux, win</td>
 <td>Socket</td>
 <td>Bytes match</td>
 <td>debug-socket</td>
-<td></td>
+<td><code>load_mem</code> loads a host file</td>
 </tr>
 <tr>
 <td><code>debug.protocol.breakpoints</code></td>
@@ -6572,8 +6664,18 @@
 <td>Compiled out</td>
 </tr>
 <tr>
+<td><code>web.no-netprinter</code></td>
+<td>No Net Printer / gs2print</td>
+<td>Complete</td>
+<td>web</td>
+<td>—</td>
+<td>Attachments absent</td>
+<td>manual</td>
+<td>File capture still works</td>
+</tr>
+<tr>
 <td><code>web.no-host-fst-picker</code></td>
-<td>No Host Folder…</td>
+<td>No Host Folder card</td>
 <td>Complete</td>
 <td>web</td>
 <td>—</td>
@@ -6834,6 +6936,34 @@
 </tr>
 </tbody>
 </table>
+<h3 id="ramworks-ramworks">RamWorks (<code>ramworks</code>)<a class="headerlink" href="#ramworks-ramworks" title="Permanent link">&para;</a></h3>
+<p>8MB auxiliary RAM on the IIe family. Slot 0 is labeled <strong>Aux</strong> in the editor. Not the Slinky card.</p>
+<table>
+<thead>
+<tr>
+<th><code>id</code></th>
+<th>feature</th>
+<th>status</th>
+<th>hosts</th>
+<th>preconditions</th>
+<th>verify</th>
+<th>automation</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>device.ramworks.8mb</code></td>
+<td>8MB aux banks (128 × 64K)</td>
+<td>Complete</td>
+<td>all</td>
+<td>IIe family, slot 0</td>
+<td><code>$C073</code> bank; video stays AUX 0</td>
+<td>manual</td>
+<td><a href="../Cards_RamWorks/">Cards_RamWorks.md</a></td>
+</tr>
+</tbody>
+</table>
 <h3 id="thunderclock-plus-thunder_clock">Thunderclock Plus (<code>thunder_clock</code>)<a class="headerlink" href="#thunderclock-plus-thunder_clock" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -6949,7 +7079,27 @@
 <td>Card</td>
 <td>Wider stereo</td>
 <td>manual</td>
-<td>Settings → Mono Helper</td>
+<td>Settings → Mockingboard → Mono Helper</td>
+</tr>
+<tr>
+<td><code>device.mockingboard.timbre</code></td>
+<td>AY timbre</td>
+<td>Complete</td>
+<td>all</td>
+<td>Card</td>
+<td>Settings → Mockingboard → Timbre</td>
+<td>manual</td>
+<td>Square is hardware; others are host flavors</td>
+</tr>
+<tr>
+<td><code>device.mockingboard.speech</code></td>
+<td>Mockingboard C SSI-263 speech</td>
+<td>Complete</td>
+<td>all</td>
+<td>Card</td>
+<td>Speech titles talk</td>
+<td>manual</td>
+<td>No extra setting</td>
 </tr>
 </tbody>
 </table>
@@ -7202,13 +7352,13 @@
 </tr>
 <tr>
 <td><code>device.hostfst.pick-folder</code></td>
-<td>Host Folder…</td>
+<td>Host Folder card</td>
 <td>Complete</td>
 <td>macOS, win, linux</td>
 <td>IIgs running</td>
 <td>Finder shows <code>:Host</code></td>
 <td>manual</td>
-<td>Default: Documents</td>
+<td>Pencil on Control Panel connections row; default: Documents</td>
 </tr>
 <tr>
 <td><code>device.hostfst.windows-ads</code></td>
@@ -7239,13 +7389,13 @@
 <tbody>
 <tr>
 <td><code>device.display.engines</code></td>
-<td>NTSC / RGB / mono engines</td>
+<td>NTSC / RGB / GS Composite / mono engines</td>
 <td>Complete</td>
 <td>all</td>
 <td>—</td>
 <td>Menu switch</td>
 <td>manual</td>
-<td>Not a slot card</td>
+<td>GS Composite is IIgs-only; not a slot card</td>
 </tr>
 <tr>
 <td><code>device.display.scanner-pal</code></td>

@@ -4147,7 +4147,7 @@
 </ul>
 <p>The <code>M</code> and <code>X</code> flag columns reflect the current accumulator/index width on the 65816.</p>
 <h3 id="instruction-log">Instruction log<a class="headerlink" href="#instruction-log" title="Permanent link">&para;</a></h3>
-<p>Each traced instruction appears on one line with columns for cycle count, registers, program counter, opcode bytes (optional), mnemonic, effective address, access direction (<code>R</code>/<code>W</code>), data byte, and an optional symbol label. <code>COP</code>, <code>BRK</code>, and <code>WDM</code> show the signature byte that follows the opcode.</p>
+<p>Each traced instruction appears on one line with columns for cycle count, registers, program counter, opcode bytes (optional), mnemonic, effective address, access direction (<code>R</code>/<code>W</code>), data byte, and an optional symbol label.</p>
 <ul>
 <li><strong>Tracing</strong> is <strong>on by default</strong>. <strong>Settings → Debug → CPU Trace</strong> sets the default for new sessions; press <strong>T</strong> in the debugger to disable recording new entries (useful if you only care about breakpoints and want less overhead).</li>
 <li>Press <strong>B</strong> to hide or show raw opcode bytes (<code>B)ytes: ON/OFF</code> in the status line).</li>
@@ -4514,7 +4514,6 @@ al C010 .Loop
 </table>
 <p>For everyday software debugging, use the <strong>Video pane</strong> or <strong>Static</strong> main-window mode. For cycle-timed graphics, switch the main window to <strong>Beam</strong> and step at <strong>1 MHz</strong> — a red crosshair marks the scanner position on the guest picture.</p>
 <p><strong>Speed setting matters.</strong> Use fixed clock rates (especially 1 MHz), not Ludicrous Speed, when debugging raster effects.</p>
-<p><strong>Useful main-window keys:</strong> <strong>F2</strong> (display engine, including GS Composite on a IIgs), <strong>F5</strong> (Smooth / Sharp scaling), <strong>F4</strong> (Control Panel / speed), <strong>F7</strong> (Shadow Mask).</p>
 <p><strong>Beam counters</strong> — enable the Watch pane <strong><code>display</code></strong> panel (<code>debug "display"</code>) for H/V position, soft switches, and VBL/HBL flags.</p>
 <hr />
 <h2 id="typical-workflows">Typical workflows<a class="headerlink" href="#typical-workflows" title="Permanent link">&para;</a></h2>
