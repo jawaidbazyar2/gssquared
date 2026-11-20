@@ -191,7 +191,7 @@ cmake --build build
 cmake --build build --target appimage
 ```
 
-Creates a .appimage package in the build/ directory that contains all the pieces you need.
+Creates `gssquared-<version>-Linux.AppImage` in the `build/` directory (same `gssquared-<version>-<platform>` pattern as the macOS DMG and Windows zip).
 
 ## Windows
 

@@ -1458,6 +1458,9 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             list(APPEND APPIMAGE_DEPENDS ${LINUXDEPLOY_APPIMAGE})
         endif()
 
+        # Match CPack names on the other platforms: gssquared-<version>-<system>.<ext>
+        set(GS2_APPIMAGE_FILENAME "gssquared-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}.AppImage")
+
         # Create AppImage target
         add_custom_target(appimage
             # Clean and create AppDir
@@ -1477,17 +1480,22 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             # Use PNG icon (256x256) for better file manager support
             # LD_LIBRARY_PATH must include build lib dir and AppDir lib dir so linuxdeploy
             # can resolve vendored SDL3 dependencies (libSDL3_ttf -> libSDL3) when running ldd
+            # LDAI_OUTPUT / LINUXDEPLOY_OUTPUT_* set the package filename (not GSSquared-x86_64.AppImage)
             COMMAND ${CMAKE_COMMAND} -E env
                     LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:${APPIMAGE_APPDIR}/usr/${CMAKE_INSTALL_LIBDIR}:$ENV{LD_LIBRARY_PATH}
+                    LINUXDEPLOY_OUTPUT_APP_NAME=gssquared
+                    LINUXDEPLOY_OUTPUT_VERSION=${PROJECT_VERSION}
+                    LDAI_OUTPUT=${GS2_APPIMAGE_FILENAME}
                     ${LINUXDEPLOY_EXECUTABLE}
                     --appdir ${APPIMAGE_APPDIR}
                     --executable ${APPIMAGE_APPDIR}/usr/bin/GSSquared
                     --desktop-file ${APPIMAGE_APPDIR}/usr/share/applications/GSSquared.desktop
                     --icon-file ${APPIMAGE_APPDIR}/usr/share/icons/hicolor/256x256/apps/GSSquared.png
                     --output appimage
+            COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_BINARY_DIR}/GSSquared-x86_64.AppImage
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             DEPENDS ${APPIMAGE_DEPENDS}
-            COMMENT "Creating AppImage with linuxdeploy"
+            COMMENT "Creating AppImage ${GS2_APPIMAGE_FILENAME}"
         )
 
         message(STATUS "AppImage target available: cmake --build build --target appimage")
