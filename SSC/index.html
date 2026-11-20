@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3337,7 +3365,7 @@ card = &quot;super_serial&quot;
 <tr>
 <td>DIPSW1</td>
 <td><code>$EF</code></td>
-<td>9600 baud, Communications mode</td>
+<td>9600 baud, SIC P8A (SW1-5 OFF, SW1-6 OFF)</td>
 </tr>
 <tr>
 <td>DIPSW2</td>
@@ -3352,9 +3380,11 @@ card = &quot;super_serial&quot;
 <li>DIPSW2: <code>S1 Z S2 Z S3 S4 S5 CTS</code></li>
 </ul>
 <p>SW2-6 (IRQ enable to the slot) is a hardware gate not present in the DIPSW2 read byte; v1 leaves it enabled.</p>
+<p><code>$EF</code> is SIC P8A, not communications mode. SW1-5 and SW1-6 are the low two bits of DIPSW1 (<code>S5</code> then <code>S6</code>; ON reads as 0). P8A is both OFF, so firmware sends ETX (<code>$83</code>) and waits for ACK. A File attachment leaves this default, which is why a <code>PR#</code> capture can be only <code>$83</code>.</p>
+<p>A Printer attachment (<code>device = "printer"</code>) keeps the baud bits and sets the mode bits to SIC P8 (SW1-5 ON, SW1-6 OFF), so DIPSW1 is <code>$ED</code>. Firmware skips ETX/ACK. Switching away from Printer restores <code>$EF</code>. The capture file is otherwise the same as File, except the raw dump stays open for 60 seconds of idle instead of 10. See <a href="../PrinterEmulation/">PrinterEmulation.md</a>. <strong>Net Printer</strong> (<code>device = "netprinter"</code>) uses the same SIC P8 switch change and the same 60-second idle close, with no capture file. See <a href="../NetPrinter/">NetPrinter.md</a>.</p>
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <p>Main emu thread: MMU handlers, 6551 registers, baud-timed TX/RX via <code>EventTimer</code>, slot IRQ via <code>InterruptController</code>.</p>
-<p>Child thread: <code>FileDevice</code> / <code>ModemDevice</code> / <code>SerialPortDevice</code> — bytes and line settings on SPSC <code>SerialQueue</code> (<code>q_host</code> / <code>q_dev</code>); CD/CTS/DSR on <code>SerialDevice::modem_inputs</code>.</p>
+<p>Child thread: <code>FileDevice</code> / <code>ModemDevice</code> / <code>SerialPortDevice</code> / <code>NetPrinterDevice</code> — bytes and line settings on SPSC <code>SerialQueue</code> (<code>q_host</code> / <code>q_dev</code>); CD/CTS/DSR on <code>SerialDevice::modem_inputs</code>.</p>
 <p>Handshake policy (device + cabling) is in <a href="../SerialPortSpec/">SerialPortSpec.md</a>. File/clipboard keep CD/CTS/DSR asserted. Modem CD follows the TCP session. Host serial passes through live CD/CTS/DSR. Guest → host DTR/RTS is still a follow-up.</p>
 
 

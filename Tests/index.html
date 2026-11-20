@@ -687,6 +687,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#vidmodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vidmodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memstate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MemState
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cpu" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2331,6 +2353,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3349,6 +3399,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#vidmodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vidmodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memstate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MemState
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cpu" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3400,7 +3472,7 @@
 <p>Summary:
 At this time there are no known issues with 65C02 or 65816 emulation; N6502 lacks support for the "undocumented opcodes".</p>
 <p>IIgs needs support for PAL timing and 14/16MHz mode switching effects;
-NTSC/PAL colorburst handling needs improvement; </p>
+AppleColor composite colorburst latency matches hardware for the usual VIDSYNC phases (known gaps on issue #217 turn-on line and phase 3 turn-off); </p>
 <p>IIgs IWM needs work.</p>
 <p>With the exception of the N6502 above, this is cosmetic and none causes software to crash. </p>
 <h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
@@ -3534,11 +3606,45 @@ NTSC/PAL colorburst handling needs improvement; </p>
 <td>✅</td>
 <td>Copy-protected 3.5" disk title, runs correctly</td>
 </tr>
+<tr>
+<td><a href="https://github.com/hasseily/apple2gs-tests">MMUProbe</a></td>
+<td>IIgs</td>
+<td>✅</td>
+<td>Rikkles (Hasseily) Test of various IIgs MMU behaviors</td>
+</tr>
 </tbody>
 </table>
 <h2 id="arekkusu">Arekkusu<a class="headerlink" href="#arekkusu" title="Permanent link">&para;</a></h2>
 <p>This series of tests deserves its own section because they are so intricate and thorough.</p>
 <h3 id="switches">Switches<a class="headerlink" href="#switches" title="Permanent link">&para;</a></h3>
+<p><a href="https://github.com/mamedev/mame/pull/15247">Vidmodes/Switches</a></p>
+<table>
+<thead>
+<tr>
+<th>Platforms</th>
+<th>Pass/Fail</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>II+</td>
+<td>✅❌</td>
+<td></td>
+</tr>
+<tr>
+<td>IIe</td>
+<td>✅❌</td>
+<td></td>
+</tr>
+<tr>
+<td>IIgs</td>
+<td>✅❌</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="vidmodes">Vidmodes<a class="headerlink" href="#vidmodes" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -3567,8 +3673,33 @@ NTSC/PAL colorburst handling needs improvement; </p>
 </table>
 <p>Generally speaking, GS2 is:</p>
 <p>[ ] Doing it about half right</p>
-<p>[ ] not correctly reflecting colorburst hold latency. We are determining colorburst per scanline based on the video mode at start of scanline. real monitors hold colorburst for some period via a PLL even after II stops sending colorburst.</p>
-<p>[ ] not switching character widths quite right (e.g. when switching from 40 to 80, latency in the switch interacting with the video shift registers )</p>
+<p>[x] AppleColor composite monitor colorburst latency (issues #217, #223). The IIe emits burst on horz 13-16 (Sather clocks 53-56) when graphics is selected. The monitor's burst gate only sees the last two of those cycles (horz 15-16). It integrates burst energy: each line adds the number of gated cycles (0-2), and lines without burst bleed it off. Full burst: color on the 13th line, held 131 lines after burst stops (through VBL). VIDSYNC phase 0 (graphics through horz 14) never shows color. Phase 1 (one gated cycle on a 32-line box) turns color on at box line ~25 and off ~14 lines after the box. Phases 2-4 (two gated cycles) turn color on at box line ~13 and off ~40 lines after the box. Hardware shows unstable color near the switch points; we switch cleanly. Known gaps: on hardware #217 turns color on at line 7, not 13, and phase 3 turns color off later than phase 2.</p>
+<p>not switching character widths quite right (e.g. when switching from 40 to 80, latency in the switch interacting with the video shift registers).</p>
+<p>On IIe, the issue is that 80 col output is shifted to the left 7 pixels compared to 40 col, and we are only adjusting for this at start of scanline; we need to adjust any time there is a switch from 80 to 40 or vice-versa.</p>
+<h3 id="memstate">MemState<a class="headerlink" href="#memstate" title="Permanent link">&para;</a></h3>
+<p>Latest version of this is at :</p>
+<p><a href="https://github.com/mamedev/mame/pull/15803">Memstate</a></p>
+<table>
+<thead>
+<tr>
+<th>Platforms</th>
+<th>Pass/Fail</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IIe</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>IIgs</td>
+<td>✅</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 <h3 id="cpu">CPU<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

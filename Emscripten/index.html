@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3226,6 +3254,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Run it">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hosts-that-cannot-send-headers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hosts that cannot send headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3311,9 +3356,11 @@ mkdir -p &quot;$EM_CACHE&quot;
 <p>(If you use the official <code>emsdk</code> instead, <code>source /path/to/emsdk/emsdk_env.sh</code>
 and you can skip the <code>EM_CACHE</code> step.)</p>
 <h2 id="configure-and-build">Configure and build<a class="headerlink" href="#configure-and-build" title="Permanent link">&para;</a></h2>
-<pre><code class="language-bash">emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
+<pre><code class="language-bash">emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DGS2_WEB_DEBUG=OFF
 cmake --build build-web --target GSSquared -j
 </code></pre>
+<p><code>GS2_WEB_DEBUG</code> defaults to <code>ON</code> and enables diagnostic symbols and runtime
+assertions. Set it to <code>OFF</code> as above for the release build.</p>
 <p>This produces, in <code>build-web/</code>:</p>
 <ul>
 <li><code>GSSquared.html</code>  – the page (generated from <code>assets/web/shell.html</code>)</li>
@@ -3333,6 +3380,14 @@ Cross-Origin-Embedder-Policy: require-corp
 </code></pre>
 <p>Opening <code>GSSquared.html</code> directly from <code>file://</code> will <strong>not</strong> work (no headers,
 and WASM fetch is blocked). Always serve over HTTP with the headers above.</p>
+<h3 id="hosts-that-cannot-send-headers">Hosts that cannot send headers<a class="headerlink" href="#hosts-that-cannot-send-headers" title="Permanent link">&para;</a></h3>
+<p>Static hosts such as GitHub Pages cannot send the headers. Serve the page over
+HTTPS with <code>isolation-worker.js</code> (copied into the build directory) beside it.
+When the page is not isolated, it registers that service worker and loads once
+more; the worker adds the headers of <code>live.htaccess</code> to every same-origin
+response. Later visits go through the worker from the start. When the server
+sends the headers itself, the page never registers the worker. Without HTTPS
+(or <code>localhost</code>) the page shows a message and does not start.</p>
 <h2 id="deploying-to-gssquarednetlive">Deploying to gssquared.net/live<a class="headerlink" href="#deploying-to-gssquarednetlive" title="Permanent link">&para;</a></h2>
 <pre><code class="language-bash">scripts/deploy-web.sh              # builds, then rsyncs to the server
 scripts/deploy-web.sh --dry-run    # show what would be uploaded

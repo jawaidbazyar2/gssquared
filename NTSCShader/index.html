@@ -1,0 +1,4555 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Packed Bitstream and GPU NTSC Decoder (design) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#packed-bitstream-and-gpu-ntsc-decoder-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Packed Bitstream and GPU NTSC Decoder (design)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Cards_UthernetII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Suites
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CommandLine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BlankFloppy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blank Disk Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HostFST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host FST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SerialConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial & Parallel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Serial_Modem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial / Modem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Play in the Browser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigFiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gs2Pack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS2 Packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProtocolHandlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File Types & URLs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UsingTheDebugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_UthernetII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Uthernet II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SuperSerial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Super Serial Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VOC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Overlay Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SecondSight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Second Sight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard (user)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Videx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Videx VideoTerm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VIDHD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VIDHD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-pipeline-composite-and-monochrome-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current pipeline (composite and monochrome engines)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#display-geometry-shared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Display geometry (shared)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packed-line-layout-shared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packed line layout (shared)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-packed-bitstream-from-the-generator-cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: packed bitstream from the generator (CPU)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: packed bitstream from the generator (CPU)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cpu-decoder-ntsc560" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPU decoder (NTSC560)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monochrome-engine-monochrome560" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monochrome engine (Monochrome560)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitor-color-tint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitor color (tint)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interface-and-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interface and scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-gpu-decoder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: GPU decoder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: GPU decoder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-as-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 as built
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-cpu-decode-computes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the CPU decode computes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-uploaded-per-frame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data uploaded per frame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monochrome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monochrome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shader
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fallback-and-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fallback and overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-iigs-composite-as-an-rgb-to-composite-encoder-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: IIgs composite as an RGB-to-composite encoder (design)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: IIgs composite as an RGB-to-composite encoder (design)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-as-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 as built
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#display-option" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Display option
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-line-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-line information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monocolor-c021" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MONOCOLOR ($C021)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integration_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-cycle-accurate-iigs-video-switches-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: cycle-accurate IIgs video switches (design notes)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-crt-glow-halation-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: CRT glow / halation (design notes)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 5: CRT glow / halation (design notes)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-parked-attempt-did-and-why-it-looked-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the parked attempt did, and why it looked wrong
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="packed-bitstream-and-gpu-ntsc-decoder-design">Packed Bitstream and GPU NTSC Decoder (design)<a class="headerlink" href="#packed-bitstream-and-gpu-ntsc-decoder-design" title="Permanent link">&para;</a></h1>
+<p>Status: phase 1 implemented (all platforms). Phase 2 implemented for macOS /
+Metal only; Windows (DXIL) and Linux (SPIR-V) builds of the shader are not made
+yet, so those hosts use the phase 1 CPU decoders. See "Phase 2 as built" for
+where the implementation differs from the design below. Phase 3 (IIgs composite
+from the RGB stream through a modeled encoder chip) is implemented for macOS /
+Metal; see "Phase 3 as built". Phase 4 lists follow-ups for cycle-accurate IIgs
+video switches.</p>
+<h2 id="goal">Goal<a class="headerlink" href="#goal" title="Permanent link">&para;</a></h2>
+<p>Speed up the legacy Apple II video path (composite and monochrome monitor
+engines) in two phases:</p>
+<ul>
+<li><strong>Phase 1: packed bitstream (CPU).</strong> <code>VideoScanGenerator_Comp</code> emits packed
+  bits instead of one byte per dot. <code>NTSC560</code> and <code>Monochrome560</code> read the
+  packed bits. This helps every platform, including the ones that cannot use
+  phase 2 (web build, hosts without Metal / D3D12 / Vulkan, software rendering).</li>
+<li><strong>Phase 2: GPU decoder.</strong> A fragment shader replaces <code>NTSC560::render</code> and
+  <code>Monochrome560::render</code> when the SDL GPU renderer is active. The phase 1
+  buffer is uploaded as-is (~15 KB) instead of the full 910×263 RGBA texture
+  (957 KB).</li>
+</ul>
+<p>Phase 1 stands on its own and is a prerequisite for phase 2. The packed layout
+and the display geometry below are shared by both.</p>
+<p>Out of scope: the RGB monitor engine (<code>VideoScanGenerator_RGB</code>, including the
+IIgs RGB path) and IIgs super hi-res. They do not produce the 560-dot bitstream;
+they write colors straight into <code>frame_vsg</code>.</p>
+<h2 id="current-pipeline-composite-and-monochrome-engines">Current pipeline (composite and monochrome engines)<a class="headerlink" href="#current-pipeline-composite-and-monochrome-engines" title="Permanent link">&para;</a></h2>
+<ol>
+<li><code>VideoScanner*::video_cycle()</code> pushes one <code>Scan_t</code> per video cycle into <code>ScanBuffer</code>.</li>
+<li><code>VideoScanGenerator_Comp::generate_frame()</code> turns the scans into <code>Frame560</code>.
+   That is a 560×192 bitstream, one byte (0/1) per dot, plus a per-line
+   <code>color_mode_t</code> (colorburst, phase_offset). Mixed mode is already resolved here.</li>
+<li><code>NTSC560::render()</code> (or <code>Monochrome560::render()</code>) converts each line to RGBA
+   and writes it into <code>frame_vsg</code>, a 910×263 streaming <code>SDL_Texture</code>, at row
+   <code>y+35</code>, starting at column <code>168 - 7*shift_enabled</code>. <code>NTSC560</code> rebuilds a
+   15-bit window from the bytes with a shift register and looks it up in <code>g_hgr_LUT</code>.</li>
+<li><code>update_display_apple2_cycle()</code> locks and unlocks <code>frame_vsg</code> around step 2-3.
+   That uploads the whole texture. It then calls <code>render_frame()</code>, which draws it
+   into <code>scene_target</code> (when the CRT shader is on) or the swapchain.</li>
+<li><code>present_scene()</code> runs the CRT post-process shader over <code>scene_target</code>.</li>
+</ol>
+<p>Measured on Apple Silicon: step 3 takes ~50 µs/frame after the local-pointer
+rewrite (~135 µs before). Step 2 has the same per-dot pattern (each of the 14
+dots per screen byte is a separate store that reloads the frame's row pointer
+and position). The texture lock/upload in step 4 has not been measured. On a
+Raspberry Pi 4 class CPU, all of these are expected to be several times larger.</p>
+<p>The byte-per-dot <code>Frame560</code> is 107 KB per frame. That is cache-resident, so
+memory bandwidth is not the cost. The cost is instruction count: 14 stores per
+screen byte in step 2, then one load and a shift-register step per dot in step 3.</p>
+<h2 id="display-geometry-shared">Display geometry (shared)<a class="headerlink" href="#display-geometry-shared" title="Permanent link">&para;</a></h2>
+<p>Each line is 560 dots, but the visible display area is not always 560 dots
+wide. It depends on the platform:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Display area</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IIe, IIe PAL</td>
+<td><strong>567 dots</strong>, columns 161..727</td>
+<td>80-column modes start half a 1 MHz cycle (7 dots) earlier than 40-column modes</td>
+</tr>
+<tr>
+<td>II, II Plus</td>
+<td>560 dots, columns 168..727</td>
+<td>no 80-column modes, so every line is a 40-column line</td>
+</tr>
+<tr>
+<td>IIgs</td>
+<td>560 dots, columns 168..727</td>
+<td>legacy modes are generated differently; no half-cycle offset (<code>shift_enabled</code> is false)</td>
+</tr>
+</tbody>
+</table>
+<p>On the IIe, the 80-column modes (TEXT80, DLORES, DHIRES; <code>phase_offset == 1</code>)
+occupy columns 161..720. The 40-column modes (TEXT40, LORES, LORES_7M, HIRES,
+HIRES_NOSHIFT; <code>phase_offset == 0</code>) occupy 168..727. <strong>The output region must be
+the full 567 columns.</strong> Clipping it to 560 loses real output: either the first 7
+dots of every 80-column line or the last 7 dots of every 40-column line. Mixed
+screens (e.g. 80-column text under graphics) show both offsets in one frame.</p>
+<p>Both phases work in <strong>display coordinates</strong>, with one per-platform value <code>shift</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th><code>shift</code></th>
+<th>Region (texture columns)</th>
+<th>Width</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IIe, IIe PAL</td>
+<td>7</td>
+<td>161..727</td>
+<td>567</td>
+</tr>
+<tr>
+<td>II, II Plus</td>
+<td>0</td>
+<td>168..727</td>
+<td>560</td>
+</tr>
+<tr>
+<td>IIgs</td>
+<td>0</td>
+<td>168..727</td>
+<td>560</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Region: columns <code>[168 - shift, 168 + 560)</code>, rows <code>[35, 35+192)</code> of the
+  910×263 frame texture. Display column <code>c</code> is 0-based within the region.</li>
+<li>Each line occupies dots <code>[line_start, line_start + 560)</code>, where
+  <code>line_start = (shift == 7 &amp;&amp; phase_offset == 0) ? 7 : 0</code>. On the IIe,
+  40-column lines start at 7 and 80-column lines at 0. On II Plus and IIgs every
+  line starts at 0.</li>
+<li>The color phase follows the original dot position:
+  <code>p = (c - line_start + phase_offset) &amp; 3</code>. On the IIe that is <code>(c + 1) &amp; 3</code>
+  for <strong>every</strong> line, because the half-cycle shift is a real timing offset and
+  the colorburst phase follows time. On the IIgs, with no shift, it is
+  <code>(c + phase_offset) &amp; 3</code>, so 80-column lines keep their phase offset without
+  moving.</li>
+<li>Dots outside the line are 0. That matches <code>dot(j)</code> outside <code>[0, 560)</code> in the
+  decode formula below, so decoding needs no special edge handling.</li>
+<li><strong>Padding columns</strong> are the 7 columns of a IIe line outside its 560 dots. The
+  CPU decoder paints them pure black. A decoder working in display coordinates
+  could instead compute the filter's tail there: a faint smear from the nearest
+  lit dots, closer to a real monitor. Phase 2 makes this a uniform
+  (<code>black_padding</code>).</li>
+<li>Lines with colorburst off output white or black per dot (no filtering).
+  Padding dots are 0, so no extra check is needed.</li>
+<li><code>phase_offset</code> is per line, latched from the first data scan of the line. A
+  40/80-column switch partway through a line is not shifted mid-line. This is
+  the current behavior and neither phase changes it.</li>
+</ul>
+<p>The CPU path currently has <code>shift_enabled</code> on for II / II Plus too. Their lines
+are all 40-column, so columns 161..167 are always black and the visible output
+is the same. Turn <code>shift_enabled</code> off for II / II Plus in phase 1, as the IIgs
+already does in <code>display.cpp</code>, so <code>shift</code> means the same thing everywhere. That
+gives the same pixels.</p>
+<h2 id="packed-line-layout-shared">Packed line layout (shared)<a class="headerlink" href="#packed-line-layout-shared" title="Permanent link">&para;</a></h2>
+<p>One frame is 192 lines × 19 little-endian <code>uint32_t</code> words (14,592 bytes):</p>
+<ul>
+<li>Words 0..17 hold dots in display coordinates: dot <code>c</code> is bit <code>c &amp; 31</code> of word
+  <code>c &gt;&gt; 5</code>. Bit 0 of word 0 is the leftmost dot. 18 words are 576 dots, enough
+  for the 567-dot IIe line; dots past the line are 0.</li>
+<li>Word 18 holds the line's mode: byte 0 = colorburst, byte 1 = phase_offset,
+  byte 2 = line_start, byte 3 = 0.</li>
+</ul>
+<p>This is byte-for-byte the phase 2 upload format. As an <code>SDL_PIXELFORMAT_RGBA32</code>
+texture, byte 0 of each word is R, so the layout is identical on all
+little-endian hosts (x86, ARM, wasm). It replaces both <code>Frame560</code>'s byte rows
+and its per-line <code>line_mode</code> array.</p>
+<h2 id="phase-1-packed-bitstream-from-the-generator-cpu">Phase 1: packed bitstream from the generator (CPU)<a class="headerlink" href="#phase-1-packed-bitstream-from-the-generator-cpu" title="Permanent link">&para;</a></h2>
+<h3 id="generator">Generator<a class="headerlink" href="#generator" title="Permanent link">&para;</a></h3>
+<p><code>VideoScanGenerator_Comp</code> replaces <code>frame_byte</code> (a <code>Frame560</code>) with a packed
+frame (<code>FrameBits</code>, the layout above). Per line it keeps a 64-bit accumulator
+and a bit count:</p>
+<pre><code>line start (first data scan of the line, where set_color_mode is called today):
+    write word 18 (colorburst, phase_offset, line_start)
+    acc = 0; nbits = line_start; word = 0
+
+emit14(pattern):                      // bit 0 = leftmost dot
+    acc |= (uint64_t)pattern &lt;&lt; nbits
+    nbits += 14
+    if nbits &gt;= 32 and word &lt; 18:
+        words[word++] = (uint32_t)acc
+        acc &gt;&gt;= 32; nbits -= 32
+
+line end (HSYNC, VSYNC):
+    flush the partial word if nbits &gt; 0 and word &lt; 18
+</code></pre>
+<ul>
+<li>At HSYNC, clear the next line's 19 words before writing it, so lines that
+  receive no data scans are blank rather than stale. That is cheap (19 words).</li>
+<li>Writes past word 17, and lines ≥ 192, are dropped. Today an extra data scan
+  would overrun into the next <code>Frame560</code> row; this makes it bounded.</li>
+<li>Every mode reduces to one 14-bit pattern per data scan. Bit order matches the
+  order the current code pushes dots:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>14-bit pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TEXT40</td>
+<td>the 7 character-ROM bits (after flash/inverse), each doubled: <code>dbl7[cdata &amp; 0x7F]</code> (128-entry table)</td>
+</tr>
+<tr>
+<td>TEXT80</td>
+<td><code>aux7 \| main7 &lt;&lt; 7</code>, from the aux and main character-ROM bits</td>
+</tr>
+<tr>
+<td>LORES</td>
+<td><code>lores14[nibble][hcount &amp; 1]</code> (16×2 table). The current per-dot rotation starts at <code>(hcount * 14) % 4</code>, which is 0 or 2</td>
+</tr>
+<tr>
+<td>LORES_7M</td>
+<td><code>lores7m[nibble][hcount &amp; 1]</code>: 7 rotated bits, each doubled</td>
+</tr>
+<tr>
+<td>DLORES</td>
+<td><code>lo7[aux_nibble][hcount &amp; 1] \| lo7[main_nibble][hcount &amp; 1] &lt;&lt; 7</code> (both halves start at the same rotation, as today)</td>
+</tr>
+<tr>
+<td>HIRES, HIRES_NOSHIFT</td>
+<td><code>hires14[byte \| (lastByte &amp; 0x40) &lt;&lt; 2]</code> (512-entry table, built the same way as <code>hires40Font</code>; <code>color_delay_mask</code> applied first, as today)</td>
+</tr>
+<tr>
+<td>DHIRES</td>
+<td><code>(aux &amp; 0x7F) \| (main &amp; 0x7F) &lt;&lt; 7</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each case becomes a table lookup and one <code>emit14</code>, instead of 14 byte stores.
+The tables replace <code>hires40Font</code> and are built once in the constructor.</p>
+<h3 id="cpu-decoder-ntsc560">CPU decoder (<code>NTSC560</code>)<a class="headerlink" href="#cpu-decoder-ntsc560" title="Permanent link">&para;</a></h3>
+<p><code>render()</code> takes the packed frame instead of <code>Frame560</code>. For each line it
+copies the 18 dot words into a local buffer with zero guard words on both sides,
+so windows at the line edges read zeros. Then, for each display column <code>c</code> in
+the region:</p>
+<pre><code>window = 15 bits of the line starting at dot c - 7     // bit k = dot c - 7 + k
+p      = (c - line_start + phase_offset) &amp; 3
+out    = g_hgr_LUT[p][window]                           // same LUT as today
+</code></pre>
+<ul>
+<li>The window is one unaligned 64-bit read from the local buffer, a shift and a
+  mask. There is no loop-carried shift register, so pixels are independent.
+  That removes the dependency chain that limits the current loop.</li>
+<li>The window's bit order is the LUT's index order (bit 0 = offset -7), so
+  <code>g_hgr_LUT</code> is used unchanged.</li>
+<li>Padding columns are written black, as today.</li>
+<li>Colorburst-off lines write white or black per dot, from the words directly.</li>
+</ul>
+<h3 id="monochrome-engine-monochrome560">Monochrome engine (<code>Monochrome560</code>)<a class="headerlink" href="#monochrome-engine-monochrome560" title="Permanent link">&para;</a></h3>
+<p>Same input, every line treated as colorburst off. It can expand 8 dots per
+lookup (byte → 8 pixels).</p>
+<p>Both CPU renderers write mono dots as <strong>white</strong>. The monitor color is applied
+afterwards (see "Monitor color (tint)").</p>
+<h3 id="monitor-color-tint">Monitor color (tint)<a class="headerlink" href="#monitor-color-tint" title="Permanent link">&para;</a></h3>
+<p>The green / amber / white monitor color is applied after decoding, as a
+multiply on the frame texture with <code>SDL_SetTextureColorMod</code>:</p>
+<ul>
+<li><code>update_display_apple2_cycle()</code> already picks the engine once per frame. Right
+  before <code>render_frame()</code>, it sets the texture's color multiply to
+  <code>vs-&gt;get_mono_color()</code> for <code>DM_ENGINE_MONO</code>. For every other engine it sets
+  white (255, 255, 255), so no tint is left over after an engine switch.</li>
+<li>White × tint gives exactly the tint and black stays black, so the output is
+  identical to drawing <code>mono_color</code> directly.</li>
+<li>It works the same on the CPU path (<code>frame_vsg</code>), on the GPU decoder path
+  (<code>frame_ntsc</code>, phase 2), and on the classic renderer, with no extra pass.</li>
+<li><code>Render::mono_color</code> and <code>set_mono_color()</code> go away.</li>
+<li>The tint is texture state, so anything that draws the frame texture again
+  (e.g. the screenshot path through <code>screencap_texture</code>) gets it too.</li>
+</ul>
+<p>A multiply is enough because mono output is only black and white. A future mono
+monitor that shows a <em>color</em> signal as brightness (including the fine stripe
+patterns from color graphics) needs a color-to-brightness conversion first. That
+belongs in its own stage in the shader pipeline: after the decode, before the
+CRT stage. That stage would convert to brightness, then tint, and would replace
+the color multiply on the GPU path. The classic renderer would keep the multiply.</p>
+<p>The IIgs DHGR mono mode (<code>dhgr_mono_mode</code>) needs nothing extra, because the
+generator already clears colorburst for those lines.</p>
+<h3 id="interface-and-scope">Interface and scope<a class="headerlink" href="#interface-and-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>Render::render</code> takes the packed frame instead of <code>Frame560*</code>. The only
+  active implementations are <code>NTSC560</code> and <code>Monochrome560</code>.</li>
+<li><code>GSRGB560</code> is not compiled today (its include in <code>display.hpp</code> is commented
+  out). The old <code>VideoScanGenerator.cpp</code> keeps its own <code>Frame560</code> use. Neither
+  needs changes, but <code>GSRGB560</code> would need updating if it is revived.</li>
+<li><code>Frame560</code> stays for those legacy users.</li>
+</ul>
+<h3 id="phase-1-verification">Phase 1 verification<a class="headerlink" href="#phase-1-verification" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Old vs new output:</strong> render the same scan streams through the current
+  pipeline (byte frame → <code>NTSC560</code> / <code>Monochrome560</code>) and the new one, and
+  compare the full 910×263 output. They must be identical. Cover every mode
+  (TEXT40 with flash and inverse, TEXT80, LORES, LORES_7M, DLORES, HIRES with
+  and without the delay bit, HIRES_NOSHIFT, DHIRES), mixed mode, and IIe screens
+  mixing 40- and 80-column lines. Run both engines.</li>
+<li><strong>Geometry:</strong> on the IIe, confirm columns 161..167 carry 80-column output and
+  721..727 carry 40-column output, with neither clipped. On II Plus and IIgs,
+  output stays in 168..727.</li>
+<li><strong>Bounds:</strong> a line with more than 40 data scans does not write past word 17
+  or into the next line.</li>
+<li><strong>Tint:</strong> switch monochrome → composite → RGB → monochrome while running.
+  Composite and RGB must show no leftover tint, and screenshots must include the
+  tint in monochrome.</li>
+<li><strong>Timing:</strong> <code>generate_frame</code> and <code>render</code> before and after, standalone and via
+  <code>display_times</code> (already measured in <code>gs2.cpp</code>), on macOS and a Raspberry Pi.</li>
+</ul>
+<h2 id="phase-2-gpu-decoder">Phase 2: GPU decoder<a class="headerlink" href="#phase-2-gpu-decoder" title="Permanent link">&para;</a></h2>
+<p>Move the decode into a fragment shader when the SDL GPU renderer is active,
+i.e. when <code>video_system_t::gpu_device</code> is non-null. The classic renderer keeps
+the phase 1 CPU decoders.</p>
+<h3 id="phase-2-as-built">Phase 2 as built<a class="headerlink" href="#phase-2-as-built" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Shader source and build.</strong> <code>assets/shaders/ntsc.frag.hlsl</code> is SDL3-convention
+  HLSL (same register spaces and PSInput as <code>crt.frag.hlsl</code>).
+  <code>scripts/compile_shaders_macos.sh</code> compiles it HLSL → SPIR-V (glslang) → MSL
+  (spirv-cross) and writes the committed <code>ntsc.frag.metal</code>. <code>scripts/compile_crt_shader.sh</code>
+  compiles the same HLSL to <code>ntsc.frag.dxil</code> and <code>ntsc.frag.spv</code> (and the same
+  for <code>gscomposite</code>). The HLSL already uses the post-shadercross interpolant
+  semantics, so the script calls DXC directly. Without those blobs, Windows and
+  Linux fall back to the CPU decoders automatically.</li>
+<li><strong>YIQ weights plus matrix, not <code>Wrgb</code>.</strong> The uniforms are the YIQ weights
+  <code>w[phase][tap]</code> (60 <code>float4</code>) and the decoder matrix rows <code>m[3]</code>. The shader
+  sums YIQ over the lit taps in the same order as the CPU, then applies <code>m</code>,
+  then truncates. Folding <code>M</code> into the weights (the <code>Wrgb</code> form below) is
+  mathematically equal but rounds differently. With the CPU's order, the GPU
+  output on Apple Silicon matches the CPU bit for bit (vsgtest: 0 pixels off by
+  one). The uniform block is 1024 bytes:
+  <code>float4 w[60]; float4 m[3]; float2 region_origin; uint black_padding; uint force_mono;</code>.</li>
+<li><strong>Weights are rebuilt every frame</strong> (<code>build_ntsc_gpu_weights()</code> in
+  <code>ntsc.cpp</code>, from <code>config</code>). It is 60 small entries, so hue / saturation /
+  filter hotkeys take effect on the next frame with no hook into
+  <code>init_hgr_LUT()</code>. The 512 KB LUT is still built because the CPU decoders
+  remain the fallback.</li>
+<li><strong>Pieces.</strong> <code>GpuFragmentPass</code> (<code>src/display/shaders/</code>) owns a fragment
+  shader plus its <code>SDL_GPURenderState</code>, and picks <code>.metal</code> / <code>.dxil</code> / <code>.spv</code> by
+  device format. The CRT post-process now uses it too (<code>video_system_t::crt_pass</code>);
+  later post-process stages can reuse it. <code>NtscGpu</code> (<code>src/display/NtscGpu.*</code>)
+  owns the NTSC pass and the 19×192 <code>ntsc_bits</code> texture, and does steps 4-5 of
+  the integration below in <code>decode()</code>. <code>video_system_t</code> creates it at startup
+  (<code>get_ntsc_gpu()</code> is null when unavailable). The generator's renderer on the
+  GPU path is <code>PackedOnly</code>, a no-op <code>Render</code>. <code>display_state_t::frame_ntsc</code> is
+  the 910×263 target.</li>
+<li><strong>Override.</strong> <code>--ntsc-cpu</code> forces the CPU decoders even when the shader is available.</li>
+<li><strong>IIgs composite border.</strong> <code>frame_ntsc</code> is cleared to black outside the
+  decoded region every frame, so the IIgs border is black in the composite and
+  monochrome engines on the GPU path. The CPU path leaves whatever <code>frame_vsg</code>
+  last held there.</li>
+<li><strong>Verification.</strong> <code>vsgtest --gpu</code> decodes every vsgtest frame on both paths,
+  reads <code>frame_ntsc</code> back, and requires mono to match exactly and NTSC within 1
+  per channel (it reports how many pixels are off by one). <code>vsgtest --gpu --bench</code>
+  times the decode call.</li>
+</ul>
+<h3 id="what-the-cpu-decode-computes">What the CPU decode computes<a class="headerlink" href="#what-the-cpu-decode-computes" title="Permanent link">&para;</a></h3>
+<p><code>init_hgr_LUT()</code> bakes, for each output phase <code>p</code> (0..3) and each 15-dot window,
+the center pixel's color. Rewritten as a sum over dots, for dot <code>x</code> on a line
+with <code>phase_offset</code> (bitstream coordinates):</p>
+<pre><code>p        = (x + phase_offset) &amp; 3
+dot(j)   = bitstream[j] for 0 &lt;= j &lt; 560, else 0
+yiq      = sum over o in -7..7 of  dot(x+o) * W[o][(p+o) &amp; 3]
+rgb      = M * yiq
+out      = clamp(int(rgb * 255), 0, 255)          // truncation, not rounding
+</code></pre>
+<p>where</p>
+<ul>
+<li><code>W[o][k]</code> is <code>config.heldWeights[o+7][k]</code> when <code>config.heldDots</code> is set.
+  Otherwise it is <code>config.pixelYUV[1][k] * config.filterCoefficients[|o|]</code>,
+  componentwise. Dots that are 0 contribute nothing in either case.</li>
+<li><code>M</code> is <code>config.decoderMatrix</code> (YIQ→RGB × hue × saturation).</li>
+</ul>
+<p>Because this is linear in the dots, fold <code>M</code> in on the CPU:</p>
+<pre><code>Wrgb[p][o] = M * W[o][(p+o) &amp; 3]        // 4 phases × 15 taps, vec3 each
+rgb        = sum over o of dot(x+o) * Wrgb[p][o]
+</code></pre>
+<p>That is 60 RGB weights (960 bytes as <code>float4</code>) in a uniform buffer. Hue,
+saturation and filter changes then only rebuild this small table, not the
+512 KB LUT. <code>NUM_TAPS</code> stops being limited by LUT size; growing it only grows
+the uniform table and the loop.</p>
+<p>In display coordinates (see "Display geometry"), <code>x = c - line_start</code> and the
+phase is <code>p = (c - line_start + phase_offset) &amp; 3</code>.</p>
+<h3 id="data-uploaded-per-frame">Data uploaded per frame<a class="headerlink" href="#data-uploaded-per-frame" title="Permanent link">&para;</a></h3>
+<p>The SDL GPU renderer only accepts 32-bit RGBA/BGRA (and YUV) texture formats, so
+there is no R8 texture. The phase 1 packed frame is already in the right form:</p>
+<ul>
+<li>Texture <code>ntsc_bits</code>: 19 × 192, <code>SDL_PIXELFORMAT_RGBA32</code>, streaming,
+  <code>SDL_SCALEMODE_NEAREST</code>.</li>
+<li>Uploaded with <code>SDL_UpdateTexture</code> straight from the generator's buffer
+  (14.6 KB). There is no packing step on the CPU.</li>
+</ul>
+<h3 id="monochrome">Monochrome<a class="headerlink" href="#monochrome" title="Permanent link">&para;</a></h3>
+<p>The same shader covers the monochrome engine with one uniform:</p>
+<ul>
+<li><code>force_mono</code>: treat every line as colorburst off. Set for the monochrome
+  engine (<code>DM_ENGINE_MONO</code>). Clear for the composite engine, where text lines
+  still go mono on their own because the generator clears their colorburst.</li>
+</ul>
+<p>Mono dots are written white; the monitor color is the texture color multiply
+from phase 1 ("Monitor color (tint)").</p>
+<h3 id="shader">Shader<a class="headerlink" href="#shader" title="Permanent link">&para;</a></h3>
+<p>One fragment shader, drawn as a single quad covering the region. It uses pixel
+coordinates (<code>SV_Position</code> / <code>[[position]]</code> / <code>gl_FragCoord</code>), not UVs. SDL's
+GPU backends all use a top-left origin with pixel centers at .5.</p>
+<pre><code class="language-hlsl">cbuffer Ntsc : register(b0, space3) {
+    float4 wrgb[4 * 15];   // [phase][tap], tap 0 = offset -7
+    float2 region_origin;  // target pixel of column 0, line 0 = (168 - shift, 35)
+    uint   black_padding;  // 1 = paint columns outside the line black, like the CPU path
+    uint   force_mono;     // 1 = monochrome monitor engine: every line is colorburst off
+};
+Texture2D    u_bits    : register(t0, space2);   // the drawn texture = ntsc_bits
+SamplerState u_sampler : register(s0, space2);
+
+static const float4 BLACK = float4(0, 0, 0, 1);
+static const float4 WHITE = float4(1, 1, 1, 1);   // monitor tint is a texture color multiply
+
+uint word_at(uint t, uint y) {
+    uint4 b = (uint4)round(u_bits.Load(int3(t, y, 0)) * 255.0);
+    return b.r | (b.g &lt;&lt; 8) | (b.b &lt;&lt; 16) | (b.a &lt;&lt; 24);
+}
+uint dot_at(int c, uint y) {
+    if (c &lt; 0 || c &gt;= 576) return 0;
+    return (word_at(c &gt;&gt; 5, y) &gt;&gt; (c &amp; 31)) &amp; 1;
+}
+
+float4 main(float4 pos : SV_Position, ...) : SV_Target {
+    int  c = int(pos.x - region_origin.x);
+    uint y = uint(pos.y - region_origin.y);
+    // colorburst, phase_offset, line_start
+    uint3 mode = (uint3)round(u_bits.Load(int3(18, y, 0)).rgb * 255.0);
+    int  start = int(mode.z);
+
+    if (force_mono != 0 || mode.x == 0) return dot_at(c, y) ? WHITE : BLACK;
+    if (black_padding != 0 &amp;&amp; (c &lt; start || c &gt;= start + 560)) return BLACK;
+
+    uint p = uint(c - start + int(mode.y)) &amp; 3;
+    float3 rgb = 0;
+    [unroll] for (int o = -7; o &lt;= 7; o++)
+        if (dot_at(c + o, y)) rgb += wrgb[p * 15 + (o + 7)].rgb;
+    return float4(floor(saturate(rgb) * 255.0) / 255.0, 1);   // match CPU truncation
+}
+</code></pre>
+<p>Every branch here depends only on the line (mono or color, line start) or on a
+uniform (<code>force_mono</code>, <code>black_padding</code>). The padding test differs only at the 7
+edge columns. Pixels in a GPU thread group therefore almost always take the
+same path, so the branches cost close to nothing; the texture reads dominate.</p>
+<p>The 15 <code>dot_at</code> calls touch at most two words. Load those once and shift, instead
+of calling <code>Load</code> per tap. <code>c - start</code> is negative in the left padding; the <code>&amp; 3</code>
+on the two's-complement value still gives the right phase (e.g. -1 → 3).</p>
+<p>The PSInput layout and register spaces must follow the conventions in
+<code>crt.frag.hlsl</code> (shadercross remaps COLOR0→TEXCOORD0, TEXCOORD0→TEXCOORD1).</p>
+<p>GPU cost: ~109K fragments × 15 taps per frame. That is negligible even on a Pi GPU.</p>
+<p>Deliverables, matching the CRT shader layout in <code>assets/shaders/</code>:
+<code>ntsc.frag.hlsl</code> (source), <code>ntsc.frag.metal</code> (generated on macOS), and later
+<code>ntsc.frag.spv</code> and <code>ntsc.frag.dxil</code>, both compiled from the HLSL.</p>
+<h3 id="integration">Integration<a class="headerlink" href="#integration" title="Permanent link">&para;</a></h3>
+<p>New pieces:</p>
+<ul>
+<li><strong><code>video_system_t</code></strong>: <code>ntsc_shader</code> / <code>ntsc_state</code>, created next to <code>crt_state</code>
+  in the same way: <code>SDL_CreateGPURenderState</code> with the fragment shader and one
+  uniform slot. Also <code>ntsc_bits</code> (19×192 streaming) and <code>frame_ntsc</code> (910×263,
+  <code>SDL_TEXTUREACCESS_TARGET</code>, blend mode none).</li>
+<li><strong><code>NTSC560GPU : Render</code></strong>: replaces both <code>NTSC560</code> and <code>Monochrome560</code> on the
+  GPU path. <code>render()</code> does no decoding: it hands the packed frame to the upload
+  and ignores the <code>FrameVSG*</code> argument. It carries <code>force_mono</code> the same way
+  <code>Render</code> already carries <code>shift_enabled</code>.</li>
+<li><strong>Weight table builder</strong>: computes <code>Wrgb</code> from <code>config</code>. Call it from
+  <code>init_hgr_LUT()</code> (or a split-out <code>init_ntsc_weights()</code>), so the hue/saturation
+  hotkeys in <code>handle_display_event</code> update both paths. Skip the 512 KB LUT build
+  when only the GPU path is active.</li>
+</ul>
+<p><code>update_display_apple2_cycle()</code> with <code>DM_ENGINE_NTSC</code> or <code>DM_ENGINE_MONO</code> and the
+GPU path available:</p>
+<ol>
+<li>Select <code>NTSC560GPU</code> as the renderer, with <code>force_mono</code> off for
+   <code>DM_ENGINE_NTSC</code> and on for <code>DM_ENGINE_MONO</code>.</li>
+<li><strong>Do not</strong> <code>frame_vsg-&gt;open()/close()</code>. <code>VideoScanGenerator_Comp</code> only touches
+   <code>frame_vsg</code> through <code>render</code>, so skipping the lock removes the 957 KB upload.</li>
+<li><code>generate_frame(scanbuf)</code>, which fills the packed frame.</li>
+<li><code>SDL_UpdateTexture(ntsc_bits, …)</code> from the packed frame; update <code>ntsc_state</code>
+   uniforms (<code>Wrgb</code>, region origin, <code>black_padding</code>, <code>force_mono</code>).</li>
+<li>Save <code>SDL_GetRenderTarget()</code> (it is <code>scene_target</code> when the CRT shader is on).
+   Then <code>SDL_SetRenderTarget(frame_ntsc)</code>, clear to opaque black,
+   <code>SDL_SetRenderGPUState(ntsc_state)</code>, <code>SDL_RenderTexture(ntsc_bits, nullptr, &amp;region)</code>
+   with <code>region = { 168 - shift, 35, 560 + shift, 192 }</code>,
+   <code>SDL_SetRenderGPUState(nullptr)</code>, and restore the saved target.</li>
+<li>Set the frame texture's color multiply: the monitor color for
+   <code>DM_ENGINE_MONO</code>, white otherwise (see "Monitor color (tint)").</li>
+<li><code>render_frame(frame_ntsc, …)</code> instead of <code>frame_vsg-&gt;get_texture()</code>. The source
+   rects, content insets, CRT pass and screenshot path (<code>last_texture</code>) work unchanged.</li>
+</ol>
+<p>The RGB engine and the IIgs SHR display keep using <code>frame_vsg</code>.</p>
+<p>Engine switching needs no special handling: each frame picks its path from
+<code>display_color_engine</code> and whether <code>ntsc_state</code> exists.</p>
+<h3 id="fallback-and-overrides">Fallback and overrides<a class="headerlink" href="#fallback-and-overrides" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ntsc_state == nullptr</code> (classic renderer, shader load failure): use the
+  phase 1 <code>NTSC560</code> and <code>Monochrome560</code>.</li>
+<li>Add a way to force the CPU path (CLI flag or debug toggle) for A/B comparison and bug reports.</li>
+</ul>
+<h3 id="phase-2-verification">Phase 2 verification<a class="headerlink" href="#phase-2-verification" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Pixel comparison:</strong> for the phase 1 test screens, render both paths. Read
+  back <code>frame_ntsc</code> with <code>SDL_RenderReadPixels</code> and compare against the CPU
+  <code>frame_vsg</code> content, with <code>black_padding</code> on. Expect identical output, or at
+  most ±1 per channel from float summation order.</li>
+<li><strong>Padding off:</strong> with <code>black_padding</code> off, only the 7 padding columns of IIe
+  lines may differ from the CPU path, and only near lit edge dots.</li>
+<li><strong>Edges:</strong> columns 0..6 and 553..559 of each line, both phase offsets, IIe and IIgs.</li>
+<li><strong>IIe 567-column area and monochrome engine:</strong> as in phase 1, on the GPU path.</li>
+<li><strong>Live adjustments:</strong> hue/saturation hotkeys change the output with no LUT rebuild.</li>
+<li><strong>Timing:</strong> compare <code>display_times</code> before and after on macOS, Windows, and a
+  Raspberry Pi 4/5.</li>
+</ul>
+<h2 id="phase-3-iigs-composite-as-an-rgb-to-composite-encoder-design">Phase 3: IIgs composite as an RGB-to-composite encoder (design)<a class="headerlink" href="#phase-3-iigs-composite-as-an-rgb-to-composite-encoder-design" title="Permanent link">&para;</a></h2>
+<p>Status: implemented for macOS / Metal (the only shader format built so far).
+Other hosts fall back to the Composite path. See "Phase 3 as built" for where
+the implementation differs from the design below.</p>
+<h3 id="phase-3-as-built">Phase 3 as built<a class="headerlink" href="#phase-3-as-built" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Engine and UI (core only).</strong> <code>DM_ENGINE_GSCOMPOSITE</code> is appended after
+  Monochrome, named "GS Composite". F2 skips it unless
+  <code>video_system_t::gscomposite_allowed</code>, which display init sets for IIgs
+  platforms. The native Monitor menus (macOS, Windows, Linux) have a
+  "GS Composite" item (<code>MONITOR_GS_COMPOSITE</code> / <code>MENU_MONITOR_GS_COMPOSITE</code> = 205).
+  The OSD buttons, DisplaySelect, ConfigSelectors and saved config do not offer
+  it yet. Selected on a non-IIgs machine (through the menu), it renders as Composite.</li>
+<li><strong>Per-line information</strong> goes in the uniform block, not a texture:
+  <code>uint4 lines[66]</code>, one line per component (<code>lines[y &gt;&gt; 2][y &amp; 3]</code>), bit 0
+  colorburst and bit 1 16-dot clock. <code>VideoScanGenerator_RGB</code> records
+  <code>LineInfo { burst, clock16 }</code> at each HSYNC and at VSYNC. <code>burst</code> is
+  <code>line_colorburst &amp;&amp; !mono_mode</code>. The line's colorburst is set by its first data
+  scan (off for TEXT40 / TEXT80, on for other modes including SHR). Border-only
+  lines keep the last value.</li>
+<li><strong>Pre-gray switch.</strong> <code>VideoScanGenerator_RGB::set_composite_encode(true)</code>
+  stops MONOCOLOR from graying the text / hires LUTs and the SHR palette.
+  The display sets it each frame: on while the pass runs, off otherwise.
+  Toggling rebuilds the LUTs and <code>palette.active</code> from <code>palette.colors</code>.</li>
+<li><strong>Filters.</strong> <code>generate_trap_point_filters()</code> in <code>filters.cpp</code>: a point-sample
+  version of the phase 2 trap design (the encoder's output is an analog sample,
+  not a held 1-bit dot). Luma is a Gaussian (1/e at <code>GS_LUMA_BANDWIDTH</code> in
+  <code>ntsc.cpp</code>, 3.5 MHz, separate from the Apple II decoder's
+  <code>TRAP_LUMA_BANDWIDTH</code>) with an exact null at the subcarrier. The AppleColor
+  IIe spec is 3 MHz video bandwidth in color mode; the Gaussian's −3 dB point is
+  about 0.59 × its 1/e frequency (about 2.1 MHz now; 5.1 MHz would put −3 dB at
+  3 MHz). Hires luma looks right on hardware comparison, so it stays at 3.5 MHz.</li>
+<li><strong>Chroma bandwidth and taps.</strong> I and Q are cut at <code>GS_CHROMA_BANDWIDTH</code>
+  (0.6 MHz, the usual consumer-monitor figure) with <code>GS_NUM_TAPS</code> = 15 per side
+  (31 taps; the 15-tap kernel cannot be that narrow). The phase 2 trap I / Q
+  bandwidths (2.0 / 1.3 MHz) let Finder's 640-mode desktop dither, which repeats
+  every 4 SHR dots (4.09 MHz, 0.51 MHz from the subcarrier), beat into broad
+  violet / green bands every 32 dots; on hardware they are faint. At 0.6 MHz the
+  beat passes at about 66% (0.3 MHz with 23 taps per side would be about 26%).
+  Still to calibrate against hardware.</li>
+<li><strong>SHR phase knob.</strong> SHR fringe colors depend on when SHR pixels come out
+  relative to the subcarrier, which is not known: the VGC's SHR pipeline delay
+  and the MC1377's burst placement. The model assumes SHR data starts in phase
+  with legacy data at cycle 12. <code>config.gsShrPhase</code> (turns) is added
+  to the 16-dot basis only. It rotates SHR artifact colors without changing solid
+  colors. Alt+Shift+keypad +/- steps it by 1/32 turn (11.25°) and shows the
+  value. Default −1/8 turn (−45°), chosen on a IIgs into an AppleColor IIe by
+  comparing the File and Apple menu fringes. With 0, the 'F' of File fringed
+  green, where hardware shows blue; −90° was also wrong. −45° and −33.75° looked closest.
+  −45° is one tick of the IIgs's 28.636 MHz master clock, which also drives the
+  VGC (the SHR dot clock is 28.636 × 4/7 MHz), so a one-tick SHR pipeline
+  difference is a plausible cause. −33.75° would only coincidentally cancel the
+  33° <code>phaseInfo[0]</code> convention. I / Q are windowed sincs at 2.0 / 1.3 MHz with exact nulls at the
+  subcarrier (so luma does not leak into chroma and tint solid colors) and at
+  twice the subcarrier (the demodulation image). The 16-dot taps are the same
+  design at 16/14 × 4fsc, where the subcarrier is 14/16 as many cycles per
+  sample. The classic 2 MHz Lanczos luma was tried first and blurred
+  noticeably.</li>
+<li><strong>Colorburst off is per-pixel luma.</strong> Lines without colorburst (text,
+  MONOCOLOR, Monochrome engine) output <code>enc</code> row 0 · rgb of the pixel itself,
+  with no filter. This matches hardware notes in DevelopLog ("Color disabled":
+  solid grays, no dot pattern; text shows its colors as grays) and keeps text
+  as sharp as RGB. Running these lines through the composite luma filter made
+  80-column text blurry. Checked on a IIgs with an AppleColor IIe: text with
+  the monitor in color mode is indistinguishable from the mono switch (8 MHz),
+  so the monitor's color killer also removes the chroma trap.</li>
+<li><strong>Basis instead of weight tables.</strong> The uniforms hold the demodulation basis
+  (<code>b14[4]</code> = sin/cos of <code>x &amp; 3</code>, <code>b16[32]</code> = sin/cos of <code>x &amp; 31</code> at a step of
+  <code>subcarrier × 14/16</code>), the taps by |offset| (<code>f14[8]</code>, <code>f16[8]</code>), the decoder
+  matrix <code>m</code> and the encoder matrix <code>enc</code>. The shader computes
+  <code>s = enc·rgb · (1, sin, cos)</code> per tap and accumulates
+  <code>f[|o|] · s · (1, sin, cos)</code>. The basis is the same one the decoder uses, so
+  <code>phi0</code> cancels and is not a uniform.</li>
+<li><strong>Encoder hue.</strong> <code>enc</code> is the inverse of the decoder's YIQ→RGB matrix, rotated
+  by −0.05 turn (<code>GS_ENCODER_HUE</code>, the default <code>videoHue</code>). At default settings a
+  solid color decodes back to itself (within 3 per channel in tests). The
+  hue / saturation hotkeys still act on the decoder.</li>
+<li><strong>Monochrome engine on the IIgs.</strong> When the pass is available, IIgs Monochrome
+  also runs the RGB generator and the pass with <code>force_mono</code> (luma only on every
+  line), then the monitor tint. Without the pass it keeps the phase 2 mono path.</li>
+<li><strong>Fallback.</strong> With no pass (classic renderer, no shader for the backend,
+  <code>--ntsc-cpu</code>) GS Composite renders as Composite. <code>frame_ntsc</code> is created when
+  either GPU pass exists.</li>
+<li><strong>Code.</strong> <code>assets/shaders/gscomposite.frag.hlsl</code> (+ generated <code>.metal</code>),
+  <code>src/display/GsCompositeGpu.{hpp,cpp}</code> (created in <code>video_system_t</code> next to
+  <code>NtscGpu</code>), <code>build_gscomposite_uniforms()</code> in <code>ntsc.cpp</code>, wiring in
+  <code>update_display_apple2_cycle()</code>.</li>
+<li><strong>Tests.</strong> <code>vsgtest --gpu</code> checks: solid-color round trip (exact at default
+  settings); burst-off luma gray; <code>force_mono</code> equal to burst off; a 1-pixel
+  black/white pattern on a burst-off line passes unchanged; black and white exact;
+  a period-4 dot pattern on 16-dot lines shows chroma, solid gray does not, and
+  burst off shows none. On the RGB generator it checks per-line colorburst
+  (text, lores, carried by border lines), a border change at scan k landing at
+  dot 14k in both <code>frame_vsg</code> and the decoded luma, and MONOCOLOR (no burst, no
+  pre-gray with <code>composite_encode</code>, pre-gray without it).</li>
+</ul>
+<h3 id="problem">Problem<a class="headerlink" href="#problem" title="Permanent link">&para;</a></h3>
+<p>The composite path above models an Apple II / IIe, where the video circuit
+produces a 1-bit dot stream and the monitor's decoder creates the colors. A real
+IIgs doesn't work that way. Its VGC produces RGB for every mode, and the
+composite output is made from that RGB by a separate RGB-to-composite encoder
+chip. Running IIgs video through <code>VideoScanGenerator_Comp</code> gets several things wrong:</p>
+<ul>
+<li><strong>No border.</strong> The composite generator ignores <code>VM_BORDER_COLOR</code>, and its
+  output region is only the 560×192 picture. On the CPU path the border that
+  appeared in composite was a frozen leftover of the last RGB frame in
+  <code>frame_vsg</code>. The phase 2 GPU path clears <code>frame_ntsc</code>, so the border is black.</li>
+<li><strong>Border and text colors in text mode.</strong> On a real IIgs in text mode the
+  colorburst is off, so the monitor shows the luma of the encoded signal: the
+  border and colored text appear as shades of gray. The composite generator
+  draws text white on black and ignores <code>TEXTCOLOR</code>.</li>
+<li><strong>Super hi-res.</strong> SHR is compiled out of the composite generator. On a real
+  IIgs, SHR through the encoder picks up color artifacts, especially on 640-mode
+  text, because 640-mode pixels alternate fast enough to land in the chroma band.</li>
+</ul>
+<p>Extending the composite generator to cover all of this (border placement by
+beam position, a second dot clock for SHR, border phase compensation on
+80-column lines, IIgs text colors) makes it much harder to follow. Instead,
+model the chip.</p>
+<h3 id="approach">Approach<a class="headerlink" href="#approach" title="Permanent link">&para;</a></h3>
+<p>For the IIgs, generate the frame with the RGB engine as today, then run a GPU
+pass that encodes each RGB pixel to a composite signal and decodes it with
+the same filter the phase 2 shader uses:</p>
+<pre><code class="language-mermaid">flowchart LR
+    Scan[ScanBuffer] --&gt; RGB[VideoScanGenerator_RGB]
+    RGB --&gt; FV[&quot;frame_vsg (RGB: picture, border, SHR, text colors)&quot;]
+    RGB --&gt; Lines[&quot;per-line info: colorburst, dot clock&quot;]
+    FV --&gt; Enc[&quot;gscomposite pass: RGB to composite, then decode&quot;]
+    Lines --&gt; Enc
+    Enc --&gt; FN[&quot;frame_ntsc&quot;]
+    FN --&gt; Out[&quot;render_frame, CRT pass&quot;]
+</code></pre>
+<p>This handles the cases above without special code:</p>
+<ul>
+<li><strong>Border:</strong> the RGB generator already paints it into <code>frame_vsg</code>, cycle by
+  cycle, including mid-line and mid-frame color changes.</li>
+<li><strong>Gray in text mode:</strong> with colorburst off, the monitor's color killer turns
+  off chroma decoding, so the output is luma only. A colored border or colored
+  text comes out as the matching gray.</li>
+<li><strong>SHR artifacts:</strong> SHR is clocked at 16 dots per 1 MHz cycle instead of 14, so
+  each SHR pixel advances the subcarrier phase by 78.75° instead of 90°.
+  Alternating 640-mode pixels then decode with color fringes, as on hardware.</li>
+</ul>
+<h3 id="display-option">Display option<a class="headerlink" href="#display-option" title="Permanent link">&para;</a></h3>
+<p>This is a new display engine, <strong>GS Composite</strong> (<code>DM_ENGINE_GSCOMPOSITE</code>),
+offered only on the IIgs, next to Composite, RGB and Monochrome. It changes
+how legacy modes look on the IIgs: HGR, lores and text come from the RGB
+generator's colors, softened by the composite filter, instead of IIe-style
+dot-pattern colors. The existing Composite engine keeps today's path, for
+people who prefer the IIe look.</p>
+<h3 id="encode">Encode<a class="headerlink" href="#encode" title="Permanent link">&para;</a></h3>
+<p>Per <code>frame_vsg</code> pixel at column <code>x</code> on a line with dot clock <code>k</code> (14 or 16 dots
+per 1 MHz cycle):</p>
+<pre><code>yiq  = RGB_to_YIQ(rgb)                          // inverse of yiqMatrix in init_hgr_LUT()
+phi  = x * (2*pi * 14 / (4 * k)) + phi0         // 90° per dot when k = 14, 78.75° when k = 16
+s(x) = Y + I * cos(phi) + Q * sin(phi)
+</code></pre>
+<p>Start with the same color phase reference (<code>phi0</code>) as the legacy decoder, so a
+solid color with colorburst on decodes back to about the color it started as.
+Tune <code>phi0</code>, and whether the chip low-passes chroma before modulating, against
+photos of real hardware. Treat the line as having a constant phase (the Apple II
+long cycle keeps the phase constant from line to line); no 180° alternation.</p>
+<h3 id="decode">Decode<a class="headerlink" href="#decode" title="Permanent link">&para;</a></h3>
+<p>The phase 2 weights <code>w[phase][tap]</code> are the demodulation basis times the filter
+for a lit dot of amplitude 1. With an analog sample in place of the dot:</p>
+<pre><code>yiq = sum over o in -7..7 of s(x+o) * W_k[p][o]
+rgb = M * yiq
+</code></pre>
+<ul>
+<li>14-dot lines use <code>build_ntsc_gpu_weights()</code> unchanged.</li>
+<li>16-dot (SHR) lines need a second table, built with the 78.75° phase step and
+  the filter taps spaced for the faster clock. The phase no longer repeats every
+  4 dots, so this table is indexed by the dot position within the phase cycle
+  (it repeats every 32 dots: 32 × 78.75° = 7 × 360°), or the shader computes the
+  demodulation <code>cos</code>/<code>sin</code> directly.</li>
+<li>Colorburst off: luma only (<code>rgb = Y</code>, gray).</li>
+<li>Monochrome engine on a IIgs: always luma only. The monitor color is the same
+  texture color multiply as today.</li>
+<li>Cost: one pass over about 742×240 pixels with about 15 taps each. That is
+  negligible on a GPU. It is a <code>GpuFragmentPass</code> stage between the main render
+  and the CRT pass.</li>
+</ul>
+<h3 id="per-line-information">Per-line information<a class="headerlink" href="#per-line-information" title="Permanent link">&para;</a></h3>
+<p>The pass needs two values per beam line, which only the generator knows:</p>
+<ul>
+<li><strong>colorburst:</strong> off for text lines. <code>VideoScanGenerator_RGB</code> already computes
+  <code>color_mode.colorburst</code> per line and then drops it. Keep the current rule:
+  only TEXT40 / TEXT80 lines are off, so the text lines at the bottom of mixed
+  mode keep colorburst on, as on the IIe.</li>
+<li><strong>dot clock:</strong> <code>scanner_freq</code> (14 or 16).</li>
+</ul>
+<p>The generator records both in a 263-entry array at each HSYNC. The pass gets them
+as a small texture (one texel per line) uploaded with the frame.</p>
+<h3 id="monocolor-c021">MONOCOLOR ($C021)<a class="headerlink" href="#monocolor-c021" title="Permanent link">&para;</a></h3>
+<p>On the IIgs, bit 7 of MONOCOLOR selects color or monochrome composite. It
+controls whether the VGC feeds colorburst to the MC1377 encoder, so "mono" means
+colorburst off on every line. Measured on hardware ("Color disabled" in the
+Control Panel): text is unchanged, lores becomes luma-only bars, and LORES_7M
+becomes a clean grayscale. That is not the same as color with the saturation
+turned to 0.</p>
+<p>In GS Composite:</p>
+<ul>
+<li>The generator records <code>colorburst = (not a text line) and not MONOCOLOR</code>
+  for each line. The pass needs nothing else.</li>
+<li>The RGB generator must <strong>not</strong> pre-gray its colors (<code>mono_mode</code>, the
+  <code>txt_mono_lut</code> / <code>hgr_mono_lut</code> / mono palette swap) while GS Composite is
+  active. Graying first removes the chroma before the encoder sees it, so the
+  output would be a smooth gray instead of the luma path's response to the
+  still-modulated signal.</li>
+<li>The RGB engine keeps its current behavior: MONOCOLOR pre-grays the RGB output.</li>
+</ul>
+<p>MONOCOLOR is applied per frame, as it is today (see phase 4).</p>
+<h3 id="integration_1">Integration<a class="headerlink" href="#integration_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>update_display_apple2_cycle()</code> with <code>DM_ENGINE_GSCOMPOSITE</code> on a IIgs and the
+  pass available: run <code>VideoScanGenerator_RGB</code> into <code>frame_vsg</code> exactly as the
+  RGB engine does (open/close, full upload), upload the per-line texture, then
+  draw <code>frame_vsg</code> into <code>frame_ntsc</code> through the pass, and
+  <code>render_frame(frame_ntsc, …)</code>.</li>
+<li>The source and content rectangles are the RGB ones for the current mode (SHR
+  or legacy), since the pass maps <code>frame_vsg</code> to <code>frame_ntsc</code> 1:1.</li>
+<li>No speedup: the IIgs keeps paying the full <code>frame_vsg</code> upload, as the RGB
+  engine does now. Reducing that is left for later.</li>
+<li><strong>Fallback:</strong> when the pass is unavailable (classic renderer, no shader for the
+  backend, or <code>--ntsc-cpu</code>), GS Composite uses the current Composite path.</li>
+<li>Shader source: <code>assets/shaders/gscomposite.frag.hlsl</code>, compiled with
+  <code>scripts/compile_shaders_macos.sh gscomposite</code>. Uniforms: the two weight
+  tables, the decoder matrix, <code>phi0</code>, and <code>force_mono</code>.</li>
+</ul>
+<h3 id="phase-3-verification">Phase 3 verification<a class="headerlink" href="#phase-3-verification" title="Permanent link">&para;</a></h3>
+<p>There is no exact CPU reference for this model, so the tests check its properties
+in <code>vsgtest --gpu</code>:</p>
+<ul>
+<li>A solid color with colorburst on decodes back to approximately the input color.</li>
+<li>The same color with colorburst off decodes to its luma gray.</li>
+<li>MONOCOLOR set: every line decodes with colorburst off, and the RGB generator
+  output is not pre-grayed.</li>
+<li>A border color change partway through a line shows up at the right cycle.</li>
+<li>An alternating 640-mode SHR pattern produces chroma; a solid SHR fill does not.</li>
+<li>Black and white decode to black and white.</li>
+</ul>
+<p>Then compare against photos of a real IIgs on a composite monitor: text mode
+with a colored border, 640-mode SHR text, HGR, and lores, each with MONOCOLOR
+off and on.</p>
+<h2 id="phase-4-cycle-accurate-iigs-video-switches-design-notes">Phase 4: cycle-accurate IIgs video switches (design notes)<a class="headerlink" href="#phase-4-cycle-accurate-iigs-video-switches-design-notes" title="Permanent link">&para;</a></h2>
+<p>Status: not started. Follow-ups that phase 3 does not need.</p>
+<ul>
+<li><strong>Mid-frame MONOCOLOR and C029 bit 5.</strong> <code>display_write_C021</code> and the C029
+  bit-5 (DHGR mono) handler set state on the generator directly, and
+  <code>generate_frame</code> runs at the end of the frame. A change partway through a
+  frame therefore applies to the whole frame. To make them cycle-accurate, send
+  them through the ScanBuffer as a side-band scan, only when the register
+  changes (as palette data is handled), and have the generators apply them at
+  that point in the beam.</li>
+<li><strong>Switch state reaches only the current generator.</strong> <code>display_write_C021</code> and
+  the C029 handler call <code>ds-&gt;vsg</code>, which is whichever generator ran last. After
+  an engine switch, the other generator keeps the old setting. Set both
+  generators (or keep the state in <code>display_state_t</code> and apply it each frame).
+  This is a bug today and can be fixed independently.</li>
+<li><strong>Composite engine on the IIgs ignores MONOCOLOR.</strong> <code>VideoScanGenerator_Comp</code>
+  stores the flag and never uses it. With GS Composite available this may not
+  matter; if it does, the fix is colorburst off on every line in the composite
+  generator.</li>
+<li><strong>Luma path calibration.</strong> Whether bars look sharper with MONOCOLOR set because
+  the monitor has no chroma trap or because of the luma bandwidth: tune against
+  photos, together with the phase 3 encoder details.</li>
+</ul>
+<h2 id="phase-5-crt-glow-halation-design-notes">Phase 5: CRT glow / halation (design notes)<a class="headerlink" href="#phase-5-crt-glow-halation-design-notes" title="Permanent link">&para;</a></h2>
+<p>Status: not started. A first attempt is parked on branch <code>1.1/phosphor-glow</code>
+(commit <code>c53d485</code>) and is not the design to follow.</p>
+<h3 id="what-the-parked-attempt-did-and-why-it-looked-wrong">What the parked attempt did, and why it looked wrong<a class="headerlink" href="#what-the-parked-attempt-did-and-why-it-looked-wrong" title="Permanent link">&para;</a></h3>
+<p>It blurred the 910x263 mono persistence history: two half-size downsamples, a
+7-tap Gaussian built from additive draws with per-tap color-mod weights, then
+history + glow × 0.15. The result smeared text vertically:</p>
+<ul>
+<li><strong>Wrong space.</strong> The blur was symmetric in source pixels, but the source is
+  stretched about 2x horizontally and 4x or more vertically on screen. A round
+  kernel at source resolution becomes a tall ellipse on screen.</li>
+<li><strong>Not a shader.</strong> Fixed-function blending did the blur in gamma (sRGB) space,
+  not linear light. It had no threshold or soft knee, and the weights were
+  limited to what color mod can express.</li>
+</ul>
+<h3 id="design">Design<a class="headerlink" href="#design" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Persistence stays at source resolution.</strong> It is a temporal effect, one value
+  per phosphor dot, so it belongs on the 910x263 texture (<code>PhosphorPersist</code>).</li>
+<li><strong>Glow runs in screen space, after scaling.</strong> Halation is light scattering in
+  the faceplate glass, with a fixed physical radius, so define the radius in
+  output pixels (for example, a fraction of the output height). It also comes
+  after scanlines and the shadow mask: glow partly filling the scanline gaps and
+  softening the mask is part of the look.</li>
+<li><strong>Pipeline order:</strong> decode → persistence → scale, scanlines, shadow mask →
+  glow → present.</li>
+<li><strong>Hook.</strong> <code>video_system_t::update_display()</code> already draws into the full-size
+  <code>scene_target</code> when the shadow mask is on, and <code>present_scene()</code> shows it
+  through the CRT shader. Glow is another stage in that chain. It needs
+  <code>scene_target</code> whenever glow is on, not only when the shadow mask is on.</li>
+<li><strong>Shader passes</strong> (<code>GpuFragmentPass</code>). Work in linear light: a bright-pass with
+  a soft-knee threshold, separable or dual-Kawase blur, and a final composite.</li>
+<li><strong>Cost.</strong> A Retina window can be 10–15 million pixels, too many for a wide blur
+  at full resolution. Use the standard bloom approach: downsample the scaled
+  image through a short chain of half-size textures (dual-Kawase or a mip
+  pyramid), blur at those low resolutions, then upsample and add. The radius
+  stays defined in screen space, so it stays round. Only the final composite
+  runs at full resolution.</li>
+</ul>
+<h2 id="open-questions">Open questions<a class="headerlink" href="#open-questions" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Is the uniform buffer the right home for 60 <code>float4</code>s on all three backends?
+  (960 bytes; well within typical limits, but confirm SDL GPU's per-slot limit.)</li>
+<li>Web build: SDL's GPU renderer is not available there today, so it keeps the
+  phase 1 CPU path.</li>
+<li>Default for <code>black_padding</code> once phase 2 is verified: keep CPU parity, or
+  show the filter tail in the IIe padding columns? If the tail is preferred, the
+  CPU decoder could compute those 7 columns the same way, so the paths keep matching.</li>
+<li>Later: mono dots are drawn sharp today, both on the monochrome engine and on
+  colorburst-off composite lines. A real monitor softens them through its luma
+  bandwidth. With mono in the shader, that would be one more weight table applied
+  to brightness only. Not part of this change. It fits the same future
+  brightness-and-tint pipeline stage described under "Monitor color (tint)".</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

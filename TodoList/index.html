@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3494,11 +3522,11 @@
 </ul>
 <h3 id="release-10">Release 1.0<a class="headerlink" href="#release-10" title="Permanent link">&para;</a></h3>
 <ul>
-<li>[ ] Fix all known / pending bugs</li>
+<li>[X] Fix all known / pending bugs</li>
 </ul>
 <h3 id="post-10">Post-1.0<a class="headerlink" href="#post-10" title="Permanent link">&para;</a></h3>
 <ul>
-<li>[ ] Refactor Mockingboard to use new fixed-point synth</li>
+<li>[X] Refactor Mockingboard to use new fixed-point synth</li>
 <li>[ ] Optimize / cache UI elements</li>
 </ul>
 <hr />
@@ -3584,7 +3612,7 @@
 <li>[X] Split GR/text in Ludicrous Speed should be color/NTSC, not mono</li>
 <li>[X] First pixel of HGR row disappears in Ludicrous Speed</li>
 <li>[-] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission</li>
-<li>[ ] Make SHR work again in composite</li>
+<li>[X] Make SHR work again in composite (made the special GS composite)</li>
 <li>[X] Mono DHGR / graphics when <code>$C05E</code> active (incl. HIRES_NODELAY)</li>
 <li>[ ] IIe/65816: missing composite SHR; ctrl-reset should reset video registers based on scanner, not platform</li>
 <li>[ ] PAL //e broken (needs more scanlines; garbage/overrun)</li>
@@ -3592,7 +3620,7 @@
 <li>[ ] Test RGB monitor colors</li>
 <li>[X] Lower Planes: right border offset by 1–2 scanlines (<a href="../CompatibilityGS/">CompatibilityGS.md</a>)</li>
 <li>[ ] FTA XMAS: slight cycle timing defect on lower-right border</li>
-<li>[ ] Phosphor persistence effect (multi-texture fade)</li>
+<li>[X] Phosphor persistence effect (multi-texture fade)</li>
 <li>[-] VideoScanner asserts so bad state can't crash</li>
 <li>[X] Clean up leftover <code>set_full_frame_redraw()</code> once LS full-frame path is settled</li>
 </ul>
@@ -3602,16 +3630,16 @@
 <ul>
 <li>[X] Finish Ensoniq fidelity (SenseiPlay / some demos still imperfect; see also Ensoniq notes)</li>
 <li>[-] Mockingboard mixer AND-gate (tone+noise) if still using addition (<a href="../MockingboardBugAnalysis/">MockingboardBugAnalysis.md</a> Bug 5)</li>
-<li>[ ] Verify other MockingboardBugAnalysis findings are fixed in tree (bipolar mix, silent when both disabled, tone period/duty)</li>
-<li>[ ] Noise vs tone amplitude balance on Mockingboard</li>
+<li>[X] Verify other MockingboardBugAnalysis findings are fixed in tree (bipolar mix, silent when both disabled, tone period/duty)</li>
+<li>[X] Noise vs tone amplitude balance on Mockingboard</li>
 <li>[X] Mad Effects #2 still wrong (MB interrupt / VBL timing specifics)</li>
 <li>[X] Speaker output delay</li>
 <li>[-] Configurable speaker output rate</li>
 <li>[ ] Mute / drain disk sound-effect queues in Ludicrous Speed (or on ctrl-reset)</li>
-<li>[ ] Pause / mute audio when emulator window minimized</li>
+<li>[X] Pause / mute audio when emulator window minimized</li>
 <li>[X] Chiptunes (Skull Island, Crazy Cycles 2): stop unending warning/spam streams</li>
 <li>[X] Add Mockingboard cycle hook into <code>NClockIIgs</code></li>
-<li>[-] Rescue Raiders speech synth (or don't advertise speech chip) (<a href="../Compatibility/">Compatibility.md</a>) (works on Total Replay, may just be a bad crack)</li>
+<li>[X] Rescue Raiders speech synth (or don't advertise speech chip) (<a href="../Compatibility/">Compatibility.md</a>) (works on Total Replay, may just be a bad crack)</li>
 </ul>
 <hr />
 <h2 id="input-adb-mouse-keyboard">Input, ADB, mouse, keyboard<a class="headerlink" href="#input-adb-mouse-keyboard" title="Permanent link">&para;</a></h2>
@@ -3674,10 +3702,10 @@
 <ul>
 <li>[X] Incoming serial handshake (CD / CTS / DSR) — <a href="../SerialPortSpec/">SerialPortSpec.md</a></li>
 <li>[ ] Outgoing DTR/RTS to the host UART (hang up a real modem by dropping DTR)</li>
-<li>[ ] Clear SCC queues on reset</li>
+<li>[X] Clear SCC queues on reset</li>
 <li>[X] Implement "file" serial device (complete path)</li>
 <li>[X] Print to clipboard serial/parallel device (#165)</li>
-<li>[ ] ImageWriter II emulation</li>
+<li>[X] ImageWriter II emulation</li>
 <li>[X] OSD gizmo when a capture file finishes writing (path toast)</li>
 <li>[X] Refactor parallel card onto threads; connect to file (ImageWriter later)</li>
 <li>[X] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset (via FileDevice)</li>
@@ -3701,8 +3729,8 @@
 <li>[ ] Audit address-mode edge cases across 6502 / 65c02 / 65816</li>
 <li>[ ] Check 65c02 vs NMOS differences thoroughly</li>
 <li>[ ] IIe reset conditions vs Understanding the Apple IIe tables 5.4 and 7.1</li>
-<li>[ ] Bank latch / direct bank <code>$E1</code> tests and analysis</li>
-<li>[ ] MMU SoA + static aligned page table experiment (perf)</li>
+<li>[X] Bank latch / direct bank <code>$E1</code> tests and analysis</li>
+<li>[X] MMU SoA + static aligned page table experiment (perf)</li>
 <li>[ ] Address mask + debug OOB warnings on MMU</li>
 <li>[X] Thunderclock: interrupts, writing clock, more testing</li>
 <li>[X] Fast accesses for IIgs memory softswitches (<a href="../AppleIIgs-Memory/">AppleIIgs-Memory.md</a>)</li>
@@ -3737,13 +3765,13 @@
 <p>From <a href="../DevelopLog/">DevelopLog.md</a>, <a href="../Woz/">Woz.md</a>, <a href="../runloop/">runloop.md</a>:</p>
 <ul>
 <li>[ ] Clean memory allocation on VM shutdown</li>
-<li>[ ] Pull SDL init/deinit out of power on/off loop</li>
+<li>[-] Pull SDL init/deinit out of power on/off loop</li>
 <li>[ ] Improve debug emitters in diskii_controller / Floppy525</li>
 <li>[ ] Optimize rdpulse/wrpulse (avoid recalculating bit index every call)</li>
 <li>[-] 74LS259 latch registers as bools</li>
 <li>[ ] <code>slot_rom_ptable</code> 16 entries for clearer loops</li>
-<li>[ ] Evaluate shadow+optimized vs full-frame draw</li>
-<li>[ ] Menu-hold / timer interaction causing audio slips (Mac menus)</li>
+<li>[-] Evaluate shadow+optimized vs full-frame draw</li>
+<li>[-] Menu-hold / timer interaction causing audio slips (Mac menus) (worked around it)</li>
 </ul>
 <hr />
 <h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link">&para;</a></h2>
@@ -3811,6 +3839,47 @@
 </tbody>
 </table>
 <p>When closing an item, prefer also updating the source doc checkbox (and closing the GitHub issue when applicable) so this list, the feature docs, and <code>gh</code> stay aligned.</p>
+<h1 id="v1x-work">V1.x Work<a class="headerlink" href="#v1x-work" title="Permanent link">&para;</a></h1>
+<h2 id="v1x-features">V1.x Features<a class="headerlink" href="#v1x-features" title="Permanent link">&para;</a></h2>
+<p>The goal of 1.X train features is: only one major feature per release. Slow the Releases to maybe 6 or 4 per year (maybe 4) so I can reduce the time I'm spending on the emulator.</p>
+<p>Shaders Galore to move a lot of rendering into GPU:</p>
+<pre><code>[X] Increase resolution of ntsc rendering - switch NTSC render to shader and simulate against not 560 but say 1120 pixel positions. This ought to improve clarity and accuracy of the render, as well as performance. (this would be very hard with current LUT approach). Keep current approach as fallback if user lacks GPU. (this was ish but did produce crisper ntsc)
+
+[X] Shader to model SHR-on-Composite based on above
+
+[X] Switch monochrome render to shader and handle phosphor persistence on green/amber/white displays. Implemented as a single GPU history texture: each frame it is faded by a per-color factor (mono_persistence_table) and the new mono frame is max-blended in (PhosphorPersist).
+
+[ ] SHR Shader to correctly render 14/16mhz pixel dot rate speed shifts
+
+[ ] IIgs PAL timing mode (50Hz/60Hz switching)
+
+[ ] Bunch of postprocessor shaders (the ones I like!)
+
+[ ] Model unique shadow masks for Composite, RGB, and green screen
+</code></pre>
+<p>[ ] ProDOS 8 host "FST".</p>
+<p>[X] Implement the new fixed-point mockingboard AY synths</p>
+<p>[x] Auto Updating. Have a notifier that alerts users when there is a new version.</p>
+<p>[ ] Get added to AppImage directory with a "correct" ubuntu 22 build.</p>
+<p>[X] if debug build display that in title bar</p>
+<p>[X] Mockingboard Speech support</p>
+<p>[ ] AppleTini card</p>
+<p>[ ] IIgs Virtual Memory: memory protection, paging</p>
+<p>[ ] IIgs other foreign language keyboard layouts</p>
+<p>[ ] IIgs ADB - emulate the microcontroller itself</p>
+<p>[ ] Midi Support for IIe and IIgs</p>
+<p>[ ] Debug enhancements (see Debugger.md)</p>
+<h2 id="v1x-bug-fixes">V1.x Bug Fixes<a class="headerlink" href="#v1x-bug-fixes" title="Permanent link">&para;</a></h2>
+<p>[ ] debugger single-step video desynchronize</p>
+<p>[ ] Eliminate some Code Smells (display could use some reorg)</p>
+<p>[X] GS MMU performance improvement by using LUTs instead of tons of IFs.</p>
+<p>[X] correctly model colorburst change latency</p>
+<p>[ ] pass IWM test suite</p>
+<p>[ ] pass Ensoniq test suite</p>
+<p>[ ] pass SWITCHES test suite</p>
+<p>[X] don't drop trace files all the time</p>
+<h2 id="v1x-optimizations">V1.x Optimizations<a class="headerlink" href="#v1x-optimizations" title="Permanent link">&para;</a></h2>
+<p>[X] Optimization in ntsc_render so it's not calling out to a method all the time; 2X-2.6X speed improvement;</p>
 
 
 

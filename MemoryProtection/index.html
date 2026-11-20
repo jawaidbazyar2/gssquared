@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3474,6 +3502,7 @@
 <h1 id="gssquared-mmu-architecture-specification-phase-1">GSSquared MMU Architecture &amp; Specification (Phase 1)<a class="headerlink" href="#gssquared-mmu-architecture-specification-phase-1" title="Permanent link">&para;</a></h1>
 <h2 id="reference-design-for-65816-based-apple-iigs-compatible-systems">Reference Design for 65816-based Apple IIgs Compatible Systems<a class="headerlink" href="#reference-design-for-65816-based-apple-iigs-compatible-systems" title="Permanent link">&para;</a></h2>
 <p>This document specifies the software design for the Memory Management Unit (MMU) of the <strong>GSSquared</strong> emulator. The architecture is optimized for a low-overhead software implementation while remaining strictly implementable in hardware (e.g., FPGA) to interface with a physical 65816 processor.</p>
+<p>A separate two-level proposal (flags in bits 31:28, terminal 64 KB superpages, 4 KB pages in a second level) is <a href="../TwoLevelPageTables/">TwoLevelPageTables.md</a>. This document is the single-level flat table.</p>
 <hr />
 <h2 id="1-architectural-overview-core-parameters">1. Architectural Overview &amp; Core Parameters<a class="headerlink" href="#1-architectural-overview-core-parameters" title="Permanent link">&para;</a></h2>
 <p>The 65816 processor natively exposes a 24-bit address space (16 MB). This MMU translates 24-bit virtual addresses (VA) into a broader 32-bit physical address space (PA), facilitating expansion up to 4 GB of physical memory, I/O devices, and expanded buffers. </p>
@@ -3655,7 +3684,7 @@ TODO: this is a bad choice. it looks like it wants 10 bytes. </p>
 <h3 id="71-key-conclusions">7.1 Key Conclusions<a class="headerlink" href="#71-key-conclusions" title="Permanent link">&para;</a></h3>
 <ol>
 <li>
-<p><strong>The existing <code>MMU_IIgs</code> is the FPI model, not this spec.</strong> It is a software model of the real Apple IIgs FPI (shadowing, main/aux, language card, soft switches) at 64K granularity. The MegaII is a separate instance of MMU_IIe, contained by MMU_IIgs, which has a 256-byte page granularity to support legacy Apple II semantics. Its <code>page_table[]</code> is the <em>decoded output</em> of soft-switch state. This document's Advanced MMU is a <strong>separate, additive subsystem</strong> for 16-bit 65816-native, OS-managed multitasking — not a replacement for the FPI model.</p>
+<p><strong>The existing <code>MMU_IIgs</code> is the FPI model, not this spec.</strong> It is a software model of the real Apple IIgs FPI (shadowing, main/aux, language card, soft switches) at 64K granularity. The MegaII is a separate instance of MMU_IIe2, contained by MMU_IIgs, which has a 256-byte page granularity to support legacy Apple II semantics. Its <code>page_table[]</code> is the <em>decoded output</em> of soft-switch state. This document's Advanced MMU is a <strong>separate, additive subsystem</strong> for 16-bit 65816-native, OS-managed multitasking — not a replacement for the FPI model.</p>
 </li>
 <li>
 <p><strong>No TLB in v1.</strong> A hardware TLB exists to avoid a slow page-table walk and to avoid storing a full decoded map on-die. The emulator has neither constraint. Because the V→P table is <strong>single-level and flat</strong>, the "walk" (§3.2) is literally <em>one indexed load</em>, cheap enough to perform on every access. A TLB would be a cache in front of something already as fast as the cache, plus invalidation risk. The TLB programming model (registers in §5) is retained on paper for FPGA/ABI parity, but in the emulator those registers drive eager recompute, not a cache. A real decoded cache is a <em>later, profiling-driven optimization only</em>.</p>

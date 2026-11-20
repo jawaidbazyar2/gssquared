@@ -2320,6 +2320,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3386,6 +3414,7 @@
 <h3 id="no-gamepad-attached">No gamepad attached<a class="headerlink" href="#no-gamepad-attached" title="Permanent link">&para;</a></h3>
 <p>When <strong>Joystick - Gamepad</strong> mode is selected but no gamepad is connected, GSSquared by default still reports a <strong>centered</strong> stick (paddles at mid-range). That keeps software such as Total Replay from hiding joystick-only titles just because a controller was not plugged in at that moment.</p>
 <p>If you prefer hardware-accurate behavior — paddle timers that never expire, so the machine looks like no joystick is connected — enable <strong>Settings → Game Controller → Disconnected When No Gamepad</strong>. The preference is stored in the app-level <code>system_settings.toml</code> file and persists across sessions.</p>
+<p>A <code>$C070</code> strobe restarts a paddle axis only after that axis has finished timing out, matching the real NE558 (Apple IIe Technical Note #6). A second read of a long axis does not finish early.</p>
 <p>Gamepad support: I have personally tested only an 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.</p>
 <p>Joystick axes and buttons are mapped like so:</p>
 <table>

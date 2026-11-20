@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3196,17 +3224,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#apple-iigs-rombank-c028-statereg-bit-1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Apple IIgs — ROMBANK ($C028 / STATEREG bit 1)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#cassette-interface-c020-c060" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3284,39 +3301,6 @@
 <h1 id="intentionally-unimplemented">Intentionally Unimplemented<a class="headerlink" href="#intentionally-unimplemented" title="Permanent link">&para;</a></h1>
 <p>Features and hardware behaviors we have <strong>chosen not to emulate</strong> (or to leave as permanent no-ops), as distinct from open work in <a href="../Roadmap/">Roadmap.md</a> / the todo list.</p>
 <p>Add new entries here when we decide something is out of scope, obsolete, or unused enough that a stub would only add complexity.</p>
-<hr />
-<h2 id="apple-iigs-rombank-c028-statereg-bit-1">Apple IIgs — ROMBANK (<code>$C028</code> / STATEREG bit 1)<a class="headerlink" href="#apple-iigs-rombank-c028-statereg-bit-1" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Hardware</strong></td>
-<td>On ROM 00/01 boards, access to <code>$C028</code> toggles <strong>ROMBANK</strong>. The same bit appears as bit 1 of <code>$C068</code> (STATEREG).</td>
-</tr>
-<tr>
-<td><strong>Effect</strong></td>
-<td>When language-card ROM is mapped at <code>$D000–$FFFF</code>, the toggle flips <strong>A14</strong> into the system ROM for that window: normal <code>$FF/D000–$FFFF</code> vs alternate <code>$FF/9000–$BFFF</code> (shown in the <code>$D000</code> window). It does <strong>not</strong> swap banks <code>$FE</code>/<code>$FF</code>.</td>
-</tr>
-<tr>
-<td><strong>ROM 01 firmware</strong></td>
-<td>Unused. Apple docs say STATEREG ROMBANK “must always be 0.” IIgs firmware and GS/OS never touch it.</td>
-</tr>
-<tr>
-<td><strong>ROM 03</strong></td>
-<td>Removed from the hardware (CYA era). <code>$C028</code> / the STATEREG bit are inert.</td>
-</tr>
-<tr>
-<td><strong>GSSquared</strong></td>
-<td><code>g_rombank</code> exists in the STATEREG bitfield for completeness / debugger display, but <code>$C028</code> is not handled and nothing remaps LC ROM from the bit. Behavior is “always 0,” which matches real software.</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Related (ROM image layout, not ROMBANK):</strong> Physical ROM01 dumps sometimes present banks <code>$FE</code>/<code>$FF</code> swapped relative to linear address space. Our ROM01 image is stored with <code>$FE</code> then <code>$FF</code> (bank <code>$FF</code> last) so the MMU can map the top <code>N</code> banks of the file linearly. ROM03’s four banks are already linear <code>FC–FF</code> that way. That normalization is independent of the ROMBANK softswitch.</p>
 <hr />
 <h2 id="cassette-interface-c020-c060">Cassette interface (<code>$C020</code> / <code>$C060</code>)<a class="headerlink" href="#cassette-interface-c020-c060" title="Permanent link">&para;</a></h2>
 <p>Listed in <a href="../Documentation/">Documentation.md</a> as <strong>no support planned</strong>.</p>

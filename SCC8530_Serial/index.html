@@ -2338,6 +2338,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="R3 - Interrupt Pending">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tx-ip-lifetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tx IP lifetime
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2586,6 +2603,34 @@
     
   
     Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
   
 
     
@@ -3841,6 +3886,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="R3 - Interrupt Pending">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tx-ip-lifetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tx IP lifetime
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -4811,6 +4873,37 @@ modified by status information (Channel B). </p>
 </tr>
 </tbody>
 </table>
+<h4 id="tx-ip-lifetime">Tx IP lifetime<a class="headerlink" href="#tx-ip-lifetime" title="Permanent link">&para;</a></h4>
+<p>Tx IP is latched when the transmit buffer goes from full to empty (with WR1 TxIE
+set). It stays set until software either writes the next character to the
+transmit buffer or issues WR0 command 5, Reset Tx Int Pending. Reading RR0/RR3
+does not clear it.</p>
+<p>Sources:</p>
+<ul>
+<li>Zilog SCC/ESCC User Manual, ch. 5, WR0: "Reset Tx Interrupt Pending Command
+  (101). This command is used in cases where there are no more characters to be
+  sent ... This command prevents further transmit interrupts until after the next
+  character has been loaded into the transmit buffer or until CRC has been
+  completely sent."</li>
+<li>Zilog AN0096 (Z180 with SCC at 10 MHz): "The interrupt acknowledge cycle does
+  not reset the IP bit. The IP bit clears by a software command to the SCC, or
+  when the action that generated the interrupt ends ... writing data to the
+  transmitter data register, issuing Reset Tx interrupt pending command for Tx
+  buffer empty interrupt".</li>
+<li>Apple IIgs firmware <code>GSFirmware/Serial/serialdrvr.aii</code>, <code>Serpint</code> /
+  <code>CLEARTXINT</code>: the ISR loops on RR3 until it reads zero, and acks each Tx
+  interrupt with <code>LDA #%00101000 / STA SCCCmd,y</code> (cmd 5) before dequeuing the
+  next byte. If IP were cleared by the RR3 read, the ISR would see no Tx bit and
+  the output queue would never drain (the GS/OS Printer-port hang).</li>
+</ul>
+<p>WR0 command 7, Reset Highest IUS, does <em>not</em> touch IP. Zilog ch. 5: "This
+command resets the highest priority Interrupt Under Service (IUS) bit, allowing
+lower priority conditions to request interrupts." IUS is only set during an
+interrupt-acknowledge cycle (AN0096: "Only software commands clear the IUS bit
+in the SCC"). The IIgs runs the SCC with WR9 No Vector and never generates INTACK,
+so IUS is never set and cmd 7 is effectively a no-op; GSSquared ignores it.
+(KEGS clears the highest pending IP on cmd 7; that is a shortcut, not hardware
+behavior, and would drop e.g. a pending channel B DCD Ext/Status interrupt.)</p>
 <h3 id="r10">R10<a class="headerlink" href="#r10" title="Permanent link">&para;</a></h3>
 <p>| 7 | x | one clocks missing |
 | 6 | x | two clocks missing |

@@ -2608,6 +2608,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3989,7 +4017,7 @@
   gssquared ~/Documents/MyIIe.gs2
   gssquared "Choplifter Settings.txt"</code></p>
 <p>When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration. See <a href="../CommandLine/">Command Line</a>.</p>
-<p>To write a config from the UI, use <strong>+</strong> or <strong>Edit…</strong> on System Select and click <strong>Save</strong> (or <strong>Save As</strong>). That writes a <code>.gs2</code> with platform, slots, pre-mounted disks, and serial/parallel attachments — not CPU/RAM state. <strong>Save As</strong> to a new path mints a new machine <code>id</code> (IIgs BRAM is copied). Full machine <strong>save states</strong> (CPU, RAM, devices) are <a href="../SaveAndRestore/">planned and not shipped</a>.</p>
+<p>To write a config from the UI, use <strong>+</strong> or <strong>Edit…</strong> on System Select (or right-click / Cmd-click / Alt-click a recent profile tile) and click <strong>Save</strong> or <strong>Save As</strong>. <strong>Save</strong> overwrites an existing <code>.gs2</code> and stays grayed out on a brand-new profile. <strong>Save As</strong> asks for a path; a new path mints a new machine <code>id</code> (IIgs BRAM is copied). Either button writes a <code>.gs2</code> with platform, slots, pre-mounted disks, and serial/parallel attachments — not CPU/RAM state. Full machine <strong>save states</strong> (CPU, RAM, devices) are <a href="../SaveAndRestore/">planned and not shipped</a>.</p>
 <hr />
 <h2 id="your-first-gs2-file">Your first <code>.gs2</code> file<a class="headerlink" href="#your-first-gs2-file" title="Permanent link">&para;</a></h2>
 <p>A <code>.gs2</code> file is plain text in <strong>TOML</strong> format. TOML uses <code>key = value</code> lines and <code>[[sections]]</code> for repeating blocks. Comments start with <code>#</code>.</p>
@@ -4135,7 +4163,7 @@ image = &quot;disks/BASIC SYSTEM.woz&quot;
 <li><strong><code>clock = "pal"</code></strong> — European timing. Use with II, II+, and IIe family only.</li>
 <li><strong><code>scanner</code></strong> — Advanced. Values: <code>"apple2"</code>, <code>"apple2e"</code>, <code>"apple2e_pal"</code>, <code>"apple2gs"</code>. If you are building a PAL //e, set <code>clock = "pal"</code> and you can skip <code>scanner</code>; GS2 will use <code>"apple2e_pal"</code>.</li>
 <li><strong><code>speed</code></strong> — How fast the emulator runs the CPU (not the IIgs Control Panel <code>$C036</code> bit). Same choices as the config editor and F4 speed row.</li>
-<li><strong><code>display</code></strong> — Composite (NTSC), RGB, or a monochrome phosphor. Same choices as the config editor monitor row.</li>
+<li><strong><code>display</code></strong> — Composite (NTSC), RGB, or a monochrome phosphor (<code>green</code> / <code>amber</code> / <code>white</code>). Same choices as the config editor monitor row. <strong>GS Composite</strong> is a session Display-menu engine on the IIgs, not a <code>.gs2</code> <code>display</code> value.</li>
 </ul>
 <p>Motherboard devices (keyboard, built-in IIgs sound, built-in floppy controller on the GS, and so on) are added automatically from <code>platform</code>. You only list <strong>expansion cards</strong> in <code>[[cards]]</code>.</p>
 <hr />
@@ -4201,6 +4229,10 @@ card = &quot;bazfast3&quot;
 <td>Slinky-style RAM expansion (up to 1 MB)</td>
 </tr>
 <tr>
+<td><code>"ramworks"</code></td>
+<td><a href="../Cards_RamWorks/">RamWorks</a> 8MB auxiliary RAM (IIe family only, slot 0 / Aux)</td>
+</tr>
+<tr>
 <td><code>"prodos_block"</code></td>
 <td>Deprecated - do not use; prefer <code>"bazfast3"</code></td>
 </tr>
@@ -4236,7 +4268,7 @@ card = &quot;bazfast3&quot;
 </table>
 <p>Empty slots are simply omitted — you do not need to say “empty.”</p>
 <h3 id="parallel-and-serial-attachments">Parallel and serial attachments<a class="headerlink" href="#parallel-and-serial-attachments" title="Permanent link">&para;</a></h3>
-<p>Do <strong>not</strong> put paths on the card entry. Use <code>[[connections]]</code> (below) for parallel file/clipboard capture and serial modem/file/clipboard/host-UART attachments. See also <a href="../Cards_Parallel/">Parallel Interface</a> and <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
+<p>Do <strong>not</strong> put paths on the card entry. Use <code>[[connections]]</code> (below) for parallel file/clipboard capture and serial modem/file/clipboard/printer/Net Printer/host-UART attachments. See also <a href="../Cards_Parallel/">Parallel Interface</a> and <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
 <hr />
 <h2 id="disk-images-storage">Disk images — <code>[[storage]]</code><a class="headerlink" href="#disk-images-storage" title="Permanent link">&para;</a></h2>
 <p>Pre-mount disks so they are ready when the machine boots. Each row is one drive:</p>
@@ -4324,7 +4356,7 @@ image = &quot;volumes/Games.po&quot;
 </code></pre>
 <hr />
 <h2 id="serial-parallel-ports-connections">Serial / parallel ports — <code>[[connections]]</code><a class="headerlink" href="#serial-parallel-ports-connections" title="Permanent link">&para;</a></h2>
-<p>Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, or a real host UART. Full UI walkthrough: <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
+<p>Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, a Net Printer, or a real host UART. Full UI walkthrough: <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>. Net Printer: <a href="../NetPrinter/">NetPrinter.md</a>.</p>
 <p><strong>IIgs built-in ports</strong> (no <code>slot</code> — these are on the motherboard):</p>
 <pre><code class="language-toml">[[connections]]
 port = &quot;a&quot;
@@ -4363,11 +4395,15 @@ path = &quot;printouts/session.bin&quot;
 </tr>
 <tr>
 <td><code>device</code></td>
-<td><code>"none"</code>, <code>"file"</code>, <code>"clipboard"</code>, <code>"echo"</code>, <code>"modem"</code>, or <code>"serial"</code>. Parallel allows <code>"none"</code> / <code>"file"</code> / <code>"clipboard"</code> only. <strong><code>echo</code> is TOML-only</strong> — it is not offered in the Control Panel or config editor.</td>
+<td><code>"none"</code>, <code>"file"</code>, <code>"clipboard"</code>, <code>"echo"</code>, <code>"modem"</code>, <code>"serial"</code>, <code>"printer"</code>, or <code>"netprinter"</code>. Parallel allows <code>"none"</code> / <code>"file"</code> / <code>"clipboard"</code> only. <strong><code>echo</code> is TOML-only</strong> — it is not offered in the Control Panel or config editor.</td>
 </tr>
 <tr>
 <td><code>path</code></td>
 <td>Host file when <code>device = "file"</code> (relative paths work like disk images). Host port name when <code>device = "serial"</code> (stored as-is, e.g. <code>cu.usbserial-…</code>, <code>/dev/cu.usbserial-…</code>, <code>COM3</code>, or <code>/dev/ttyUSB0</code>).</td>
+</tr>
+<tr>
+<td><code>host</code> / <code>port</code></td>
+<td>For <code>device = "netprinter"</code>: DNS name or IP, and TCP port (often 9100).</td>
 </tr>
 </tbody>
 </table>

@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -4239,11 +4267,6 @@ typedef struct {
 <td>All</td>
 </tr>
 <tr>
-<td><code>"iie_memory"</code></td>
-<td><code>DEVICE_ID_IIE_MEMORY</code></td>
-<td>IIe family</td>
-</tr>
-<tr>
 <td><code>"cassette"</code></td>
 <td><code>DEVICE_ID_CASSETTE</code></td>
 <td>All</td>
@@ -4373,7 +4396,7 @@ device = &quot;file&quot;
 <td><code>device</code></td>
 <td>string</td>
 <td>yes</td>
-<td>Virtual peripheral: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>clipboard</code>, <code>serial</code>, <code>none</code></td>
+<td>Virtual peripheral: <code>file</code>, <code>printer</code>, <code>modem</code>, <code>echo</code>, <code>clipboard</code>, <code>serial</code>, <code>netprinter</code>, <code>none</code></td>
 </tr>
 <tr>
 <td><code>slot</code></td>
@@ -4383,15 +4406,21 @@ device = &quot;file&quot;
 </tr>
 <tr>
 <td><code>port</code></td>
-<td>string</td>
+<td>string or integer</td>
 <td>no</td>
-<td>Channel <code>"a"</code> or <code>"b"</code> (defaults to <code>"a"</code>; legacy bare <code>port</code> without <code>slot</code> still loads)</td>
+<td>Channel <code>"a"</code> or <code>"b"</code> when a string (defaults to <code>"a"</code>; legacy bare <code>port</code> without <code>slot</code> still loads). Integer 1–65535 is the TCP port when <code>device = "netprinter"</code> (required for that device). Preferred configs always use <code>slot</code> for the jack.</td>
 </tr>
 <tr>
 <td><code>path</code></td>
 <td>string</td>
 <td>no</td>
 <td>Capture file when <code>device = "file"</code> (optional); host port name when <code>device = "serial"</code> (required; stored as-is, not relative to the config)</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td>string</td>
+<td>no</td>
+<td>DNS name or IP when <code>device = "netprinter"</code> (required for that device; stored as typed)</td>
 </tr>
 <tr>
 <td><code>remote_url</code></td>
@@ -4421,6 +4450,10 @@ device = &quot;file&quot;
 <td>Capture / file sink (<code>path</code> optional)</td>
 </tr>
 <tr>
+<td><code>"printer"</code></td>
+<td>IIgs SCC and Super Serial. Same capture as <code>"file"</code> (<code>GS2.A.*</code> / <code>GS2.B.*</code> on SCC, <code>GS2.SSCn.*</code> on SSC; idle close, toast). On native builds the printer worker also opens a gs2print ticket and copies the same bytes to that socket; the OS open is spawned from the worker and not waited on. If the printer app is missing, a toast says so and the dump continues. On SSC, DIPSW1 mode bits are SIC P8 (<code>$ED</code> at the 9600 default) so firmware does not send ETX or wait for ACK. Not valid on parallel. The web build writes the dump only.</td>
+</tr>
+<tr>
 <td><code>"clipboard"</code></td>
 <td>Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file)</td>
 </tr>
@@ -4436,9 +4469,14 @@ device = &quot;file&quot;
 <td><code>"serial"</code></td>
 <td>Real host UART; <code>path</code> is the OS port name (macOS <code>/dev/cu.*</code>, Windows <code>COMn</code>, Linux <code>/dev/ttyS*</code> <code>/dev/ttyUSB*</code> <code>/dev/ttyACM*</code> <code>/dev/ttyAMA*</code>)</td>
 </tr>
+<tr>
+<td><code>"netprinter"</code></td>
+<td>Raw TCP client. <code>host</code> and integer <code>port</code> required. Opens on the first guest byte and closes after 60 seconds idle. Native builds only; a web row is left unattached. On SSC, DIPSW1 mode bits are SIC P8. Spec: <a href="../NetPrinter/">NetPrinter.md</a>. Not valid on parallel.</td>
+</tr>
 </tbody>
 </table>
-<p><strong>Allowed devices by port kind:</strong> serial (SCC, SSC) → none / file / clipboard / modem / serial; parallel → none / file / clipboard.</p>
+<p><strong>Allowed devices by port kind:</strong> SCC and SSC serial → none / file / printer / clipboard / modem / serial / netprinter; parallel → none / file / clipboard. A <code>printer</code> or <code>netprinter</code> row on parallel is refused when the machine starts (the port keeps its default); the config editor rewrites it to <code>file</code>.</p>
+<p><code>gs2print</code> as its own <code>[[connections]]</code> device (parallel, and a serial port used as a printer) is not implemented. The <code>printer</code> attachment is what opens the ticket. The sidecar app is still a separate download. See <a href="../PrinterEmulation/">PrinterEmulation.md</a>.</p>
 <h3 id="port-addressing">Port addressing<a class="headerlink" href="#port-addressing" title="Permanent link">&para;</a></h3>
 <p><strong>IIgs built-in SCC</strong> — firmware maps Port A to slot 1 and Port B to slot 2. Preferred TOML:</p>
 <pre><code class="language-toml">[[connections]]
@@ -4448,6 +4486,11 @@ device = &quot;file&quot;
 [[connections]]
 slot = 2
 device = &quot;modem&quot;
+</code></pre>
+<p>Printer on either built-in port:</p>
+<pre><code class="language-toml">[[connections]]
+slot = 1
+device = &quot;printer&quot;
 </code></pre>
 <p>Legacy form (still accepted; normalized on load):</p>
 <pre><code class="language-toml">[[connections]]

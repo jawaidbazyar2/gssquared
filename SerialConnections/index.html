@@ -2325,6 +2325,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3406,6 +3434,11 @@
 <td>Capture printer bytes to a host file</td>
 </tr>
 <tr>
+<td><strong>Printer</strong></td>
+<td>IIgs SCC and Super Serial. Same capture as File, and on native builds the same bytes go to a gs2print socket. The worker opens the ticket without blocking the emulator. On SSC, sets the card to SIC P8 so firmware does not wait for ACK.</td>
+<td>—</td>
+</tr>
+<tr>
 <td><strong>Clipboard</strong></td>
 <td>Capture TX to the host clipboard</td>
 <td>Capture printer bytes to the host clipboard</td>
@@ -3413,6 +3446,11 @@
 <tr>
 <td><strong>Modem</strong></td>
 <td>Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502). Native builds only; absent in the <a href="../Web/">browser</a>.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Net Printer</strong></td>
+<td>Raw TCP client to a host:port (often 9100). Opens on the first guest byte, closes after 60 seconds idle. Native builds only; absent in the <a href="../Web/">browser</a>. Spec: <a href="../NetPrinter/">NetPrinter.md</a>.</td>
 <td>—</td>
 </tr>
 <tr>
@@ -3429,7 +3467,7 @@
 <li>Press <strong>F4</strong> (or click the Control Panel tab).</li>
 <li>Find the <strong>Serial / Parallel</strong> buttons (between the slot list and the drive icons).</li>
 <li>Click a port button.</li>
-<li>Pick <strong>None</strong>, <strong>File</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, or a host serial port listed by name (Modem and host ports only on serial jacks). The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.</li>
+<li>Pick <strong>None</strong>, <strong>File</strong>, <strong>Printer</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, <strong>Net Printer</strong>, or a host serial port listed by name (Modem, Net Printer, and host ports only on serial jacks; <strong>Printer</strong> on IIgs SCC and Super Serial). <strong>Net Printer</strong> asks for a host and TCP port; the chosen address is shown under the port button. The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.</li>
 </ol>
 <p>On Apple IIgs machines you will see the built-in ports (often labeled like printer/modem). Slot cards such as Super Serial or Parallel appear as their own buttons.</p>
 <h2 id="config-editor-saved-with-the-machine">Config editor (saved with the machine)<a class="headerlink" href="#config-editor-saved-with-the-machine" title="Permanent link">&para;</a></h2>
@@ -3454,14 +3492,20 @@ device = &quot;modem&quot;
 slot = 2
 device = &quot;modem&quot;
 </code></pre>
-<p>Optional <code>path</code> sets the capture filename for <code>device = "file"</code>. For <code>device = "serial"</code>, <code>path</code> is the host port name stored as written (<code>/dev/cu.usbserial-…</code>, <code>cu.usbserial-…</code>, <code>COM3</code>, <code>/dev/ttyUSB0</code>, <code>/dev/ttyS0</code>, …) — it is not resolved relative to the config file.</p>
+<p>Optional <code>path</code> sets the capture filename for <code>device = "file"</code>. For <code>device = "serial"</code>, <code>path</code> is the host port name stored as written (<code>/dev/cu.usbserial-…</code>, <code>cu.usbserial-…</code>, <code>COM3</code>, <code>/dev/ttyUSB0</code>, <code>/dev/ttyS0</code>, …) — it is not resolved relative to the config file. For <code>device = "netprinter"</code>, <code>host</code> is a DNS name or IP and integer <code>port</code> is the TCP port (preferred configs use <code>slot</code> for the jack, so <code>port</code> here is not the SCC channel).</p>
 <pre><code class="language-toml">[[connections]]
 slot = 2
 device = &quot;serial&quot;
 path = &quot;cu.usbserial-A50285BI&quot;   # macOS; on Windows use path = &quot;COM3&quot;; on Linux, /dev/ttyUSB0 or /dev/ttyS0
 </code></pre>
 <p>Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. Host <strong>CD, CTS, and DSR</strong> are passed through to the emulated UART so BBS software can see carrier loss. If the dongle is unplugged, the emulator keeps the attachment and retries (handshake lines read as deasserted until it reopens). On Linux, <code>/dev/ttyUSB*</code> and <code>/dev/ttyS*</code> are owned by group <code>dialout</code> (some distros use <code>uucp</code>); the local user must be in that group and re-login before GSSquared can open the port.</p>
-<p>A <strong>Modem</strong> attachment asserts CD only while the TCP session is connected. File and clipboard attachments keep handshake asserted. Details: <a href="../SerialPortSpec/">SerialPortSpec.md</a>.</p>
+<pre><code class="language-toml">[[connections]]
+slot = 1
+device = &quot;netprinter&quot;
+host = &quot;printer.local&quot;
+port = 9100
+</code></pre>
+<p>A <strong>Modem</strong> attachment asserts CD only while the TCP session is connected. File, clipboard, printer, and Net Printer attachments keep handshake asserted. Details: <a href="../SerialPortSpec/">SerialPortSpec.md</a>.</p>
 <p>If you omit <code>[[connections]]</code>, GSSquared applies sensible defaults (IIgs: file on one port and modem on the other on native builds; SSC → modem; parallel → file).</p>
 <p><code>device = "echo"</code> is valid in a hand-written <code>.gs2</code> only; the Control Panel and config editor do not offer Echo.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
@@ -3471,6 +3515,7 @@ path = &quot;cu.usbserial-A50285BI&quot;   # macOS; on Windows use path = &quot;
 <li><a href="../Serial_Modem/">Serial / Modem</a></li>
 <li><a href="../Web/">Play in the browser</a> — no modem on web</li>
 <li><a href="../SerialPortSpec/">Serial port spec</a></li>
+<li><a href="../NetPrinter/">Net Printer</a></li>
 <li><a href="../ConfigFiles/">Writing Config Files Manually</a></li>
 </ul>
 

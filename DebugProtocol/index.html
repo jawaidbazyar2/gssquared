@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3578,6 +3606,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#loadmem-main-3-sub-4-0x00000304" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LOADMEM — main 3, sub 4 (0x00000304)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3858,7 +3897,7 @@
 <li>TCP listen/connect (frame is ready; transport comes later).</li>
 <li>Required request pipelining (header supports it; implementation may allow only one outstanding request).</li>
 <li>MCP, GDB RSP, or an embedded script runtime.</li>
-<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / PASTE_TEXT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.</li>
+<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / LOADMEM / BP_* / KEYEVENT / PASTE_TEXT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.</li>
 </ul>
 <hr />
 <h2 id="frame-layout">Frame layout<a class="headerlink" href="#frame-layout" title="Permanent link">&para;</a></h2>
@@ -4213,6 +4252,14 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <td><code>hit_count</code> + addresses</td>
 </tr>
 <tr>
+<td><code>LOADMEM</code></td>
+<td>3</td>
+<td>4</td>
+<td><code>0x00000304</code></td>
+<td>protocol (file I/O) + main (write)</td>
+<td>4 bytes: <code>bytes_loaded</code></td>
+</tr>
+<tr>
 <td><code>BP_SET</code></td>
 <td>4</td>
 <td>1</td>
@@ -4565,7 +4612,7 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <h3 id="cpu-trace-main-2">CPU / trace (<code>main == 2</code>)<a class="headerlink" href="#cpu-trace-main-2" title="Permanent link">&para;</a></h3>
 <p>Commands in this family run on the <strong>main emulation thread</strong>.</p>
 <h4 id="get_trace-main-2-sub-1-0x00000201"><code>GET_TRACE</code> — main 2, sub 1 (<code>0x00000201</code>)<a class="headerlink" href="#get_trace-main-2-sub-1-0x00000201" title="Permanent link">&para;</a></h4>
-<p>Read a window from the CPU instruction trace ring buffer (<code>cpu-&gt;trace_buffer</code>, capacity 100000, 40-byte <code>system_trace_entry_t</code> records — same layout as <code>EVT_STOPPED.trace</code>).</p>
+<p>Read a window from the CPU instruction trace ring buffer (<code>cpu-&gt;trace_buffer</code>, default capacity 131072 / 128K, 40-byte <code>system_trace_entry_t</code> records — same layout as <code>EVT_STOPPED.trace</code>).</p>
 <p><strong>Request payload</strong> (8 bytes):</p>
 <table>
 <thead>
@@ -5034,6 +5081,85 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 </tbody>
 </table>
 <p><strong>Bounds:</strong> handshake required; payload size mismatch; zero/<code>&gt;65536</code> window; wrap; bad <code>pattern_len</code> / <code>max_hits</code> / flags → <code>E_BAD_LENGTH</code>. Domain / platform errors match <code>READMEM</code> (<code>unsupported domain</code>, <code>MEGAII only on Apple IIgs</code>, <code>out of range</code>, …). Allowed while running or paused.</p>
+<h4 id="loadmem-main-3-sub-4-0x00000304"><code>LOADMEM</code> — main 3, sub 4 (<code>0x00000304</code>)<a class="headerlink" href="#loadmem-main-3-sub-4-0x00000304" title="Permanent link">&para;</a></h4>
+<p>Load binary bytes from a host filesystem file into a memory domain at <code>address</code>. Avoids transferring large binaries inline over the socket or hex-encoding them through an MCP/LLM host. Same domain table and write semantics as <code>WRITEMEM</code>.</p>
+<p>File open/stat/read runs on the <strong>protocol thread</strong> so disk I/O does not stall the main emulation loop; writing the loaded bytes into emulated memory runs on the <strong>main thread</strong>.</p>
+<p><strong>Request payload</strong> (<code>16 + N</code> bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>domain</code></td>
+<td>Memory domain (<code>uint32</code>), same table as <code>READMEM</code> / <code>WRITEMEM</code>.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>address</code></td>
+<td>Destination base address (<code>uint32</code>), little-endian.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>file_offset</code></td>
+<td>Byte offset into host file (<code>uint32</code>). <code>0</code> = start of file.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td><code>max_length</code></td>
+<td>Max bytes to load (<code>uint32</code>). <code>0</code> = load from <code>file_offset</code> to EOF.</td>
+</tr>
+<tr>
+<td>16</td>
+<td>N</td>
+<td><code>path</code></td>
+<td>UTF-8 host filesystem path (remainder of payload; not NUL-terminated).</td>
+</tr>
+</tbody>
+</table>
+<p>Clients should pass an <strong>absolute path</strong> so success does not depend on the emulator process cwd.</p>
+<p>If <code>max_length &gt; 0</code> and fewer than <code>max_length</code> bytes remain after <code>file_offset</code>, the server loads through EOF and reports the actual byte count in <code>bytes_loaded</code>.</p>
+<p><strong>Success reply</strong> (same <code>type=LOADMEM</code>, echoed <code>seq</code>), payload (4 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>bytes_loaded</code></td>
+<td>Number of bytes read from the file and written to memory (<code>uint32</code>).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Bounds:</strong></p>
+<ul>
+<li>Handshake required; payload <code>&lt; 16</code> → <code>E_BAD_LENGTH</code>.</li>
+<li><code>path</code> empty, <code>&gt; 4096</code> bytes, or containing NUL → <code>E_BAD_LENGTH</code>.</li>
+<li>Invalid <code>domain</code> → <code>E_BAD_LENGTH</code>.</li>
+<li><code>max_length &gt; 0x01000000</code> (16 MiB) or resulting byte count <code>&gt; 0x01000000</code> → <code>E_BAD_LENGTH</code>.</li>
+<li><code>file_offset &gt; file_size</code> → <code>E_BAD_LENGTH</code> (<code>LOADMEM file_offset past EOF</code>).</li>
+<li>Reject if <code>address + bytes_loaded</code> wraps <code>uint32</code> → <code>E_BAD_LENGTH</code>.</li>
+<li>File missing, not a regular file, unreadable, or read failure → <code>E_INTERNAL</code>.</li>
+<li>Domain / platform / range checks match <code>WRITEMEM</code> (<code>MAIN</code> / <code>MEGAII</code> checked against MMU address space size; <code>MAIN_RAW</code> / <code>MEGAII_RAW</code> checked against <code>get_memory_size()</code>; <code>ENSONIQ</code> checked against <code>0x10000</code>; out-of-range → <code>E_BAD_LENGTH</code> / <code>out of range</code>; <code>MEGAII</code> / <code>MEGAII_RAW</code> on non-IIgs → <code>E_INTERNAL</code> / <code>MEGAII only on Apple IIgs</code>; <code>ADBMICRO</code> or <code>ENSONIQ</code> on non-IIgs → <code>E_INTERNAL</code> / <code>unsupported domain</code>).</li>
+<li>Allowed while running or paused.</li>
+</ul>
 <h3 id="input-main-5">Input (<code>main == 5</code>)<a class="headerlink" href="#input-main-5" title="Permanent link">&para;</a></h3>
 <h4 id="keyevent-main-5-sub-1-0x00000501"><code>KEYEVENT</code> — main 5, sub 1 (<code>0x00000501</code>)<a class="headerlink" href="#keyevent-main-5-sub-1-0x00000501" title="Permanent link">&para;</a></h4>
 <p>Inject one SDL keyboard event into the emulator event queue (<code>SDL_PushEvent</code>). Handled on the <strong>protocol thread</strong> (<code>SDL_PushEvent</code> is thread-safe). II/e keyboard and IIgs KeyGloo see the same events as a real keypress.</p>

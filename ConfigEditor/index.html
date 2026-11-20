@@ -2336,6 +2336,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3413,6 +3441,7 @@
 <ul>
 <li><strong>+</strong> — create a new custom config from scratch. Opens the config editor with a default Enhanced //e setup you can change.</li>
 <li><strong>Edit...</strong> — open an existing config file (<code>.gs2</code> or <code>… Settings.txt</code>) and load it into the editor so you can change it and save.</li>
+<li><strong>Recent profile tile</strong> — click boots it. Right-click, or Cmd-click / Alt-click, opens that profile in the editor (same as <strong>Edit...</strong> after picking the file). Hover the tile for a reminder. A <code>.gs2pack</code> tile only launches.</li>
 </ul>
 <p>Hover the <strong>+</strong> or <strong>Edit…</strong> tile to see a short description at the bottom of the screen.</p>
 <h2 id="launch-config-menu">Launch Config… (menu)<a class="headerlink" href="#launch-config-menu" title="Permanent link">&para;</a></h2>
@@ -3440,12 +3469,12 @@
 <ul>
 <li><strong>Name</strong> and <strong>description</strong> — shown on the badge / for your own reference.</li>
 <li><strong>Platform</strong> — Apple II, II+, //e, Enhanced //e, IIgs ROM 01, IIgs ROM 03, etc.</li>
-<li><strong>Slots</strong> — click a slot to pick which card goes there (or None). Card choices include Disk II, BazFast, <a href="../Cards_Mockingboard/">Mockingboard</a>, <a href="../Cards_UthernetII/">Uthernet II</a>, <a href="../Cards_SuperSerial/">Super Serial</a>, <a href="../Cards_AppleMouse/">Apple Mouse</a>, <a href="../Cards_Parallel/">Parallel</a>, <a href="../Cards_Videx/">Videx</a> (II/II+ slot 3), <a href="../Cards_Clock/">clock cards</a>, <a href="../Cards_VIDHD/">VIDHD</a> (65816 //e), <a href="../Cards_SecondSight/">Second Sight</a> or <a href="../Cards_VOC/">Video Overlay Card</a> (IIgs slot 3), language card (slot 0), and Slinky memory expansion.</li>
+<li><strong>Slots</strong> — click a slot to pick which card goes there (or None). On a //e the first slot is labeled <strong>Aux</strong> (not 0); that is where <a href="../Cards_RamWorks/">RamWorks</a> goes. Other card choices include Disk II, BazFast, <a href="../Cards_Mockingboard/">Mockingboard</a>, <a href="../Cards_UthernetII/">Uthernet II</a>, <a href="../Cards_SuperSerial/">Super Serial</a>, <a href="../Cards_AppleMouse/">Apple Mouse</a>, <a href="../Cards_Parallel/">Parallel</a>, <a href="../Cards_Videx/">Videx</a> (II/II+ slot 3), <a href="../Cards_Clock/">clock cards</a>, <a href="../Cards_VIDHD/">VIDHD</a> (65816 //e), <a href="../Cards_SecondSight/">Second Sight</a> or <a href="../Cards_VOC/">Video Overlay Card</a> (IIgs slot 3), language card (slot 0 on II / II+), and Slinky memory expansion.</li>
 <li><strong>Storage (pre-mount)</strong> — click a drive to choose a disk image that will be mounted when you later launch this config. Click again to clear it. Any valid disk image including .pmap (BazFast multi-image) can be "pre-mounted" this way.</li>
-<li><strong>Serial / Parallel</strong> — click a port button and choose <strong>None</strong>, <strong>File</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, or a listed host serial port (serial jacks only). See <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</li>
+<li><strong>Serial / Parallel</strong> — click a port button and choose <strong>None</strong>, <strong>File</strong>, <strong>Printer</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, <strong>Net Printer</strong>, or a listed host serial port (serial jacks only). <strong>Net Printer</strong> asks for host and TCP port; the address is shown under the port button. See <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</li>
 </ul>
 <p>Speed and Display controls on this screen are for preview only; they are <strong>not saved</strong> into the config file.</p>
-<p><strong>Save</strong> writes a <code>.gs2</code> file (you'll get a save dialog). <strong>Save As</strong> to a new path mints a new machine <code>id</code> (IIgs BRAM is copied). This is configuration only — not a full CPU/RAM save state (that is planned). <strong>Cancel</strong> returns to System Select without saving.</p>
+<p><strong>Save</strong> overwrites the current <code>.gs2</code> and skips the dialog. On a brand-new profile (and when editing a <code>Settings.txt</code>, which is not a <code>.gs2</code>), Save stays grayed out. <strong>Save As</strong> asks for a path. A new path mints a new machine <code>id</code> (IIgs BRAM is copied). A brand-new edit uses Save As to name the first file. This is configuration only — not a full CPU/RAM save state (that is planned). <strong>Cancel</strong> returns to System Select without saving.</p>
 <p>After saving, use <strong>Launch Config…</strong>, double-click the <code>.gs2</code>, or Open With to run it. Recent configs also appear as tiles on System Select.</p>
 <h2 id="machine-identity-bram">Machine identity (BRAM)<a class="headerlink" href="#machine-identity-bram" title="Permanent link">&para;</a></h2>
 <p>Each <code>.gs2</code> file gets a stable <strong><code>id</code></strong> (UUID). On Apple IIgs configs, battery RAM / Control Panel NVRAM is stored in the <code>.gs2</code> (<code>bram</code>) and written when you close the machine. You normally do not need to edit <code>id</code> by hand; GSSquared assigns one when missing. See <a href="../ConfigFiles/#machine-identity-id">Writing Config Files Manually</a>.</p>

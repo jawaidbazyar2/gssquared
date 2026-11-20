@@ -2602,6 +2602,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -4119,9 +4147,9 @@
 </ul>
 <p>The <code>M</code> and <code>X</code> flag columns reflect the current accumulator/index width on the 65816.</p>
 <h3 id="instruction-log">Instruction log<a class="headerlink" href="#instruction-log" title="Permanent link">&para;</a></h3>
-<p>Each traced instruction appears on one line with columns for cycle count, registers, program counter, opcode bytes (optional), mnemonic, effective address, access direction (<code>R</code>/<code>W</code>), data byte, and an optional symbol label.</p>
+<p>Each traced instruction appears on one line with columns for cycle count, registers, program counter, opcode bytes (optional), mnemonic, effective address, access direction (<code>R</code>/<code>W</code>), data byte, and an optional symbol label. <code>COP</code>, <code>BRK</code>, and <code>WDM</code> show the signature byte that follows the opcode.</p>
 <ul>
-<li><strong>Tracing</strong> is <strong>on by default</strong>. Press <strong>T</strong> to disable recording new entries (useful if you only care about breakpoints and want less overhead).</li>
+<li><strong>Tracing</strong> is <strong>on by default</strong>. <strong>Settings → Debug → CPU Trace</strong> sets the default for new sessions; press <strong>T</strong> in the debugger to disable recording new entries (useful if you only care about breakpoints and want less overhead).</li>
 <li>Press <strong>B</strong> to hide or show raw opcode bytes (<code>B)ytes: ON/OFF</code> in the status line).</li>
 <li>Scroll backward through up to 100,000 retained instructions.</li>
 </ul>
@@ -4291,6 +4319,11 @@
 <td><code>save</code></td>
 <td><code>save "out.bin" 2000.2FFF</code></td>
 <td>Save a memory range to a file</td>
+</tr>
+<tr>
+<td><code>trsave</code></td>
+<td><code>trsave "trace.bin"</code></td>
+<td>Save the current CPU trace ring buffer to a file</td>
 </tr>
 <tr>
 <td><code>sload</code></td>
@@ -4481,7 +4514,7 @@ al C010 .Loop
 </table>
 <p>For everyday software debugging, use the <strong>Video pane</strong> or <strong>Static</strong> main-window mode. For cycle-timed graphics, switch the main window to <strong>Beam</strong> and step at <strong>1 MHz</strong> — a red crosshair marks the scanner position on the guest picture.</p>
 <p><strong>Speed setting matters.</strong> Use fixed clock rates (especially 1 MHz), not Ludicrous Speed, when debugging raster effects.</p>
-<p><strong>Useful main-window keys:</strong> <strong>F2</strong> (display engine), <strong>F5</strong> (scaling), <strong>F4</strong> (Control Panel / speed).</p>
+<p><strong>Useful main-window keys:</strong> <strong>F2</strong> (display engine, including GS Composite on a IIgs), <strong>F5</strong> (Smooth / Sharp scaling), <strong>F4</strong> (Control Panel / speed), <strong>F7</strong> (Shadow Mask).</p>
 <p><strong>Beam counters</strong> — enable the Watch pane <strong><code>display</code></strong> panel (<code>debug "display"</code>) for H/V position, soft switches, and VBL/HBL flags.</p>
 <hr />
 <h2 id="typical-workflows">Typical workflows<a class="headerlink" href="#typical-workflows" title="Permanent link">&para;</a></h2>
@@ -4513,11 +4546,11 @@ al C010 .Loop
 </ol>
 <hr />
 <h2 id="trace-file-on-exit">Trace file on exit<a class="headerlink" href="#trace-file-on-exit" title="Permanent link">&para;</a></h2>
-<p>When you quit emulation (or exit the application while a machine is running), GSSquared automatically saves the instruction trace ring buffer to a binary file named <strong><code>gssquared-trace.bin</code></strong> in your documents folder. The file contains raw <code>system_trace_entry_t</code> records for offline analysis.</p>
-<p>There is not yet a built-in menu command to save or reload a trace mid-session; use the automatic save on exit, or the external debug protocol for scripted capture.</p>
+<p>When <strong>Settings → Debug → Write Trace File on Exit</strong> is enabled (off by default; stored as <code>debug.save_trace_on_exit</code> in <code>system_settings.toml</code>), quitting emulation or exiting the application while a machine is running saves the instruction trace ring buffer to a binary file named <strong><code>gssquared-trace.bin</code></strong> in your documents folder. The file contains raw <code>system_trace_entry_t</code> records for offline analysis.</p>
+<p>To save the trace buffer mid-session, run <code>trsave "filename"</code> in the Monitor pane, or use the external debug protocol (<code>GET_TRACE</code>) for scripted capture.</p>
 <hr />
 <h2 id="external-debug-protocol-optional">External debug protocol (optional)<a class="headerlink" href="#external-debug-protocol-optional" title="Permanent link">&para;</a></h2>
-<p>Launch GSSquared with a Unix domain socket to allow external tools to pause, step, read memory, set breakpoints, inject keystrokes, and more — without using the debugger UI:</p>
+<p>Launch GSSquared with a Unix domain socket to allow external tools to pause, step, read memory, load a host file into memory (<code>LOADMEM</code> / <code>load_mem</code>), set breakpoints, inject keystrokes, and more — without using the debugger UI:</p>
 <pre><code class="language-bash">./build/GSSquared --debug /tmp/gs2.sock -p 3
 </code></pre>
 <p>On <strong>Windows 10+</strong>, <code>--debug</code> uses AF_UNIX sockets the same way (for example <code>GSSquared --debug C:\Temp\gs2.sock -p 3</code>).</p>

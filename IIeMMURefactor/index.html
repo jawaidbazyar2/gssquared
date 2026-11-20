@@ -1,0 +1,4400 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>IIe MMU refactor - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#iie-mmu-refactor" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IIe MMU refactor
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Cards_UthernetII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Suites
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CommandLine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BlankFloppy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blank Disk Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HostFST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host FST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SerialConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial & Parallel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Serial_Modem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial / Modem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Play in the Browser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigFiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gs2Pack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS2 Packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProtocolHandlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File Types & URLs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UsingTheDebugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_UthernetII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Uthernet II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SuperSerial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Super Serial Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VOC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Overlay Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SecondSight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Second Sight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard (user)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Videx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Videx VideoTerm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VIDHD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VIDHD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#current-split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current split
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constructor-flag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constructor flag
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setter-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setter API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#map-the-composer-publishes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Map the composer publishes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#characterization-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Characterization test
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Characterization test">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-one-state-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What one state records
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aux-and-language-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aux and language card
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suites-kept-out-of-the-512" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suites kept out of the 512
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cxxx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $Cxxx
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setter-companion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setter companion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#done-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done when
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-mega-ii-uses-mmu_iie2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Mega II uses MMU_IIe2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2 — Mega II uses MMU_IIe2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#intcxrom-and-slotc3rom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        INTCXROM and SLOTC3ROM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#still-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Still out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#done-when_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-page-table-struct-of-arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — page table struct-of-arrays
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3 — page table struct-of-arrays">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#who-indexes-the-arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who indexes the arrays
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#side-tables-stay-arrays-of-structs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side tables stay arrays of structs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#done-when_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gs-mmu-shadow_is_enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS MMU — shadow_is_enabled
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GS MMU — shadow_is_enabled">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-mask-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One mask table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#done-when_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gs-mmu-calc_aux_read-calc_aux_write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS MMU — calc_aux_read / calc_aux_write
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GS MMU — calc_aux_read / calc_aux_write">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#not-a-table-of-addends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not a table of addends
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#same-shape-as-shadow_is_enabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Same shape as shadow_is_enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-it-is-rebuilt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where it is rebuilt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#speed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#done-when_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Done when
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="iie-mmu-refactor">IIe MMU refactor<a class="headerlink" href="#iie-mmu-refactor" title="Permanent link">&para;</a></h1>
+<p>Phase 1 moves the Apple IIe auxiliary-memory and language-card map into <code>MMU_IIe</code>, behind a constructor flag so a IIgs Mega II keeps today's page tables. A characterization test records the current map first and is the gate for the move.</p>
+<p>Unifying the IIgs composers with <code>calc_aux_read</code> / <code>calc_aux_write</code> stays out of scope. <code>shadow_is_enabled</code> is specified below, and so is the aux-page table that replaces <code>calc_aux_read</code> / <code>calc_aux_write</code>.</p>
+<h2 id="current-split">Current split<a class="headerlink" href="#current-split" title="Permanent link">&para;</a></h2>
+<p>One motherboard function is two objects.</p>
+<p><code>MMU_IIe</code> owns the page table, RAM and ROM bases, <code>cpu_aux</code> / RamWorks bank, and the slot-ROM switches. Its constructor registers writes for <code>$C006</code>, <code>$C007</code>, <code>$C00A</code>, and <code>$C00B</code> (<code>INTCXROM</code>, <code>SLOTC3ROM</code>).</p>
+<p><code>iiememory</code> (<code>src/devices/iiememory/iiememory.cpp</code>) owns <code>80STORE</code>, <code>RAMRD</code>, <code>RAMWRT</code>, <code>ALTZP</code>, the language-card flip-flops, copies of <code>PAGE2</code> and <code>HIRES</code>, and the code that publishes <code>$00</code>–<code>$BF</code> and <code>$D0</code>–<code>$FF</code>. It holds an <code>MMU_II *</code> and downcasts to reach <code>cpu_aux_base()</code>, <code>set_aux_bank()</code>, <code>f_intcxrom</code>, and <code>f_slotc3rom</code>.</p>
+<p><code>MMU_IIgs</code> does not use <code>iiememory</code>. It keeps its own copies of those switches (<code>g_80store</code>, <code>g_ramrd</code>, the state register at <code>$C068</code>, <code>LanguageCardLogic</code>) and writes the Mega II page table from <code>megaii_compose_map</code> and <code>bsr_map_memory</code>. <code>$C068</code> updates several switches at once and never goes through <code>$C000</code>–<code>$C00F</code>.</p>
+<p>Display is a second consumer of <code>80STORE</code>, <code>PAGE2</code>, <code>HIRES</code>, <code>TEXT</code>, and <code>MIXED</code>. It registers its own <code>$C0xx</code> handlers. The scanner applies video switches on a delayed cycle and reads video RAM by address. That split stays.</p>
+<p>The II+ language card stays a device. It owns a card RAM buffer. IIe language-card RAM is main and auxiliary memory, selected by <code>ALTZP</code>.</p>
+<h2 id="phase-1">Phase 1<a class="headerlink" href="#phase-1" title="Permanent link">&para;</a></h2>
+<h3 id="in">In<a class="headerlink" href="#in" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Record a golden map of today's IIe page table, driven by <code>$C0xx</code> bus accesses.</li>
+<li>Move <code>iiememory</code>'s switches, <code>LanguageCardLogic</code>, <code>compose_map</code>, and <code>bsr_map_memory</code> onto <code>MMU_IIe</code>.</li>
+<li>Replace the inline <code>$C00x</code> handler body with a static callback that calls setters.</li>
+<li>Give <code>compose_map</code> a range helper so a region is one call, not a loop that repeats <code>ram_page(...)</code>.</li>
+<li>Constructor flag so the Mega II does not register those handlers and does not compose on init or reset.</li>
+<li>Delete <code>DEVICE_ID_IIE_MEMORY</code> / <code>MODULE_IIEMEMORY</code> once RamWorks calls <code>MMU_IIe::set_aux_bank</code> directly.</li>
+<li>Move the <code>iiememory</code> debug dump onto the MMU. Same lines.</li>
+</ul>
+<h3 id="out">Out<a class="headerlink" href="#out" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No change to <code>MMU_IIgs::megaii_compose_map</code>, <code>MMU_IIgs::bsr_map_memory</code>, <code>calc_aux_read</code>, or <code>calc_aux_write</code>.</li>
+<li>No change to which <code>$C0xx</code> handlers the IIgs installs, or to the order they run relative to display.</li>
+<li>No change to display, the video scanner, or the II+ language card.</li>
+<li><code>TEXT</code>, <code>MIXED</code>, <code>80COL</code>, and alt charset do not move onto the MMU. They do not affect the CPU map. <code>PAGE2</code> and <code>HIRES</code> do, when <code>80STORE</code> is on, so the MMU observes those writes the way <code>iiememory</code> does today.</li>
+<li>Do not split the keyboard low bits out of <code>$C011</code>–<code>$C018</code>. Those reads keep returning <code>(last key &amp; 0x7F) | flag</code>. The golden test does not cover the data bus.</li>
+</ul>
+<h2 id="constructor-flag">Constructor flag<a class="headerlink" href="#constructor-flag" title="Permanent link">&para;</a></h2>
+<pre><code class="language-cpp">MMU_IIe(int page_table_size, int ram_amount, uint8_t *rom_pointer,
+        bool install_memory_switches = true);
+</code></pre>
+<p>The flag lives on <code>MMU_IIe2</code>. Phase 2 constructs that class for the Mega II. The rules below are the same.</p>
+<p><code>install_memory_switches == true</code> is the IIe. The MMU registers the handlers that <code>init_iiememory</code> registers today, composes the initial map, and on <code>reset</code> clears the aux switches, resets the language card, sets the aux bank to 0, and recomposes with force.</p>
+<p><code>install_memory_switches == false</code> is the Mega II inside <code>MMU_IIgs</code>.</p>
+<ul>
+<li>Do not register the handlers that move over from <code>iiememory</code>.</li>
+<li>Do not call <code>compose_map</code> or <code>bsr_map_memory</code> from the constructor or from <code>reset</code>.</li>
+<li><code>reset</code> stays what it is today: clear <code>INTCXROM</code> and <code>SLOTC3ROM</code>, then <code>compose_c1cf()</code>.</li>
+</ul>
+<p>The methods may exist on the class. The IIgs code does not call them. Page-table contents on the IIgs path come only from the existing IIgs composers.</p>
+<p>Always register <code>$C006</code>, <code>$C007</code>, <code>$C00A</code>, and <code>$C00B</code>, flag or not. On a IIgs those already occupy slot 0, and <code>init_c0xx_handlers</code> stacks <code>megaii_c0xx_write</code> in slot 1. Leaving that pair alone keeps slot-ROM behavior.</p>
+<p>Pass <code>false</code> at the two Mega II construction sites:</p>
+<ul>
+<li><code>src/gs2.cpp</code>, <code>MMU_MMU_IIGS</code></li>
+<li><code>apps/iigsmmutest/main.cpp</code></li>
+</ul>
+<p>Every other <code>new MMU_IIe2</code> keeps the default (<code>true</code>).</p>
+<p>The flag has to cover reset, not only registration. <code>computer_t::reset</code> calls <code>mmu-&gt;reset</code> on the Mega II before the IIgs reset handler runs <code>megaii_compose_map</code>. That compose republishes a region only when the IIgs <code>m_*</code> flags change. An <code>MMU_IIe::reset</code> that rewrote the page table from its own flags would leave the IIgs flags saying "already published."</p>
+<p>Each <code>$C0xx</code> address has two handler slots. On a IIgs both are already full for <code>$C000</code>/<code>$C001</code> and <code>$C054</code>–<code>$C057</code> (IIgs, then display). A third install asserts. <code>$C080</code>–<code>$C08F</code> is a single IIgs handler today. A second language-card handler would run as well, and the pre-write flip-flop would advance twice per access.</p>
+<p>Do not register <code>$C00C</code>–<code>$C00F</code>. Those are display (80-column, alt charset).</p>
+<p><code>$C011</code> and <code>$C012</code> are registered twice today (<code>iiememory_read_C01X</code>, then <code>bsr_read_C011</code> / <code>bsr_read_C012</code>). Reads OR the two results. Phase 1 uses one handler.</p>
+<h2 id="setter-api">Setter API<a class="headerlink" href="#setter-api" title="Permanent link">&para;</a></h2>
+<p><code>set_C0XX_write_handler</code> stores a C function pointer, <code>(void *context, uint32_t address, uint8_t value)</code>. A static member with that signature is a valid callback and can reach private data. A non-static member is not, because of the hidden <code>this</code>.</p>
+<p>The handler decodes the address. The setter owns the flag and the map update that depends only on that flag.</p>
+<pre><code class="language-cpp">void MMU_IIe::c00x_write(void *context, uint32_t address, uint8_t value) {
+    auto *self = static_cast&lt;MMU_IIe *&gt;(context);
+    switch (address) {
+        case 0xC006: self-&gt;set_intcxrom(false); break;
+        case 0xC007: self-&gt;set_intcxrom(true); break;
+        case 0xC00A: self-&gt;set_slotc3rom(false); break;
+        case 0xC00B: self-&gt;set_slotc3rom(true); break;
+        /* 80STORE, RAMRD, RAMWRT, ALTZP: setters, then one compose_map() */
+    }
+}
+</code></pre>
+<p><code>set_intcxrom</code> / <code>set_slotc3rom</code> store the flag and call <code>compose_c1cf()</code>. Same shape as <code>MMU_IIgs::set_intcxrom</code>. Adopt this for the four handlers that already exist, before moving anything else. Behavior stays the same.</p>
+<p>Aux switches interact. <code>set_80store</code>, <code>set_ramrd</code>, <code>set_ramwrt</code>, <code>set_altzp</code>, <code>set_page2</code>, and <code>set_hires</code> store the flag only. The handler calls <code>compose_map()</code> once after the switch. <code>compose_map</code> reads every flag and republishes the regions whose derived read or write bank changed. The page loops do not live in the setters.</p>
+<p><code>$C08x</code> is its own static handler: <code>LanguageCardLogic::read</code> or <code>write</code>, then <code>bsr_map_memory()</code>. <code>ALTZP</code> changes the language-card window's bank, so <code>compose_map</code> calls <code>bsr_map_memory</code> when the zero-page bank changes, as <code>iiememory_compose_map</code> does today.</p>
+<p><code>set_aux_bank</code> updates <code>cpu_aux</code> and recomposes with force. The aux base can move while every flag stays the same. RamWorks <code>$C073</code> calls <code>set_aux_bank</code> and does not look up <code>MODULE_IIEMEMORY</code>.</p>
+<p>Public setters, private static handlers. A later IIgs phase can call <code>megaii-&gt;set_intcxrom(...)</code> without writing <code>$C006</code>.</p>
+<h2 id="map-the-composer-publishes">Map the composer publishes<a class="headerlink" href="#map-the-composer-publishes" title="Permanent link">&para;</a></h2>
+<p>Offsets are from the selected base. Language-card bank 2 is the <code>$C000</code> hole in that 64K (<code>base + 0xC000</code>). Bank 1 is <code>base + 0xD000</code>. <code>$E000</code>–<code>$FFFF</code> RAM is <code>base + 0xE000</code>. The IIe ROM image starts at <code>$C000</code>, so ROM <code>$D000</code> is <code>get_rom_base() + 0x1000</code> and ROM <code>$E000</code> is <code>get_rom_base() + 0x2000</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Pages</th>
+<th>Read</th>
+<th>Write</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code>–<code>$01</code></td>
+<td><code>ALTZP</code></td>
+<td><code>ALTZP</code></td>
+</tr>
+<tr>
+<td><code>$02</code>–<code>$03</code>, <code>$08</code>–<code>$1F</code>, <code>$40</code>–<code>$BF</code></td>
+<td><code>RAMRD</code></td>
+<td><code>RAMWRT</code></td>
+</tr>
+<tr>
+<td><code>$04</code>–<code>$07</code></td>
+<td><code>80STORE</code> ? <code>PAGE2</code> : <code>RAMRD</code></td>
+<td><code>80STORE</code> ? <code>PAGE2</code> : <code>RAMWRT</code></td>
+</tr>
+<tr>
+<td><code>$20</code>–<code>$3F</code></td>
+<td><code>80STORE &amp;&amp; HIRES</code> ? <code>PAGE2</code> : <code>RAMRD</code></td>
+<td><code>80STORE &amp;&amp; HIRES</code> ? <code>PAGE2</code> : <code>RAMWRT</code></td>
+</tr>
+<tr>
+<td><code>$C1</code>–<code>$CF</code></td>
+<td><code>INTCXROM</code>, <code>SLOTC3ROM</code>, slot register. Not aux.</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>$D0</code>–<code>$DF</code></td>
+<td>LC read-enable ? bank RAM : ROM</td>
+<td>LC write-enable ? bank RAM : <code>NONE</code></td>
+</tr>
+<tr>
+<td><code>$E0</code>–<code>$FF</code></td>
+<td>LC read-enable ? RAM : ROM</td>
+<td>LC write-enable ? RAM : <code>NONE</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>$C0</code> is the handler table, not a page pointer. <code>$C8</code>–<code>$CF</code> also changes when <code>$C3xx</code> is accessed while <code>SLOTC3ROM</code> is clear (<code>iie_map_rom_slot3</code>). That is an access side effect. <code>$C1</code>–<code>$CF</code> does not share switches with the rows above it, so the characterization golden splits there. The <code>$C8</code> cases live in the <code>$Cxxx</code> suite.</p>
+<p>Write-enable is <code>_FF_WRITE_ENABLE == 0</code> (active low). <code>PRE_WRITE</code> does not change the map.</p>
+<h2 id="characterization-test">Characterization test<a class="headerlink" href="#characterization-test" title="Permanent link">&para;</a></h2>
+<p>Write this against the current code and commit the golden before moving handlers. The refactor is done when the same bus sequences produce the same golden.</p>
+<h3 id="fixture">Fixture<a class="headerlink" href="#fixture" title="Permanent link">&para;</a></h3>
+<p>Construct an <code>MMU_IIe</code> (flag on, once the flag exists) and call <code>init_iiememory</code>. No display, no keyboard device, no SDL. After phase 1, drop <code>init_iiememory</code>. The test still only calls <code>read</code> and <code>write</code>.</p>
+<p>Drive switches by bus access. Do not call <code>compose_map</code> and do not poke flags. <code>$C054</code>–<code>$C057</code> and <code>$C08x</code> are reads. <code>$C000</code>–<code>$C005</code>, <code>$C008</code>, <code>$C009</code>, <code>$C006</code>, <code>$C007</code>, <code>$C00A</code>, <code>$C00B</code> are writes.</p>
+<h3 id="what-one-state-records">What one state records<a class="headerlink" href="#what-one-state-records" title="Permanent link">&para;</a></h3>
+<p>Both suites use the same encoding. Record read and write separately:</p>
+<table>
+<thead>
+<tr>
+<th>Pointer</th>
+<th>Record</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>inside the 128K block (<code>main_ram</code> .. <code>main_ram + 0x20000</code>)</td>
+<td><code>RAM+offset</code></td>
+</tr>
+<tr>
+<td>inside <code>get_rom_base()</code></td>
+<td><code>ROM+offset</code></td>
+</tr>
+<tr>
+<td>null</td>
+<td><code>NONE</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>offset</code> is <code>pointer - main_ram</code>, 17 bits (<code>0x00000</code>–<code>0x1FFFF</code>). Bit 16 set is auxiliary bank 0, so text page 1 in aux is <code>RAM+0x10400</code> and language-card bank 2 under <code>ALTZP</code> is <code>RAM+0x1C000</code>. A pointer outside that window is not a <code>RAM+</code> span.</p>
+<p>Run-length encode. One state is a list of spans, for example <code>04-07 R RAM+0x10400 W RAM+0x10400</code>. Store one line per state: the switch bits, then the spans.</p>
+<p>Leave out function pointers, <code>read_d</code> / <code>write_d</code>, and page <code>$C0</code>. A handler address is not a map, and the debug tags will get renamed.</p>
+<p>The aux/language-card suite records <code>$00</code>–<code>$BF</code> and <code>$D0</code>–<code>$FF</code>. The <code>$Cxxx</code> suite records <code>$C1</code>–<code>$CF</code>.</p>
+<p>On mismatch, print the switch values and the first page whose read or write descriptor differs.</p>
+<h3 id="aux-and-language-card">Aux and language card<a class="headerlink" href="#aux-and-language-card" title="Permanent link">&para;</a></h3>
+<p>512 states. These axes, each on or off, except the language card which is three bits:</p>
+<ul>
+<li><code>80STORE</code>, <code>RAMRD</code>, <code>RAMWRT</code>, <code>ALTZP</code>, <code>PAGE2</code>, <code>HIRES</code> (64)</li>
+<li>language-card bank, read-enable, write-enable (×8)</li>
+</ul>
+<p>Reach the eight language-card map states through <code>$C080</code>–<code>$C08F</code>, using <code>LanguageCardLogic</code>'s rules:</p>
+<ul>
+<li>Address bit 3 set (<code>$C088</code>–<code>$C08F</code>) selects bank 1. Clear (<code>$C080</code>–<code>$C087</code>) selects bank 2.</li>
+<li>Address bits 1:0 equal 00 or 11 enable RAM read. 01 or 10 select ROM.</li>
+<li>Write-enable takes two successive reads of an odd address (<code>$C081</code>, <code>$C083</code>, <code>$C089</code>, <code>$C08B</code>, and the <code>+$4</code> aliases). One read leaves write protect on. <code>PRE_WRITE</code> itself is not an axis. The golden includes both the one-access and the two-access result.</li>
+</ul>
+<p><code>INTCXROM</code> and <code>SLOTC3ROM</code> are not axes. One check walks all four combinations and requires the same <code>$00</code>–<code>$BF</code> / <code>$D0</code>–<code>$FF</code> snapshot.</p>
+<p><code>TEXT</code>, <code>MIXED</code>, <code>80COL</code>, and alt charset are not axes. One extra check toggles them and requires the same snapshot.</p>
+<h3 id="suites-kept-out-of-the-512">Suites kept out of the 512<a class="headerlink" href="#suites-kept-out-of-the-512" title="Permanent link">&para;</a></h3>
+<ul>
+<li>RamWorks bank 0 and bank 1, for a few flag combinations (at least <code>ALTZP</code>, <code>RAMRD</code>, and <code>80STORE</code>+<code>PAGE2</code>+<code>HIRES</code>). Bank 0 auxiliary pages record as <code>RAM+0x1xxxx</code>. Bank 1 is <code>aux_extra</code> and falls outside the 17-bit window. A separate assertion checks that <code>cpu_aux</code> moved to the selected bank.</li>
+<li>One reset snapshot: main RAM everywhere the aux switches control, language card reading ROM and writing RAM bank 2. <code>$C1</code>–<code>$CF</code> is not on this line.</li>
+</ul>
+<h3 id="cxxx">$Cxxx<a class="headerlink" href="#cxxx" title="Permanent link">&para;</a></h3>
+<p><code>$C1</code>–<code>$CF</code> has its own lines in the same golden. <code>80STORE</code>, <code>RAMRD</code>, <code>RAMWRT</code>, <code>ALTZP</code>, <code>PAGE2</code>, <code>HIRES</code>, and the language card do not change it. One check sets those and requires the same <code>$C1</code>–<code>$CF</code> snapshot.</p>
+<p><code>INTCXROM</code> on publishes motherboard ROM for the whole window. The slot register, <code>SLOTC3ROM</code>, a <code>$C3xx</code> access, and <code>$CFFF</code> do not change that snapshot. One line, plus those checks.</p>
+<p><code>INTCXROM</code> off, with <code>$C8</code>–<code>$CF</code> still the default empty slot table: the six slot-register bits <code>compose_c1cf</code> honors, times <code>SLOTC3ROM</code> (128). Slot 3 follows <code>SLOTC3ROM</code>, not the slot-register bit. One check sets that bit and requires the same snapshot.</p>
+<p><code>$C8</code>–<code>$CF</code> is an access side effect, not crossed with the 64 slot-register values. With no card ROMs installed, and the slot register held at its power-on value:</p>
+<ul>
+<li>Default, and after <code>$CFFF</code>: <code>NONE</code>.</li>
+<li><code>$C3xx</code> with <code>SLOTC3ROM</code> clear: motherboard ROM at <code>ROM+0x0800</code>.</li>
+<li><code>$C3xx</code> with <code>SLOTC3ROM</code> set: stays <code>NONE</code>.</li>
+<li>An access in <code>$C1</code>, <code>$C2</code>, or <code>$C4</code>–<code>$C7</code> has no <code>$C8</code> handler, so the window stays <code>NONE</code>.</li>
+<li><code>$C3xx</code> while <code>INTCXROM</code> is on still shows internal ROM. Clearing <code>INTCXROM</code> reveals the <code>$C8</code> ROM that access stored.</li>
+</ul>
+<p>One <code>$Cxxx</code> reset snapshot: <code>INTCXROM</code> off, <code>SLOTC3ROM</code> off, slot register at its power-on value, <code>$C8</code>–<code>$CF</code> cleared.</p>
+<h3 id="setter-companion">Setter companion<a class="headerlink" href="#setter-companion" title="Permanent link">&para;</a></h3>
+<p>After the setters exist, a short second test calls them for a handful of states and requires the same snapshot as the matching <code>$C0xx</code> sequence. The golden guards the refactor. This one guards the new surface.</p>
+<h2 id="done-when">Done when<a class="headerlink" href="#done-when" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The golden file was generated from <code>iiememory</code> before the move, and the same test passes with the logic on <code>MMU_IIe</code>.</li>
+<li>A IIgs build still composes Mega II pages <code>$00</code>–<code>$BF</code> and <code>$D0</code>–<code>$FF</code> only through <code>megaii_compose_map</code> and <code>MMU_IIgs::bsr_map_memory</code>. The Mega II instance is <code>MMU_IIe2</code> with <code>install_memory_switches</code> false (Phase 2).</li>
+<li>RamWorks bank select republishes via <code>set_aux_bank</code>.</li>
+<li><code>$C011</code> / <code>$C012</code> have one read handler. <code>$C01x</code> still returns the keyboard low bits ORed with the flag.</li>
+<li>Display still owns <code>TEXT</code>, <code>MIXED</code>, <code>80COL</code>, and alt charset, and still shares <code>80STORE</code>, <code>PAGE2</code>, and <code>HIRES</code> through the second <code>$C0xx</code> slot.</li>
+</ul>
+<h2 id="phase-2-mega-ii-uses-mmu_iie2">Phase 2 — Mega II uses MMU_IIe2<a class="headerlink" href="#phase-2-mega-ii-uses-mmu_iie2" title="Permanent link">&para;</a></h2>
+<p>Replace the embedded Mega II with <code>MMU_IIe2</code>. <code>MMU_IIgs</code> still publishes <code>$00</code>–<code>$BF</code> and <code>$D0</code>–<code>$FF</code> only through <code>megaii_compose_map</code> and <code>bsr_map_memory</code>. Unifying those composers with <code>MMU_IIe2::compose_map</code> / <code>calc_aux_read</code> / <code>calc_aux_write</code> stays out of scope.</p>
+<h3 id="construction">Construction<a class="headerlink" href="#construction" title="Permanent link">&para;</a></h3>
+<p><code>install_memory_switches == false</code> at the two Mega II sites:</p>
+<ul>
+<li><code>src/gs2.cpp</code>, <code>MMU_MMU_IIGS</code></li>
+<li><code>apps/iigsmmutest/main.cpp</code></li>
+</ul>
+<p>Standalone IIe stays <code>MMU_IIe2</code> with the default (<code>true</code>) and a message bus. Do not attach a message bus to the Mega II. IIgs keyboard and status reads go through IIgs handlers, not <code>MMU_IIe2::c01x_read</code>.</p>
+<p><code>MMU_IIgs::megaii</code> is <code>MMU_IIe2 *</code>.</p>
+<p>With the flag false, the Mega II still installs slot-ROM writes (<code>$C006</code>, <code>$C007</code>, <code>$C00A</code>, <code>$C00B</code>) and the slot-3 <code>$C8</code> side effect. It does not install aux, language-card, or display handlers, and <code>reset</code> does not republish aux or language-card pages. IIgs <code>reset</code> still runs <code>megaii_compose_map</code> and <code>bsr_map_memory</code> after that.</p>
+<h3 id="intcxrom-and-slotc3rom">INTCXROM and SLOTC3ROM<a class="headerlink" href="#intcxrom-and-slotc3rom" title="Permanent link">&para;</a></h3>
+<p><code>MMU_IIe2::set_intcxrom</code> and <code>set_slotc3rom</code> store the flag and call <code>compose_c1cf()</code>. On a IIgs, <code>MMU_IIgs::set_intcxrom</code> mirrors <code>g_intcxrom</code> and then calls <code>megaii-&gt;set_intcxrom</code>. Do not call <code>compose_c1cf()</code> again in that helper. <code>$C00A</code> / <code>$C00B</code> on the IIgs path call <code>megaii-&gt;set_slotc3rom</code> the same way.</p>
+<p>A bus write can still compose twice: Mega II slot 0 (<code>c00x_write</code>) and IIgs slot 1 (<code>write_c0xx</code>) both run. Deduplicating that stack is out of scope.</p>
+<h3 id="still-out">Still out<a class="headerlink" href="#still-out" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Delegating <code>megaii_compose_map</code> to <code>MMU_IIe2::compose_map</code>.</li>
+<li>Removing the <code>iiememory</code> device or <code>MMU_IIe</code> (still used by <code>iiemmutest</code>, <code>iiememory</code>, and the video test apps).</li>
+</ul>
+<h3 id="done-when_1">Done when<a class="headerlink" href="#done-when_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>iigsmmutest -l</code> and <code>iigsmmutest -l -3</code> pass.</li>
+<li>A IIgs ROM built-in diagnostic still runs.</li>
+<li>Mega II has no language-card handlers on <code>$C080</code>–<code>$C08F</code> (<code>install_memory_switches</code> is false). IIgs owns those addresses.</li>
+</ul>
+<h2 id="phase-3-page-table-struct-of-arrays">Phase 3 — page table struct-of-arrays<a class="headerlink" href="#phase-3-page-table-struct-of-arrays" title="Permanent link">&para;</a></h2>
+<p>The main page table is an array of <code>page_table_entry_t</code>. Each record is 80 bytes: <code>read_p</code>, <code>write_p</code>, three handler pairs, and two debug strings. A CPU read uses <code>read_p</code> only. Consecutive <code>read_p</code> values are 80 bytes apart, so each one occupies its own 64-byte cache line, and the index scale does not fit an addressing mode (those stop at 8).</p>
+<p>Store each field in its own array, length <code>num_pages</code>:</p>
+<pre><code class="language-cpp">uint8_t *read_p;
+uint8_t *write_p;
+read_handler_t *read_h;
+write_handler_t *write_h;
+write_handler_t *shadow_h;
+const char **read_d;
+const char **write_d;
+</code></pre>
+<p>A read indexes <code>read_p[page]</code> (scale 8) and, on a null pointer, <code>read_h[page]</code>. A write indexes <code>write_h[page]</code>, then <code>write_p[page]</code>, then <code>shadow_h[page]</code>. Same order as today. <code>page</code> and the byte offset still come from <code>page_size_bits</code> and <code>page_size_mask</code>. <code>MMU_II</code> is 256 pages of 256 bytes. <code>MMU_IIgs</code> is one entry per 64K bank. Both go through this table.</p>
+<p><code>page_table_entry_t</code> stays the value type. <code>get_page_table_entry</code> gathers one page into a struct. <code>set_page_table_entry</code> scatters a struct into the arrays. <code>map_page_*</code>, <code>set_page_read_h</code>, <code>set_page_write_h</code>, and <code>set_page_shadow</code> keep their signatures and write one field.</p>
+<h3 id="who-indexes-the-arrays">Who indexes the arrays<a class="headerlink" href="#who-indexes-the-arrays" title="Permanent link">&para;</a></h3>
+<p>The live methods are inline in <code>src/mmus/mmu.hpp</code>. <code>src/mmus/mmu.cpp</code> is inside <code>#if 0</code>. Leave it.</p>
+<p>These read and write the main table by taking <code>&amp;page_table[page]</code> today:</p>
+<ul>
+<li><code>MMU::read</code>, <code>write</code>, <code>read_raw</code>, <code>write_raw</code>, the mappers, the dump, and <code>get_page_base_address</code> in <code>mmu.hpp</code></li>
+<li><code>MMU_II::read</code> and <code>write</code> in <code>mmu_ii.cpp</code></li>
+<li><code>MMU_IIe::read</code> and <code>write</code> in <code>mmu_iie.cpp</code></li>
+</ul>
+<p><code>MMU_IIe2</code> does not override <code>read</code> or <code>write</code>. <code>MMU_IIgs::read</code> and <code>write</code> call <code>MMU::read</code> and <code>MMU::write</code>.</p>
+<p><code>compose_c1cf</code> publishes a side-table record with <code>page_table[page] = entry</code> in <code>mmu_ii.cpp</code>, <code>mmu_iie.cpp</code>, and <code>mmu_iie2.cpp</code>. Those three call <code>set_page_table_entry</code> instead.</p>
+<h3 id="side-tables-stay-arrays-of-structs">Side tables stay arrays of structs<a class="headerlink" href="#side-tables-stay-arrays-of-structs" title="Permanent link">&para;</a></h3>
+<p><code>MMU_II::slot_rom_ptable[15]</code>, <code>MMU_IIe::int_rom_ptable[15]</code>, and <code>MMU_IIe2::int_rom_ptable[15]</code> stay <code>page_table_entry_t</code> arrays. They are filled on slot-ROM changes and copied into the main table by <code>compose_c1cf</code>. They are not on the per-cycle path.</p>
+<p><code>apps/iiemmutest/iie_mmu_oracle.hpp</code> keeps calling <code>get_page_table_entry</code> and reading <code>read_p</code> / <code>write_p</code> on the returned struct.</p>
+<p>Devices, <code>MMU_IIgs</code> composers, and the CPU test apps keep calling <code>map_page_read</code>, <code>map_page_write</code>, <code>map_page_both</code>, and the <code>set_page_*</code> handlers. They do not see the storage.</p>
+<h3 id="out_1">Out<a class="headerlink" href="#out_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>A compiled per-mode reader. Region bounds are the same in every mode; mode only changes pointers.</li>
+<li>Devirtualizing <code>MMU::read</code> / <code>write</code>.</li>
+<li>A direct <code>zp_base</code> / language-card base in front of the table.</li>
+<li><code>alignas(64)</code> or a statically allocated table.</li>
+<li>A new page size.</li>
+<li>Turning the 15-entry side tables into parallel arrays.</li>
+</ul>
+<h3 id="baseline">Baseline<a class="headerlink" href="#baseline" title="Permanent link">&para;</a></h3>
+<p><code>iiemmu2test --bench</code>, Release, array-of-structs. <code>MMU *</code> to <code>MMU_IIe2</code>, 10,000,000 reads of <code>i % 0xC000</code>, one warmup, five timed passes.</p>
+<p>median 1.324 ns/read, 755.102 MHz. Passes: 1.319, 1.324, 1.324, 1.329, 1.331. Checksum 1275000000.</p>
+<h3 id="after">After<a class="headerlink" href="#after" title="Permanent link">&para;</a></h3>
+<p>Same bench, struct-of-arrays.</p>
+<p>median 1.385 ns/read, 721.872 MHz. Passes: 1.382, 1.383, 1.385, 1.413, 1.432. Checksum 1275000000.</p>
+<p>The median is 0.061 ns/read slower (about 4.6%). Checksum matches the baseline. Both tables fit in L1; this loop did not show a gain from the scale-8 index.</p>
+<h3 id="done-when_2">Done when<a class="headerlink" href="#done-when_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The IIe golden map is unchanged. Same bus sequences, same <code>RAM+</code> / <code>ROM+</code> / <code>NONE</code> spans.</li>
+<li><code>iigsmmutest -l</code> and <code>iigsmmutest -l -3</code> pass. IIgs reads still go through <code>MMU::read</code>.</li>
+<li><code>get_page_table_entry</code> returns the same pointers, handlers, and debug tags as the old record.</li>
+</ul>
+<h2 id="gs-mmu-shadow_is_enabled">GS MMU — shadow_is_enabled<a class="headerlink" href="#gs-mmu-shadow_is_enabled" title="Permanent link">&para;</a></h2>
+<p><code>bank_shadow_write</code> is the only caller. It runs after <code>calc_aux_write</code>, so bit 16 of the address is the post-aux bank. The predicate does not see the bank number above that. <code>SPEED_SHADOW_ALL</code> only decides which banks install <code>bank_shadow_write</code>. It does not change the predicate.</p>
+<p>The range tests rechecked six windows against <code>reg_shadow</code> on every call. Every range is a whole number of 1K blocks, and 1K is the coarsest step that stays exact: <code>$0000–$03FF</code> is not shadowed and <code>$0400–$07FF</code> is text page 1. <code>shadow_is_enabled</code> is now the mask lookup below.</p>
+<h3 id="one-mask-table">One mask table<a class="headerlink" href="#one-mask-table" title="Permanent link">&para;</a></h3>
+<p>128 slots, one per 1K in the low 17 address bits, two bytes each. Filled in the <code>MMU_IIgs</code> constructor, after <code>is_rom03</code> is known. Nothing writes it after that. <code>$C035</code> and the <code>reg_shadow = 0x08</code> in <code>reset</code> change the register only.</p>
+<pre><code class="language-text">slot    = (address &gt;&gt; 10) &amp; 0x7F
+or_hit  = (or_mask &amp; ~reg_shadow) != 0
+and_hit = and_mask != 0 &amp;&amp; (and_mask &amp; reg_shadow) == 0
+enabled = or_hit || and_hit
+</code></pre>
+<p><code>or_mask</code> lists inhibit bits that enable the slot when any one of them is clear. <code>and_mask</code> lists inhibit bits that enable the slot only when every one of them is clear. An empty <code>and_mask</code> does not enable the slot. <code>reg_shadow</code> stays live. A slot neither mask covers stays disabled for every register value.</p>
+<p>Bits 0–5 are the bits this function reads. Bit 6 (<code>IOLC</code>) and bit 7 (reserved) are not in the table. <code>$C000–$FFFF</code> stays 0 here; <code>bank_shadow_write</code> handles that window before this call.</p>
+<p><code>is_rom03</code> is the only construction input. On a ROM03, slots 2 and 66 hold <code>TEXT2</code> (<code>0x20</code>) in <code>or_mask</code>. On a ROM01 those slots hold <code>0</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Slots</th>
+<th>Addresses</th>
+<th>or_mask</th>
+<th>and_mask</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 and 65</td>
+<td><code>$x400–$x7FF</code></td>
+<td><code>TEXT1</code> <code>0x01</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>2 and 66</td>
+<td><code>$x800–$xBFF</code></td>
+<td><code>TEXT2</code> <code>0x20</code> on ROM03, else <code>0</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>8–15</td>
+<td>even <code>$2000–$3FFF</code></td>
+<td><code>HGR1</code> <code>0x02</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>16–23</td>
+<td>even <code>$4000–$5FFF</code></td>
+<td><code>HGR2</code> <code>0x04</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>72–79</td>
+<td>odd <code>$2000–$3FFF</code></td>
+<td><code>SHR</code> <code>0x08</code></td>
+<td><code>HGR1\|AUXHGR</code> <code>0x12</code></td>
+</tr>
+<tr>
+<td>80–87</td>
+<td>odd <code>$4000–$5FFF</code></td>
+<td><code>SHR</code> <code>0x08</code></td>
+<td><code>HGR2\|AUXHGR</code> <code>0x14</code></td>
+</tr>
+<tr>
+<td>88–103</td>
+<td>odd <code>$6000–$9FFF</code></td>
+<td><code>SHR</code> <code>0x08</code></td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Odd <code>$2000–$5FFF</code> is the overlap of a hi-res page and the super-hi-res buffer. The page copies when its page inhibit and <code>AUXHGR</code> are both clear, and also when <code>SHR</code> is clear. Those are an AND term and an OR term. A single OR of the inhibit bits cannot say both: <code>SHR|AUXHGR</code> (<code>0x18</code>) ignores the page inhibit and copies <code>01:2000</code> when <code>SHADOW=$0A</code>. Odd <code>$6000–$9FFF</code> is SHR only. Even <code>$6000–$FFFF</code> is 0.</p>
+<p>Power-on <code>reg_shadow = 0x08</code> inhibits SHR and leaves the other display regions enabled. Odd <code>$2000</code> is on because <code>HGR1</code> and <code>AUXHGR</code> are both clear. Odd <code>$6000</code> is off. <code>SHADOW=$0A</code> sets <code>HGR1</code> and <code>SHR</code> and leaves <code>AUXHGR</code> clear, so odd <code>$2000</code> is off and odd <code>$4000</code> stays on.</p>
+<h3 id="out_2">Out<a class="headerlink" href="#out_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No second table, and no pointer swap when <code>reg_shadow</code> changes.</li>
+<li><code>IOLC</code> stays in <code>bank_shadow_read</code> / <code>bank_shadow_write</code>. A nonzero mask is a Mega II write-through, which is the wrong action for <code>$C000–$CFFF</code>.</li>
+<li><code>calc_aux_read</code>, <code>calc_aux_write</code>, and the <code>$C0–$FF</code> dispatch in the shadow handlers stay as they are.</li>
+<li>No sub-64K page table.</li>
+</ul>
+<h3 id="compare">Compare<a class="headerlink" href="#compare" title="Permanent link">&para;</a></h3>
+<p><code>iigsmmutest --shadow</code>. It does not load a ROM file and does not run the assembly suites.</p>
+<p>Construct two <code>MMU_IIgs</code> objects with a zeroed ROM buffer and a Mega II built with <code>install_memory_switches</code> false. 128K selects ROM01. 256K selects ROM03. Same shape as the <code>-l</code> path in <code>apps/iigsmmutest/main.cpp</code>.</p>
+<p>Copy today's range tests into the harness as the oracle. The lookup calls production <code>shadow_is_enabled</code>, which indexes <code>shadow_mask</code> on the object. The harness does not keep a second table.</p>
+<p>Sweep, and fail on the first mismatch. Print machine, <code>reg_shadow</code>, address, oracle, and lookup.</p>
+<ul>
+<li><code>reg_shadow</code> from <code>0x00</code> through <code>0xFF</code>, via <code>set_shadow_register</code>. Bits 6 and 7 must not change the result.</li>
+<li>128 addresses, <code>(slot &lt;&lt; 10)</code> for slot <code>0..127</code>.</li>
+<li>The same 128 addresses with bit 17 set (<code>| 0x20000</code>). Bank <code>$02</code> matches bank <code>$00</code> and bank <code>$03</code> matches bank <code>$01</code>.</li>
+</ul>
+<p>That is 2 × 256 × 128 × 2 comparisons. 1K boundaries are the grid. The speed-test checksum below covers the bytes inside each block for the register values it times.</p>
+<p>Snapshot the 128 mask bytes after construction. After the sweep, and after <code>reset</code>, the bytes are unchanged and <code>reg_shadow</code> is <code>0x08</code>.</p>
+<h3 id="speed">Speed<a class="headerlink" href="#speed" title="Permanent link">&para;</a></h3>
+<p>The same <code>--shadow</code> run times the oracle and the lookup after the compare passes. A compare failure skips the timing and returns non-zero. The timing does not fail the process.</p>
+<p>Release build. 10,000,000 calls, address <code>i &amp; 0x1FFFF</code>, one warmup, five timed passes, median of the five. Same arrangement as <code>iiemmu2test --bench</code>.</p>
+<p>The timed loop calls a <code>noinline</code> wrapper compiled in <code>apps/iigsmmutest/shadow_predicate_fn.cpp</code>, not in the loop's file. <code>noinline</code> in the same translation unit is not enough. Clang still sees the body, rewrites the call to pass the register in a register, and deletes every timed pass but the last. A separate file hides the body. There is no link-time optimization on this target.</p>
+<pre><code class="language-cpp">[[gnu::noinline]] bool shadow_pred::oracle(MMU_IIgs *mmu, uint32_t address);
+[[gnu::noinline]] bool shadow_pred::lookup(MMU_IIgs *mmu, uint32_t address);
+</code></pre>
+<p>The oracle is today's range tests. It reads <code>shadow_register()</code> and <code>is_rom03_machine()</code> on each call. The lookup calls <code>shadow_is_enabled</code>, so the inline mask load is compiled into the wrapper. Neither is <code>pure</code> or <code>const</code>. <code>reg_shadow</code> is not a constant argument. The timed loop also puts a memory clobber around each pass so a visible caller cannot drop the call.</p>
+<p>Time the two pass loops separately. Inside the loop accumulate <code>sum += (uint64_t)result * (address | 1)</code>. Compare checksums after the passes, not inside them. The checksums must be equal.</p>
+<p>Three register values, both machines:</p>
+<table>
+<thead>
+<tr>
+<th><code>reg_shadow</code></th>
+<th>What the old tests do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0x08</code></td>
+<td>Power-on. SHR inhibited, the other display regions enabled.</td>
+</tr>
+<tr>
+<td><code>0x00</code></td>
+<td>Every display region enabled. Hits return at the first matching range.</td>
+</tr>
+<tr>
+<td><code>0x3F</code></td>
+<td>All six display inhibits set. Every range fails.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="release">Release<a class="headerlink" href="#release" title="Permanent link">&para;</a></h3>
+<p><code>./build/iigsmmutest --shadow</code>, existing Release tree. Median of five passes.</p>
+<pre><code class="language-text">ROM01 reg 08 oracle ns/call: 1.916 1.795 1.633 1.617 1.647  median 1.647
+ROM01 reg 08 lookup ns/call: 0.695 0.691 0.697 0.696 0.694  median 0.695
+ROM01 reg 08 checksum 128015925248
+ROM01 reg 00 oracle ns/call: 1.594 1.599 1.598 1.606 1.587  median 1.598
+ROM01 reg 00 lookup ns/call: 0.697 0.699 0.689 0.692 0.707  median 0.697
+ROM01 reg 00 checksum 250422493184
+ROM01 reg 3F oracle ns/call: 1.816 1.735 1.791 1.737 1.747  median 1.747
+ROM01 reg 3F lookup ns/call: 0.701 0.696 0.686 0.705 0.695  median 0.696
+ROM01 reg 3F checksum 0
+ROM03 reg 08 oracle ns/call: 1.618 1.629 1.630 1.634 1.657  median 1.630
+ROM03 reg 08 lookup ns/call: 0.715 0.694 0.697 0.695 0.699  median 0.697
+ROM03 reg 08 checksum 133517279232
+ROM03 reg 00 oracle ns/call: 1.592 1.586 1.574 1.594 1.591  median 1.591
+ROM03 reg 00 lookup ns/call: 0.694 0.698 0.710 0.694 0.704  median 0.698
+ROM03 reg 00 checksum 255923847168
+ROM03 reg 3F oracle ns/call: 1.777 1.789 1.783 1.772 1.787  median 1.783
+ROM03 reg 3F lookup ns/call: 0.712 0.701 0.703 0.689 0.700  median 0.701
+ROM03 reg 3F checksum 0
+</code></pre>
+<p>Lookup median is 0.69–0.70 ns/call. Oracle median is 1.59–1.78 ns/call. Checksums match the pre-swap run. The fully-inhibited case (<code>$3F</code>, checksum 0) is the one where every range test fails, and the lookup is still one load and a test. The lookup column is production <code>shadow_is_enabled</code>.</p>
+<h3 id="done-when_3">Done when<a class="headerlink" href="#done-when_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The compare passes for ROM01 and ROM03.</li>
+<li>The mask bytes survive <code>set_shadow_register</code> and <code>reset</code>.</li>
+<li>Each bench pair prints one checksum, shared by the oracle and the lookup.</li>
+<li><code>iigsmmutest -l</code> and <code>iigsmmutest -l -3</code> still pass. The write-through behavior is unchanged.</li>
+</ul>
+<h2 id="gs-mmu-calc_aux_read-calc_aux_write">GS MMU — calc_aux_read / calc_aux_write<a class="headerlink" href="#gs-mmu-calc_aux_read-calc_aux_write" title="Permanent link">&para;</a></h2>
+<p><code>bank_shadow_read</code> calls <code>calc_aux_read</code>. <code>bank_shadow_write</code> calls <code>calc_aux_write</code> before <code>shadow_is_enabled</code>. Both return <code>0</code> or <code>0x10000</code>, added to the address. The range tests rechecked the soft switches on every call. <code>calc_aux_read</code> and <code>calc_aux_write</code> are now the mask lookup below.</p>
+<p>An odd bank (<code>address &amp; 0x10000</code>) returns <code>0</code> and does not consult the table. The page byte is only meaningful for an even bank.</p>
+<h3 id="not-a-table-of-addends">Not a table of addends<a class="headerlink" href="#not-a-table-of-addends" title="Permanent link">&para;</a></h3>
+<p>A 256-byte table cannot hold <code>0x10000</code>. The stored value is <code>0</code> or <code>1</code>. The caller makes the addend:</p>
+<pre><code class="language-text">use_aux = (flags &amp; aux_region[page]) != 0;
+address += (uint32_t)use_aux &lt;&lt; 16;
+</code></pre>
+<h3 id="same-shape-as-shadow_is_enabled">Same shape as shadow_is_enabled<a class="headerlink" href="#same-shape-as-shadow_is_enabled" title="Permanent link">&para;</a></h3>
+<p><code>shadow_mask</code> ORs every inhibit bit that covers a slot, because a hit means any of those regions is enabled. Aux pages do not overlap. Each page belongs to one region, so each map byte is a single bit.</p>
+<p>The bit is not a raw soft switch. A text page is not "<code>PAGE2</code> or <code>RAMRD</code>." With <code>80STORE</code> on and <code>PAGE2</code> off, the page stays in main even when <code>RAMRD</code> is on. With <code>80STORE</code> off, <code>PAGE2</code> does not move the page. Hires is the same mux, and <code>HIRES</code> chooses whether <code>PAGE2</code> or <code>RAMRD</code>/<code>RAMWRT</code> is the live flag. Those muxes are already what <code>megaii_compose_map</code> stores in <code>n_text1_*</code> and <code>n_hires1_*</code>. Fold them into the flags byte. The static map never mentions <code>80STORE</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Read byte</th>
+<th>Write byte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ZP</code></td>
+<td><code>n_zp</code></td>
+<td><code>n_zp</code></td>
+</tr>
+<tr>
+<td><code>TEXT</code></td>
+<td><code>n_text1_r</code></td>
+<td><code>n_text1_w</code></td>
+</tr>
+<tr>
+<td><code>HIRES</code></td>
+<td><code>n_hires1_r</code></td>
+<td><code>n_hires1_w</code></td>
+</tr>
+<tr>
+<td><code>ALL</code></td>
+<td><code>n_all_r</code></td>
+<td><code>n_all_w</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>n_text1_*</code> is <code>80STORE ? PAGE2 : RAMRD/RAMWRT</code>. <code>n_hires1_*</code> is <code>(80STORE &amp;&amp; HIRES) ? PAGE2 : RAMRD/RAMWRT</code>. A set bit means "this region is in aux." There is no invert. Shadow bits are inhibits; these are not.</p>
+<p>Read and write share one 256-byte map, filled once:</p>
+<table>
+<thead>
+<tr>
+<th>Pages</th>
+<th>Map bit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00–$01</code>, <code>$C0–$FF</code></td>
+<td><code>ZP</code></td>
+</tr>
+<tr>
+<td><code>$04–$07</code></td>
+<td><code>TEXT</code></td>
+</tr>
+<tr>
+<td><code>$20–$3F</code></td>
+<td><code>HIRES</code></td>
+</tr>
+<tr>
+<td><code>$02–$03</code>, <code>$08–$1F</code>, <code>$40–$BF</code></td>
+<td><code>ALL</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>$C0–$FF</code> takes <code>ZP</code> because that is what <code>calc_aux_*</code> does. The Mega II pointer loops do not publish those pages as RAM. That is why this fill is not those loops.</p>
+<h3 id="where-it-is-rebuilt">Where it is rebuilt<a class="headerlink" href="#where-it-is-rebuilt" title="Permanent link">&para;</a></h3>
+<p>Pack the two flag bytes at the bottom of <code>megaii_compose_map</code>, from the locals it just computed. One store per byte on a soft-switch write. The callers are <code>write_c0xx</code>, <code>read_c0xx</code>, <code>write_c068</code>, and <code>reset</code>. A second function invoked at each of those would recompute the same booleans and would be easy to leave off the next caller.</p>
+<p>The pointer updates above that pack are deltas (<code>n_zp != m_zp</code>, and so on). The flag bytes are not. Write both bytes from the current booleans on every compose.</p>
+<p>Construction never composes. The constructor's <code>reset(true)</code> runs with <code>map_initialized</code> false, and <code>init_map</code> sets <code>map_initialized</code> without calling <code>megaii_compose_map</code>. Zero-initialize both flag bytes in the class, the same way <code>m_*</code> start <code>false</code>. That matches the power-on state: <code>reg_state = 0x0C</code> clears <code>RAMRD</code>, <code>RAMWRT</code>, <code>PAGE2</code>, and <code>ALTZP</code>, and <code>reset</code> clears <code>80STORE</code> and <code>HIRES</code>.</p>
+<h3 id="out_3">Out<a class="headerlink" href="#out_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No <code>uint32_t[256]</code> of raw <code>0</code> / <code>0x10000</code> addends.</li>
+<li>No second 256-byte map for write. Write has its own flags byte and the same region map.</li>
+<li>Raw <code>80STORE</code>, <code>PAGE2</code>, <code>HIRES</code>, <code>RAMRD</code>, and <code>RAMWRT</code> do not go in the map or in the flags byte. The <code>n_*</code> locals already resolved them.</li>
+<li><code>IOLC</code>, language-card adjust, and <code>shadow_is_enabled</code> stay where they are. An odd bank still returns <code>0</code> before the load.</li>
+</ul>
+<p>Region bits, low to high: <code>ZP</code> <code>0x01</code>, <code>TEXT</code> <code>0x02</code>, <code>HIRES</code> <code>0x04</code>, <code>ALL</code> <code>0x08</code>.</p>
+<h3 id="compare_1">Compare<a class="headerlink" href="#compare_1" title="Permanent link">&para;</a></h3>
+<p><code>iigsmmutest --aux</code>. Same early exit as <code>--shadow</code>: no ROM file, no assembly suites. One machine. <code>is_rom03</code> is not an input. Construct it the way <code>--shadow</code> constructs ROM01: a zeroed 128K ROM and a Mega II with <code>install_memory_switches</code> false.</p>
+<p>The oracle is a copy of the old range tests. The lookup calls production <code>calc_aux_read</code> and <code>calc_aux_write</code>, which index <code>aux_region</code> and the flag bytes on the object. The harness does not keep a second table. <code>write_c0xx</code> calls <code>megaii_compose_map</code>, which packs the flag bytes. The same handoff <code>--shadow</code> already made.</p>
+<p>Both live in <code>apps/iigsmmutest/aux_predicate_fn.cpp</code>, <code>noinline</code>, not in the loop's file. The reasons are the ones in the shadow speed section. The oracle reads the live <code>g_80store</code>, <code>g_page2</code>, <code>g_hires</code>, <code>g_altzp</code>, <code>g_ramrd</code>, and <code>g_ramwrt</code> on each call. The lookup does not read the Mega II pointer tables.</p>
+<p>The constructor fills the 256-byte map once. Each switch state packs the two flag bytes inside <code>megaii_compose_map</code>:</p>
+<pre><code class="language-text">text  = 80STORE ? PAGE2 : ram
+hires = (80STORE &amp;&amp; HIRES) ? PAGE2 : ram
+flags = (ALTZP ? ZP : 0) | (text ? TEXT : 0) | (hires ? HIRES : 0) | (ram ? ALL : 0)
+</code></pre>
+<p><code>ram</code> is <code>RAMRD</code> for the read byte and <code>RAMWRT</code> for the write byte. An odd bank returns <code>0</code>. Otherwise:</p>
+<pre><code class="language-text">page    = (address &gt;&gt; 8) &amp; 0xFF
+use_aux = (flags &amp; aux_region[page]) != 0
+return (uint32_t)use_aux &lt;&lt; 16
+</code></pre>
+<p>Drive the six switches through <code>write_c0xx</code>: <code>$C000</code>/<code>$C001</code>, <code>$C002</code>/<code>$C003</code>, <code>$C004</code>/<code>$C005</code>, <code>$C008</code>/<code>$C009</code>, <code>$C054</code>/<code>$C055</code>, <code>$C056</code>/<code>$C057</code>. That is the path that stores <code>g_*</code>. All 64 combinations. <code>TEXT</code>, <code>MIXED</code>, <code>IOLC</code>, and <code>reg_shadow</code> are not inputs.</p>
+<p>Sweep, and fail on the first mismatch. Print direction, the six switches, address, oracle, and lookup.</p>
+<ul>
+<li>Read and write.</li>
+<li>256 even-bank addresses, <code>page &lt;&lt; 8</code> for page <code>0..255</code>. Page alignment is exact. <code>$00–$01</code> and <code>$C0–$FF</code> are <code>ZP</code>. <code>$04–$07</code> is <code>TEXT</code>. <code>$20–$3F</code> is <code>HIRES</code>. The rest of <code>$02–$BF</code> is <code>ALL</code>.</li>
+<li>The same 256 addresses with bit 17 set (<code>| 0x20000</code>). Bits above 16 do not change the result.</li>
+<li>The same 256 addresses with bit 16 set (<code>| 0x10000</code>). Both sides return <code>0</code>.</li>
+</ul>
+<p>That is 64 × 2 × 256 × 3 comparisons. The sweep includes <code>80STORE</code> on, <code>PAGE2</code> off, and <code>RAMRD</code> on at a text page. The oracle returns <code>0</code> there. A lookup that puts raw <code>RAMRD</code> in the flags byte returns <code>0x10000</code> and fails.</p>
+<p>Snapshot the 256 map bytes after the fill. They are unchanged after the sweep. The flag bytes change with the switches.</p>
+<h3 id="speed_1">Speed<a class="headerlink" href="#speed_1" title="Permanent link">&para;</a></h3>
+<p>The same <code>--aux</code> run times the oracle and the lookup after the compare passes. A compare failure skips the timing and returns non-zero. The timing does not fail the process.</p>
+<p>Release build. 10,000,000 calls, address <code>i &amp; 0x1FFFF</code>, one warmup, five timed passes, median of the five. Same arrangement as <code>--shadow</code>, including the memory clobber around each pass. Time read and write separately, and time the two pass loops separately. Inside the loop accumulate <code>sum += (uint64_t)result * (address | 1)</code>. <code>result</code> is the full return value, <code>0</code> or <code>0x10000</code>, so a wrong addend fails the checksum. Compare checksums after the passes. Each pair prints one checksum.</p>
+<p>Three switch states. The other switches are off.</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>What the old tests do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>all off</td>
+<td>Power-on. Every test fails.</td>
+</tr>
+<tr>
+<td><code>RAMRD</code>, <code>RAMWRT</code>, <code>ALTZP</code></td>
+<td>No <code>80STORE</code> early return. Aux comes from the last tests. Read and write match.</td>
+</tr>
+<tr>
+<td><code>80STORE</code>, <code>HIRES</code>, <code>RAMRD</code></td>
+<td>Text and hires return <code>0</code> before <code>RAMRD</code>. Write stays <code>0</code> because <code>RAMWRT</code> is off.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="release_1">Release<a class="headerlink" href="#release_1" title="Permanent link">&para;</a></h3>
+<p><code>./build/iigsmmutest --aux</code>, existing Release tree. Median of five passes. Compare passed before the timing.</p>
+<pre><code class="language-text">off read oracle ns/call: 1.284 1.271 1.260 1.277 1.172  median 1.271
+off read lookup ns/call: 0.883 0.889 0.884 0.896 0.891  median 0.889
+off read checksum 0
+off write oracle ns/call: 1.247 1.246 1.257 1.259 1.263  median 1.257
+off write lookup ns/call: 0.895 0.885 0.887 0.889 0.871  median 0.887
+off write checksum 0
+ram read oracle ns/call: 1.184 1.201 1.173 1.197 1.189  median 1.189
+ram read lookup ns/call: 0.876 0.891 0.882 0.899 0.905  median 0.891
+ram read checksum 10744690156503040
+ram write oracle ns/call: 1.261 1.232 1.240 1.236 1.267  median 1.240
+ram write lookup ns/call: 0.984 0.891 0.895 0.904 0.889  median 0.895
+ram write checksum 10744690156503040
+store read oracle ns/call: 1.244 1.250 1.215 1.234 1.248  median 1.244
+store read lookup ns/call: 0.894 0.885 0.889 0.882 0.894  median 0.889
+store read checksum 5548595772129280
+store write oracle ns/call: 1.306 1.303 1.277 1.291 1.307  median 1.303
+store write lookup ns/call: 0.885 0.916 0.904 0.891 0.900  median 0.900
+store write checksum 0
+</code></pre>
+<p>Lookup median is 0.89–0.90 ns/call. Oracle median is 1.19–1.30 ns/call. Checksums match the pre-swap run. <code>off</code> is all zeros. <code>ram</code> read and write match. <code>store</code> write is zero because <code>RAMWRT</code> is off. The lookup column is production <code>calc_aux_read</code> / <code>calc_aux_write</code>.</p>
+<h3 id="done-when_4">Done when<a class="headerlink" href="#done-when_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The compare passes for all 64 switch combinations, both directions, the even page, its bit-17 alias, and the odd bank.</li>
+<li>The region-map bytes are unchanged after the sweep.</li>
+<li>Each bench pair prints one checksum, shared by the oracle and the lookup.</li>
+<li><code>iigsmmutest -l</code> and <code>iigsmmutest -l -3</code> still pass. Production <code>calc_aux_read</code> and <code>calc_aux_write</code> are the lookup.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

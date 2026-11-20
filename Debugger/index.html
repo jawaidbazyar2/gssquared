@@ -2218,6 +2218,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3460,10 +3488,37 @@ Alternatively, can we just construct this from the softswitches? That requires i
 <h1 id="debugger-feature-roadmap">Debugger Feature Roadmap<a class="headerlink" href="#debugger-feature-roadmap" title="Permanent link">&para;</a></h1>
 <p>[ ] Implement Memory Explorer that lets you jump to, and page through, memory, like looking for text and stuff  </p>
 <p>[ ] Also, some way to put in a memory location and have it tell you which application it belongs to  </p>
-<p>[ ] "save trace right now to file name" command  </p>
+<p>[x] "save trace right now to file name" command (<code>trsave "filename"</code>)</p>
 <p>[ ] change "debug" to "watch", keying on the string argument vs number argument.  </p>
 <p>[ ] allow end a watch by clicking on an '[x]' in the upper right corner of that watch's area.</p>
 <p>[ ] when we hit a breakpoint, make a beepy sound. This should be easy to do with a soundeffect.  </p>
+<h1 id="some-notes-from-matts-mcp-interface">Some notes from Matt's MCP interface:<a class="headerlink" href="#some-notes-from-matts-mcp-interface" title="Permanent link">&para;</a></h1>
+<p>Mine has these:
+Advancing time step (cycles — fast = 1 CPU cycle, rtl = one 14M tick, ×14)
+step_inst (instructions via SYNC),
+resume (to breakpoint),</p>
+<ul>
+<li>I like these below because it's a one-step for the AI instead of: set breakpoint, resume, clear breakpoint.</li>
+</ul>
+<p>and three run-until forms: 
+  until_pc, 
+  until_write, and 
+  run_until — the semantic one, taking exactly one of pc / write_addr / text, where text matches the merged 80-col display. Fast backend only.</p>
+<p>Debugger</p>
+<p>regs, 
+peek/poke (banks main/aux/rom1/rom2/romv), 
+disasm, </p>
+<p>break_set/break_clear/break_list,
+step_over, 
+step_out. </p>
+<p>Plus the forensics: watch_changed (break on whoever writes a bad byte), 
+mem_diff (snapshot then report what changed), 
+mem_profile (per-byte coverage — what an app never touches), 
+trace_window (deduped trail), 
+trace_capture (every cycle, to file), 
+softswitch_trail ($C000-$C07F accesses).</p>
+<p>From this I like the trace capture - along with "start trace after X and run Y instructions and save to file automatically".
+the mem_diff is cool. we'd need to let it do a range.</p>
 
 
 

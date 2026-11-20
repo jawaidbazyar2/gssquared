@@ -781,10 +781,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#-g-crt-shader-at-boot" class="md-nav__link">
+  <a href="#-g-shadow-mask-at-boot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        -g — CRT shader at boot
+        -g — Shadow Mask at boot
       
     </span>
   </a>
@@ -2358,6 +2358,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3386,10 +3414,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#-g-crt-shader-at-boot" class="md-nav__link">
+  <a href="#-g-shadow-mask-at-boot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        -g — CRT shader at boot
+        -g — Shadow Mask at boot
       
     </span>
   </a>
@@ -3507,8 +3535,8 @@ GSSquared &quot;Choplifter Settings.txt&quot;
 <p>The debug-protocol <code>MOUNT</code> command uses <strong>0-based</strong> drives; the CLI does not. See <a href="../DebugProtocol/">Debug Protocol</a>.</p>
 <h2 id="-s-sleep-instead-of-busy-wait"><code>-s</code> — sleep instead of busy-wait<a class="headerlink" href="#-s-sleep-instead-of-busy-wait" title="Permanent link">&para;</a></h2>
 <p>Same as <strong>Settings → Sleep / Busy Wait</strong>. The emulator sleeps between frames instead of spinning, which lowers host CPU when you are not chasing maximum speed.</p>
-<h2 id="-g-crt-shader-at-boot"><code>-g</code> — CRT shader at boot<a class="headerlink" href="#-g-crt-shader-at-boot" title="Permanent link">&para;</a></h2>
-<p>Enables the GPU CRT effect when guest emulation starts (same as pressing <strong>F7</strong> with the shader off). See <a href="../Displays/">Displays</a>.</p>
+<h2 id="-g-shadow-mask-at-boot"><code>-g</code> — Shadow Mask at boot<a class="headerlink" href="#-g-shadow-mask-at-boot" title="Permanent link">&para;</a></h2>
+<p>Enables the GPU CRT / shadow-mask effect when guest emulation starts (same as pressing <strong>F7</strong> with <strong>Display → Shadow Mask</strong> off). See <a href="../Displays/">Displays</a>.</p>
 <h2 id="-debug-path-d-path"><code>--debug PATH</code> / <code>-D PATH</code><a class="headerlink" href="#-debug-path-d-path" title="Permanent link">&para;</a></h2>
 <p>Listen for the external debug protocol on a Unix-domain socket. Desktop builds only (macOS, Windows, Linux).</p>
 <pre><code class="language-bash">GSSquared --debug /tmp/gs2.sock -p 3

@@ -1,0 +1,3757 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>WOZ 2.1 flux tracks - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#woz-21-flux-tracks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              WOZ 2.1 flux tracks
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Cards_UthernetII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Suites
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CommandLine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BlankFloppy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blank Disk Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HostFST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host FST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SerialConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial & Parallel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Serial_Modem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial / Modem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Play in the Browser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigFiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gs2Pack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS2 Packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProtocolHandlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File Types & URLs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UsingTheDebugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_UthernetII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Uthernet II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SuperSerial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Super Serial Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VOC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Overlay Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SecondSight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Second Sight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard (user)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Videx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Videx VideoTerm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VIDHD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VIDHD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-21-adds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What 2.1 adds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-gs2-does-today" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What GS2 does today
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-a-flux-track-cannot-be-played-as-a-bitstream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why a flux track cannot be played as a bitstream
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#playback-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Playback design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Playback design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cell-decoder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell decoder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seeks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seeks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writes-and-save" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writes and save
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loader-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loader changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drive-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drive changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation order
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="woz-21-flux-tracks">WOZ 2.1 flux tracks<a class="headerlink" href="#woz-21-flux-tracks" title="Permanent link">&para;</a></h1>
+<p>Analysis and implementation plan for playing WOZ 2.1 flux-stream tracks in GSSquared.</p>
+<p>Spec: <a href="https://applesaucefdc.com/woz/reference2/">WOZ Disk Image Reference 2.1</a> (John K. Morris, 16 June 2021).</p>
+<p>This supersedes the sketch at the bottom of <a href="../Woz/">Woz.md</a> (“FLUX Tracks”). That note proposed expanding each track to one bit per 125 ns. The player below keeps the run-length bytes and turns them into the same bit-cell stream the Disk II and IWM sequencers already consume.</p>
+<h2 id="what-21-adds">What 2.1 adds<a class="headerlink" href="#what-21-adds" title="Permanent link">&para;</a></h2>
+<p>WOZ 2.0 stores a normalized bitstream: one bit per cell, 4 µs on a 5.25″ disk and 2 µs on a 3.5″ disk. A 1 is a flux transition. A 0 is a cell with no transition. GS2 plays that stream today.</p>
+<p>WOZ 2.1 (INFO chunk version 3) can store some or all tracks as a flux stream instead. A flux stream is the raw time between transitions, in ticks of 125 ns. It is the same encoding as A2R:</p>
+<ul>
+<li>Each byte is the number of ticks since the previous transition.</li>
+<li>A byte of 255 is an overflow. Add bytes until a non-255 value, then add that too. <code>255, 255, 10</code> is 520 ticks.</li>
+<li>A normal 4 µs gap (the 5.25″ “1” bit) is about 32 ticks. A <code>10</code> pair is about 64. A <code>100</code> triple is about 96.</li>
+<li>The stream is already looped. The first interval is measured from the last transition of the revolution, so wrapping the buffer does not insert or drop time.</li>
+</ul>
+<p>The file stays a WOZ2 (<code>WOZ2</code> magic). Three additions:</p>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INFO version 3</td>
+<td>Adds <code>FLUX Block</code> (uint16 at +46) and <code>Largest Flux Track</code> (uint16 at +48). Both must be non-zero or the file is not a flux image.</td>
+</tr>
+<tr>
+<td>FLUX chunk</td>
+<td>160-byte map, same layout as TMAP. Present only for tracks stored as flux. Located at file offset <code>FLUX Block * 512</code> (the chunk id sits at that offset; the chunk occupies its own block).</td>
+</tr>
+<tr>
+<td>TRKS payload</td>
+<td>Same <code>TRK</code> descriptor as 2.0. For a flux track the <code>Bit Count</code> field is a <strong>byte count</strong> of the flux encoding, not a bit count.</td>
+</tr>
+</tbody>
+</table>
+<p>Map rules:</p>
+<ul>
+<li>A physical slot (5.25″ quarter-track, or 3.5″ <code>(track &lt;&lt; 1) + side</code>) with a flux image is <code>0xFF</code> in TMAP and a TRKS index in the FLUX map.</li>
+<li>If a bad file has a real index in both maps, the FLUX index wins.</li>
+<li><code>0xFF</code> in both maps is an empty slot. The drive still supplies random bits, and the angular position still advances. The spec’s stand-in length for an empty slot is 51,200 bit cells.</li>
+</ul>
+<p>Bitstream tracks and flux tracks share one TRKS index space and may be mixed in one file. A given index is one or the other: if any FLUX-map entry points at it, that payload is flux.</p>
+<p><code>Largest Flux Track</code> is the block count (512-byte blocks) of the biggest flux track, for sizing a buffer. <code>Optimal Bit Timing</code> is unchanged: nominal cell size in 125 ns ticks. 32 is a 5.25″ cell (4 µs). 16 is a 3.5″ cell (2 µs).</p>
+<p>The WRIT chunk is instructions for a device that writes a WOZ back to a real floppy. Playback does not read it.</p>
+<h2 id="what-gs2-does-today">What GS2 does today<a class="headerlink" href="#what-gs2-does-today" title="Permanent link">&para;</a></h2>
+<p>The container layer already knows the version-3 fields and the chunk id, and then stops.</p>
+<ul>
+<li><code>woz_info_t</code> has <code>flux_block</code> and <code>largest_flux_track</code>. <code>Woz::parse_info</code> fills them when INFO version is ≥ 3. <code>Woz::dump_info</code> prints them.</li>
+<li><code>WOZ_CHUNK_FLUX</code> (<code>0x58554C46</code>) is defined. <code>Woz::load</code> hits the default arm of the chunk switch and skips the chunk.</li>
+<li><code>Woz::parse_trks_v2</code> decides which TRKS entries exist by scanning TMAP only. A flux-only slot is <code>0xFF</code> in TMAP, so its TRK is never loaded. An image that is flux on every track loads as an empty disk.</li>
+<li>The copy length is <code>(bit_count + 7) / 8</code>. On a flux track that field is a byte count, so this keeps one eighth of the payload and would interpret timing bytes as MSB-first bits.</li>
+<li><code>Woz::get_track_ptr</code> indexes only TMAP.</li>
+<li><code>Woz::save</code> / <code>build_trks_chunk</code> always write a bitstream (<code>(bit_count + 7) / 8</code> bytes, bit count in the descriptor) and never write a FLUX chunk. <code>build_info_chunk</code> will emit INFO version 3 if the flux fields are non-zero. Saving a flux image with the current writer would drop the flux map and truncate the payloads.</li>
+<li>There is no in-memory flag that distinguishes a flux track from a bitstream track. <code>woz_track_t</code> is <code>bits</code> plus <code>bit_count</code>.</li>
+</ul>
+<p>Playback assumes every mounted track is that bitstream.</p>
+<ul>
+<li>Head position is in units of 1/128 of a bit cell (<code>POSITION_FP_MUL</code> in <code>Floppy_woz</code>).</li>
+<li><code>Floppy525_woz::head_advance_per_cycle</code> is <code>(2 * POSITION_ADV_PER_CYCLE * 32) / optimal_bit_timing</code>. At the standard timing of 32 that is 4 CPU cycles per cell.</li>
+<li><code>Floppy35_woz::head_advance_per_cycle</code> is <code>(4 * POSITION_ADV_PER_CYCLE * 16) / optimal_bit_timing</code>, timed on video cycles. At timing 16 that is 2 video cycles per cell (a 2 µs cell).</li>
+<li><code>Floppy_woz::fast_forward</code> turns elapsed cycles into a count of whole cells, capped at 32 (<code>MAX_BITS_TO_SIM</code>).</li>
+<li>Disk II (<code>DiskII_WOZ_Controller::fast_forward</code>) and IWM (<code>IWM2::fast_forward_impl</code>) loop that count and call <code>read_pulse</code> / <code>write_pulse</code> once per cell. The lightweight sequencer shifts the returned bit. A 1 is treated as the read pulse for that cell.</li>
+<li><code>read_pulse</code> ORs the bit into a 4-bit window and, when the window is <code>0000</code>, substitutes <code>get_random_bit()</code>. That is this emulator’s MC3470 fake-bit behavior. (The spec’s sample code also delays the output by one cell. GS2 does not. Flux should go through the same filter the bitstream path uses.)</li>
+<li><code>Floppy_woz::update_track_ptr</code> keeps angular position with <code>head_position * new_bits / old_bits</code>.</li>
+<li><code>Floppy525_woz::mount</code> sizes <code>max_tracks</code> from TMAP only. A disk whose outer quarter-tracks exist only in the FLUX map would clamp the head below them.</li>
+<li><code>Floppy525_woz::write_pulse</code> allocates a zero bitstream when the guest writes a slot that has no track.</li>
+</ul>
+<p><code>Docs/Storage.md</code> and <code>Docs/Features.md</code> (<code>storage.format.woz21</code>) already list WOZ 2.1 as unsupported. A 2.1 file still mounts, because the magic is <code>WOZ2</code>. Bitstream tracks on it play. Flux slots read as empty and return random bits, so the copy check that needed the flux capture fails with no error at load time.</p>
+<h2 id="why-a-flux-track-cannot-be-played-as-a-bitstream">Why a flux track cannot be played as a bitstream<a class="headerlink" href="#why-a-flux-track-cannot-be-played-as-a-bitstream" title="Permanent link">&para;</a></h2>
+<p>The disks that need 2.1 are ones whose protection measures the time between transitions more finely than a 4 µs (or 2 µs) cell. The spec calls out on the order of a dozen such titles. Two reductions lose that measurement.</p>
+<p><strong>Quantizing each gap onto the nominal cell grid.</strong> A 32-tick gap and a 36-tick gap both fall in one cell and both become a single 1 bit. The bit stream matches. The arrival time does not. 4 ticks is 0.5 µs. Across an 8-bit nibble that is 4 µs, about 4 CPU cycles, which is enough to move a <code>LDA $C0EC,X</code> / <code>BPL</code> poll loop by one iteration.</p>
+<p><strong>Expanding the track to one bit per 125 ns and still clocking the sequencer once per nominal cell.</strong> The extra samples never reach the CPU. The sequencer only updates when <code>fast_forward</code> reports a cell, and that report is what a polling loop observes.</p>
+<p>The CPU-visible behavior is the pair <code>(how many cells elapsed, what bit each cell carried)</code>. Flux changes both. A 36-tick gap is still one 1-bit, and that cell lasts 36 ticks instead of 32. A 64-tick gap is the two cells <code>1, 0</code> (a transition, then a cell with none). A 96-tick gap is <code>1, 0, 0</code>.</p>
+<p>GS2 already has the right place to apply that pair. Both controllers ask the drive for a cell count and a bit per cell. The flux work belongs in the drive’s clock, not in a second sequencer.</p>
+<p>Time base, matching the existing “4 cycles = 32 ticks” bitstream clock:</p>
+<ul>
+<li>1 tick = 125 ns.</li>
+<li>1 CPU cycle (5.25″) or 1 video cycle (3.5″) = 8 ticks.</li>
+<li>Nominal cell = <code>info.optimal_bit_timing</code> ticks (fallback 32 for 5.25″ and 16 for 3.5″ if the field is 0).</li>
+</ul>
+<p>Do not also scale flux time by <code>optimal_bit_timing</code>. That field is the decoder’s nominal cell. The spindle speed is already the sum of the gaps. Applying it again would double-count the Border Zone-style bit-timing adjustment, which bitstream tracks still need.</p>
+<h2 id="playback-design">Playback design<a class="headerlink" href="#playback-design" title="Permanent link">&para;</a></h2>
+<h3 id="in-memory">In memory<a class="headerlink" href="#in-memory" title="Permanent link">&para;</a></h3>
+<p>Add a track kind. Bitstream tracks stay as they are.</p>
+<pre><code class="language-text">enum class woz_track_kind { bitstream, flux };
+
+struct woz_track_t {
+    woz_track_kind       kind = bitstream;
+    std::vector&lt;uint8_t&gt; bits;       // bitstream: MSB-first bits
+                                     // flux: raw A2R bytes, unmodified
+    uint32_t             bit_count;  // bitstream: bit count
+                                     // flux: byte count (the TRK field)
+};
+</code></pre>
+<p>On the image, store the FLUX map beside TMAP:</p>
+<pre><code class="language-text">uint8_t tmap[160];
+uint8_t flux_map[160];   // 0xFF unless this slot is a flux track
+bool    has_flux;        // INFO v3 and both flux fields non-zero, and the chunk parsed
+</code></pre>
+<p>At load, after the flux bytes are copied, decode them once into a prefix of transition times:</p>
+<ul>
+<li>Walk the bytes. Accumulate 255s. Each non-255 finishes one gap.</li>
+<li><code>gaps[i]</code> is that gap in ticks. <code>cum[i]</code> is the tick time of transition <code>i</code>, measured from the start of the revolution. <code>cum.back()</code> is the revolution length, <code>rev_ticks</code>.</li>
+<li>A buffer that ends on 255 is truncated. Reject that track.</li>
+<li><code>rev_ticks == 0</code> is an empty flux track. Treat the slot as empty.</li>
+</ul>
+<p>Keep the raw bytes too, so a later save can write them back unchanged. The prefix is derived.</p>
+<p>A dense 5.25″ revolution is about 1,600,000 ticks (200 ms at 300 RPM). An all-1s track at 32 ticks/cell is about 50,000 transitions, ~200 KB of prefix per such track. Real GCR has fewer transitions, and only the slots that failed a bitstream capture are flux. That is small next to a bitstream image.</p>
+<p><code>get_track_ptr</code> (and the mount-time scan of the highest occupied slot) resolves a slot in this order:</p>
+<ol>
+<li><code>flux_map[slot]</code> if it is not <code>0xFF</code> and in range.</li>
+<li>Else <code>tmap[slot]</code> if it is not <code>0xFF</code> and in range.</li>
+<li>Else empty.</li>
+</ol>
+<p>If the winning index is unchanged across a seek, keep the current track pointer. That is the spec’s “matching map values, do not reload” rule, and it has to compare the winning index, not TMAP alone.</p>
+<h3 id="cell-decoder">Cell decoder<a class="headerlink" href="#cell-decoder" title="Permanent link">&para;</a></h3>
+<p>State on the drive, used only while the current track is flux:</p>
+<ul>
+<li><code>head_tick</code>, <code>read_tick</code> — positions in ticks, modulo <code>rev_ticks</code>.</li>
+<li>A queue of at most <code>MAX_BITS_TO_SIM</code> already-decoded cell bits.</li>
+</ul>
+<p>Decoding one gap of <code>G</code> ticks against nominal cell <code>N</code>:</p>
+<pre><code class="language-text">cells = max(1, (G + N/2) / N)    // 32 → 1, 36 → 1, 48 → 2, 64 → 2, 96 → 3
+</code></pre>
+<p>The transition that ends the gap is a 1. The earlier cells of that gap are 0s. Place the <code>cells</code> sample times across the gap so the last one lands on the transition (spread the remainder one tick at a time across the earlier samples). Sample values: <code>cells - 1</code> zeros, then a 1.</p>
+<p>Examples at <code>N = 32</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Gap (ticks)</th>
+<th>Cells</th>
+<th>Bits</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>1</td>
+<td><code>1</code></td>
+<td>4 cycles</td>
+</tr>
+<tr>
+<td>36</td>
+<td>1</td>
+<td><code>1</code></td>
+<td>4.5 cycles</td>
+</tr>
+<tr>
+<td>64</td>
+<td>2</td>
+<td><code>0, 1</code></td>
+<td>8 cycles</td>
+</tr>
+<tr>
+<td>96</td>
+<td>3</td>
+<td><code>0, 0, 1</code></td>
+<td>12 cycles</td>
+</tr>
+<tr>
+<td>520 (<code>255,255,10</code>)</td>
+<td>16</td>
+<td>fifteen <code>0</code>s, then <code>1</code></td>
+<td>65 cycles</td>
+</tr>
+</tbody>
+</table>
+<p><code>fast_forward</code>, when the current track is flux and the spindle is on:</p>
+<ol>
+<li>Advance <code>head_tick</code> by <code>elapsed_cycles * 8</code>, modulo <code>rev_ticks</code>.</li>
+<li>Emit every sample whose time is in <code>(read_tick, head_tick]</code>, wrapping at <code>rev_ticks</code> when the interval crosses the index hole.</li>
+<li>If more than 32 samples are pending, snap <code>read_tick</code> to 32 nominal cells behind <code>head_tick</code> and decode only that warmup, the same cap as the bitstream path. The lightweight sequencer’s useful state is shorter than 32 cells; decoding a full 200 ms revolution on one register access would hitch.</li>
+<li>Return the number of queued samples.</li>
+</ol>
+<p><code>read_pulse</code> on a flux track pops one queued bit, runs it through the existing 4-bit <code>windowBits</code> fake-bit test, and does not advance a second clock. <code>fast_forward</code> already moved <code>head_tick</code>. <code>read_pulse</code> moves <code>read_tick</code> to that sample’s time.</p>
+<p>Long gaps then behave like a cleaned bitstream. The decoder emits real zeros. After four zeros in the window, <code>read_pulse</code> starts returning random bits until a real 1 arrives. Flux captures are taken below the MC3470, so the fake pulses are not in the file. Always run this filter on flux output, including when INFO <code>cleaned</code> is 0. <code>cleaned</code> describes bitstream imaging, not the flux payload.</p>
+<p>While the motor is off, do not advance <code>head_tick</code>. <code>fast_forward</code> already returns 0 in that case.</p>
+<h3 id="seeks">Seeks<a class="headerlink" href="#seeks" title="Permanent link">&para;</a></h3>
+<p>Keep a revolution fraction across a track change. The spec’s formula <code>new = current * new_length / old_length</code> is that fraction; the two lengths have to be in one unit.</p>
+<table>
+<thead>
+<tr>
+<th>Leaving</th>
+<th>Fraction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bitstream</td>
+<td><code>head_position / (bit_count * POSITION_FP_MUL)</code></td>
+</tr>
+<tr>
+<td>Flux</td>
+<td><code>head_tick / rev_ticks</code></td>
+</tr>
+<tr>
+<td>Empty</td>
+<td><code>head_position / (51200 * POSITION_FP_MUL)</code></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Entering</th>
+<th>New position</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bitstream</td>
+<td>fraction × <code>new_bit_count</code> cells, in the existing 1/128-cell units</td>
+</tr>
+<tr>
+<td>Flux</td>
+<td>fraction × <code>rev_ticks</code></td>
+</tr>
+<tr>
+<td>Empty</td>
+<td>fraction × 51,200 cells, and <code>read_pulse</code> keeps synthesizing random bits</td>
+</tr>
+</tbody>
+</table>
+<p>Switching between two slots that share a winning TRK index does not rescale.</p>
+<h3 id="writes-and-save">Writes and save<a class="headerlink" href="#writes-and-save" title="Permanent link">&para;</a></h3>
+<p>Mount any image with <code>has_flux</code> read-only.</p>
+<ul>
+<li>Force the drive write-protect sense, including when the file’s INFO write-protect flag is clear, and do not let the UI clear it.</li>
+<li><code>write_pulse</code> on a flux track must not treat timing bytes as bits. Ignore the data bit, leave <code>modified</code> clear, and still consume one queued cell so a guest that writes anyway does not stall the sequencer clock. With the sense line held protected, guest software should not enter that path.</li>
+<li><code>Floppy525_woz::write_pulse</code> must not allocate a fresh bitstream over a flux slot.</li>
+<li><code>Woz::save</code> returns an error if <code>has_flux</code> is set. The current writer cannot round-trip the chunk. <code>wozutil save</code> on a flux image should fail the same way.</li>
+</ul>
+<p>These disks are imaged originals whose protection track is the thing a copier got wrong. They are not working disks the guest needs to rewrite. A later change can allow writes on the bitstream slots of a mixed image; that requires <code>save</code> to emit the FLUX chunk on its own block, to store flux payloads with the byte count in the TRK field, and to recompute <code>FLUX Block</code> and <code>Largest Flux Track</code>. Out of scope until a mixed image actually needs it.</p>
+<h2 id="loader-changes">Loader changes<a class="headerlink" href="#loader-changes" title="Permanent link">&para;</a></h2>
+<p>All of this is in <code>src/util/woz.hpp</code> and <code>src/util/woz.cpp</code>.</p>
+<ol>
+<li>Parse INFO and TMAP as now.</li>
+<li>A file is a flux image only when INFO version ≥ 3 and both <code>flux_block</code> and <code>largest_flux_track</code> are non-zero. An INFO version 3 file with those fields zero is a bitstream image. Leave it on today’s path.</li>
+<li>Before interpreting TRKS, read the FLUX chunk at <code>flux_block * 512</code>. Require the id <code>FLUX</code> and a 160-byte payload. If the INFO fields say flux and the chunk is missing, short, or the wrong id, fail <code>Woz::load</code>. Skipping it is what makes today’s mount look successful and then fail the protection with random bits.</li>
+<li>Build the set of flux TRK indices from that map. <code>parse_trks_v2</code> takes the max index from the union of TMAP and the FLUX map. An all-flux image currently returns “no tracks” and must not.</li>
+<li>For a flux index, copy <code>Bit Count</code> bytes from the track’s starting block, bounded by <code>block_count * 512</code>. For every other index, keep <code>(bit_count + 7) / 8</code>.</li>
+<li>Decode gaps into the prefix. Reject a track whose decoded <code>rev_ticks</code> is 0 or whose block count exceeds <code>largest_flux_track</code>.</li>
+<li><code>dump_tmap</code> / <code>dump_tracks</code> print the FLUX map, the kind, the byte count, the transition count, and the revolution length in ticks.</li>
+</ol>
+<p><code>wozutil info -v</code> picks this up with no new command. <code>wozutil save</code> fails on a flux file until a real writer exists.</p>
+<h2 id="drive-changes">Drive changes<a class="headerlink" href="#drive-changes" title="Permanent link">&para;</a></h2>
+<p><code>Floppy_woz</code> owns the clock. Disk II and IWM stay as they are: they already clock one lightweight sequencer step per cell the drive reports.</p>
+<ul>
+<li><code>update_track_ptr</code> branches on track kind and converts the revolution fraction as above.</li>
+<li><code>fast_forward</code> and <code>read_pulse</code> branch on kind. Bitstream behavior stays in the current functions.</li>
+<li><code>tick_no_write</code> and <code>write_pulse</code> on a flux track advance one flux cell and do not modify bytes.</li>
+<li><code>Floppy525_woz::mount</code> computes <code>max_tracks</code> from the union of both maps.</li>
+<li><code>Floppy35_woz</code> uses the same player. Its nominal cell is <code>optimal_bit_timing</code> (16 at the 3.5″ default). Its clock is already video cycles, and those cycles are 8 ticks each under the same 2 µs cell. The MC3470 window is a Disk II behavior; 3.5″ flux images, if any show up, go through that same window until a 3.5″ title shows it is wrong.</li>
+<li>Debug lines (<code>Floppy525_woz::debug</code>, <code>Floppy35_woz::debug</code>) report kind, <code>rev_ticks</code>, and tick position when the current track is flux.</li>
+</ul>
+<p><code>head_advance_per_cycle</code> remains the bitstream formula. The flux clock is <code>elapsed * 8</code> ticks and ignores that hook.</p>
+<h2 id="implementation-order">Implementation order<a class="headerlink" href="#implementation-order" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Container.</strong> Flux map, kind flag, chunk read via <code>flux_block</code>, correct byte count, prefix decode, load failure when the chunk is inconsistent, dump output. <code>wozutil info -v</code> on a real 2.1 file shows flux slots and a plausible revolution (5.25″ near 1.6e6 ticks). Bitstream WOZ 1.0 and 2.0 files still load and save.</li>
+<li><strong>Player.</strong> Cell decoder and the <code>fast_forward</code> / <code>read_pulse</code> branch. Synthetic gaps from the table above, driven without a full machine: 32-tick and 36-tick streams both yield all 1s, and the 36-tick stream takes 9/8 as many cycles per bit.</li>
+<li><strong>Mount policy.</strong> Write-protect, <code>save</code> refusal, <code>max_tracks</code> union, write path does not clobber flux bytes.</li>
+<li><strong>Docs and status.</strong> After playback works, update <code>Docs/Storage.md</code>, <code>Docs/Features.md</code> (<code>storage.format.woz21</code>), and <code>Docs/TodoList.md</code>.</li>
+</ol>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>No WOZ unit harness exists. A small driver next to <code>wozutil</code> (or a test mode of it) can cover the decoder without booting a machine.</p>
+<p>Decoder, nominal cell 32:</p>
+<ul>
+<li><code>32</code> repeated → bits <code>1,1,1,...</code> and 4 cycles each.</li>
+<li><code>36</code> repeated → bits <code>1,1,1,...</code> and 4.5 cycles each.</li>
+<li><code>64</code> repeated → <code>0,1</code> repeating.</li>
+<li><code>96</code> repeated → <code>0,0,1</code> repeating.</li>
+<li><code>255,255,10</code> → 520 ticks, 16 cells, the last of them a 1.</li>
+<li>A stream whose tick sum is the revolution, read across the wrap, produces one continuous gap sequence. The first interval is not applied twice and no extra gap appears at the joint.</li>
+</ul>
+<p>Loader:</p>
+<ul>
+<li>INFO version 3 with both flux fields 0 loads as bitstream and never looks for a FLUX chunk.</li>
+<li>A flux slot absent from TMAP is still loaded, and <code>get_track_ptr</code> returns it.</li>
+<li>A slot listed in both maps returns the flux track.</li>
+<li><code>Bit Count</code> of 1000 copies 1000 bytes, not 125.</li>
+<li>Missing FLUX chunk with non-zero INFO fields fails <code>load</code>.</li>
+</ul>
+<p>Player regression, by booting images that already work:</p>
+<ul>
+<li>A WOZ 2.0 5.25″ disk and a WOZ 2.0 3.5″ disk (read, and writeback of a bitstream image).</li>
+<li>A quarter-track title (Miner 2049er) and a disk with a non-default <code>Optimal Bit Timing</code> (Border Zone, disk 2). Those paths must stay on the bitstream clock.</li>
+</ul>
+<p>Flux acceptance:</p>
+<ul>
+<li>Mount a real WOZ whose INFO version is 3 and whose flux fields are non-zero. Slots that are bitstream on that disk still read. The check that lives on a flux track passes.</li>
+<li>The image stays unmodified across the run, and unmount does not offer to overwrite it.</li>
+</ul>
+<h2 id="out-of-scope">Out of scope<a class="headerlink" href="#out-of-scope" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Writing flux back, or converting a written track into a bitstream TRK and updating the maps.</li>
+<li>A 2 MHz logic-state sequencer. The lightweight one-clock-per-cell model is what both controllers use for bitstream copy protection, and the flux decoder is shaped to feed it. A title that samples the read pulse inside a cell, rather than the nibble arrival time, would need that sequencer. That is a follow-up if a specific image still fails after the cell decoder matches the gap table.</li>
+<li>Authoring flux images, the WRIT chunk, and A2R files as a separate container.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -2303,6 +2303,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3356,6 +3384,7 @@
 </ul>
 <p>Main emu thread never blocks on file I/O.</p>
 <h2 id="dot-matrix-printers">Dot-Matrix Printers<a class="headerlink" href="#dot-matrix-printers" title="Permanent link">&para;</a></h2>
+<p>The current spec is <a href="../PrinterEmulation/">PrinterEmulation.md</a>: a separately downloaded sidecar, started by opening a <code>.gs2print</code> ticket. The notes below are the earlier in-process idea.</p>
 <p>libHaru is a C library (that interfaces well with C++) that can create PDF files.</p>
 <p>So, explore the approach of implementing printer emulation threads, using libHaru to create PDF files.</p>
 <p>The PDF file is the primary output. However, when printing, open a window and show recent portions of the image as it is generated. And it will also have a button to "close print job" which will close the PDF file and set up to create a new one.</p>

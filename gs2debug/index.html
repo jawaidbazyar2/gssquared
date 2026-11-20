@@ -2212,6 +2212,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3542,6 +3570,10 @@ with Client() as c:
 <td>Poke (same domains); <code>data</code> non-empty</td>
 </tr>
 <tr>
+<td><code>load_mem(domain, address, path, *, file_offset=0, max_length=0)</code> → <code>int</code></td>
+<td>Load host binary file into memory (<code>LOADMEM</code>); returns bytes loaded</td>
+</tr>
+<tr>
 <td><code>find_mem(...)</code></td>
 <td>See above; same domains as <code>read_mem</code></td>
 </tr>
@@ -3801,6 +3833,10 @@ EOF
 <tr>
 <td><code>examples/test_regs_findmem.py</code></td>
 <td><code>GET_REGS</code> / <code>SET_REGS</code> / <code>FINDMEM</code> smoke (IIe Enhanced <code>-p 3</code>)</td>
+</tr>
+<tr>
+<td><code>examples/test_load_mem.py</code></td>
+<td><code>LOADMEM</code> binary file load (whole file, slice, raw domain, error paths)</td>
 </tr>
 <tr>
 <td><code>examples/test_video_text.py</code></td>

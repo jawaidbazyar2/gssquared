@@ -2408,6 +2408,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3708,7 +3736,7 @@ F_Demos.hdv
 G_Games with Path Mods.hdv
 </code></pre>
 <p>If you mount this pmap on a BazFast device, all 7 images will be mounted at once, a big time-saver for those with complex setups, multi-disk collections like What Is the AppleIIgs or Golden Orchard.</p>
-<p>BazFast also understands <strong>Apple Partition Map</strong> (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks such as BlueSCSI images. Mounting an APM <code>.iso</code> (or an APM <code>.hdv</code> / <code>.img</code> / <code>.hda</code>) on a BazFast icon expands each <code>Apple_PRODOS</code> and <code>Apple_HFS</code> partition into its own SmartPort unit, the same way a <code>.pmap</code> expands a list of files. Driver, free-space, and partition-map entries are skipped. <code>.iso</code> images are always mounted write-protected. They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type <code>$02</code> (hard disk) - and GS/OS shows the hard drive icon. This is a GS/OS-SmartPort limitation. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.</p>
+<p>BazFast also understands <strong>Apple Partition Map</strong> (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks such as BlueSCSI images. Mounting an APM <code>.iso</code> (or an APM <code>.hdv</code> / <code>.img</code> / <code>.hda</code>) on a BazFast icon expands each <code>Apple_PRODOS</code> and <code>Apple_HFS</code> partition into its own SmartPort unit, the same way a <code>.pmap</code> expands a list of files. Driver, free-space, and partition-map entries are skipped. <code>.iso</code> images are always mounted write-protected (that flag applies to the ISO, not to other images already mounted). They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type <code>$02</code> (hard disk) - and GS/OS shows the hard drive icon. This is a GS/OS-SmartPort limitation. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.</p>
 <h2 id="host-fst">Host FST<a class="headerlink" href="#host-fst" title="Permanent link">&para;</a></h2>
 <p>Host FST shares a folder on your real computer with GS/OS as the <strong><code>:Host</code></strong> volume. Full setup (Mount Drivers, run the installer and choose <strong>Host FST</strong>, and <strong>Host Folder…</strong>) is in <a href="../HostFST/">Host FST</a>.</p>
 <h2 id="write-protection">Write-protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>

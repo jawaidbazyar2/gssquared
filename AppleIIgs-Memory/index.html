@@ -2218,6 +2218,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -4357,7 +4385,7 @@ arrangement it tests with is whichever one test 03 left behind.</p>
 <tr>
 <td>1</td>
 <td>ROMBANK</td>
-<td>Must always be 0 (unused on ROM01; removed on ROM03 — see <a href="../Unimplemented/">Unimplemented.md</a>)</td>
+<td>See below</td>
 </tr>
 <tr>
 <td>0</td>
@@ -4370,6 +4398,7 @@ arrangement it tests with is whichever one test 03 left behind.</p>
 <p>Here is an interesting question - is this -all- the softswitches that control IIe memory mapping in Main / Even Banks? NO.
 It's missing: 80STORE; but that's the only one I think.</p>
 <p>LCBNK2 here: the GS HW Reference has this bit's description backwards. HW Ref says "1 means Bank 1 selected". In fact, 1 means Bank 2 selected, just like the name says.</p>
+<p>ROMBANK is <code>$C068</code> bit 1, and <code>$C028</code> toggles that same bit. A read or a write of <code>$C028</code> toggles it. The data byte is ignored: bit 7 does not choose ROM versus RAM. Language-card RDROM still does that. On a ROM 01, the set bit forces A14 low for the Mega II windows that alias bank <code>$FF</code>: <code>$C071–$C07F</code>, internal <code>$C1xx–$CFxx</code>, and language-card ROM <code>$D000–$FFFF</code> (<code>$D000</code> reads <code>$FF/9000</code>). A direct read of bank <code>$FE</code> or <code>$FF</code> keeps A14. On a ROM 03 the bit still reads back, and CYA pin 60 is grounded so the windows do not move.</p>
 <h2 id="memory-translation">Memory Translation<a class="headerlink" href="#memory-translation" title="Permanent link">&para;</a></h2>
 <p>The Mega II swaps $6000-$9FFF (half the superhires page) in the <em>physical</em> RAM.
 I.e.
@@ -4394,7 +4423,7 @@ Otherwise set the handler and set the handler's map of 128 pages according to th
 <p>In Speed Register, bit 4 = 1 means shadowing in all banks $00 - $7F; otherwise shadowing only banks $00-$01.</p>
 <p>So we can either shadow (and make I/O &amp; LC appear) in banks 0/1; OR, in all RAM banks.</p>
 <p>For purposes of the LC, if shadowing is enabled for a particular bank, and the IOLC is enabled, then transform the address. for LC ROM, it's always going to point to the same real ROM. for LC RAM, we're mapping the addresses potentially like so:
-D000-DFFF: either C000-CFFF (bank 1), or D000-DFFF (bank 2)
+D000-DFFF: either C000-CFFF (bank 2), or D000-DFFF (bank 1)
 E000-FFFF: E000-FFFF.
 0000 - 01FF: 0000 - 01FF either in main bank, or in aux bank.
 Then re-add to base address of bank.</p>

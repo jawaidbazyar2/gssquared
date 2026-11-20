@@ -2303,6 +2303,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3341,11 +3369,11 @@
 
 <h1 id="play-in-the-browser">Play in the browser<a class="headerlink" href="#play-in-the-browser" title="Permanent link">&para;</a></h1>
 <p>GSSquared can run in a modern browser (WebAssembly). The hosted build is at <a href="https://gssquared.net/live">https://gssquared.net/live</a>.</p>
-<p>The page must be served with cross-origin isolation headers (<code>Cross-Origin-Opener-Policy: same-origin</code> and <code>Cross-Origin-Embedder-Policy: require-corp</code>). Opening a local <code>GSSquared.html</code> via <code>file://</code> will not work. For a local build, use <code>python3 assets/web/serve.py</code> as described in <a href="../Emscripten/">Emscripten.md</a>.</p>
+<p>The page must be served with cross-origin isolation headers (<code>Cross-Origin-Opener-Policy: same-origin</code> and <code>Cross-Origin-Embedder-Policy: require-corp</code>). Opening a local <code>GSSquared.html</code> via <code>file://</code> will not work. For a local build, use <code>python3 assets/web/serve.py</code> as described in <a href="../Emscripten/">Emscripten.md</a>. Static HTTPS hosts that cannot send those headers (for example GitHub Pages) can still run the build: a small service worker adds them.</p>
 <h2 id="what-works">What works<a class="headerlink" href="#what-works" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Built-in machines from System Select (same tiles as native).</li>
-<li>Keyboard, mouse, gamepad, display engines, CRT shader (when the browser GPU path is available).</li>
+<li>Keyboard, mouse, gamepad, display engines, Shadow Mask (when the browser GPU path is available).</li>
 <li>Mounting disks with <strong>File → Drives</strong>, clicking a Control Panel drive icon (browser file picker), or <strong>drag-and-drop</strong> onto a drive.</li>
 <li>Playing an arQyv pack from a <code>gssquared.net/live/#pack=</code> link, and <strong>File → Save to Collection</strong> when that download included a save token. The pack lives in the tab’s memory. See <a href="../Arqyv/">Arqyv Integration</a>.</li>
 </ul>
@@ -3371,7 +3399,7 @@
 <td>The Modem attachment is compiled out. Use a native build for TCP Hayes modem.</td>
 </tr>
 <tr>
-<td><strong>No Host Folder…</strong></td>
+<td><strong>No Host Folder</strong></td>
 <td>Host FST’s folder picker is native-only.</td>
 </tr>
 <tr>

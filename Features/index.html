@@ -1183,10 +1183,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#motherboard-iie-memory-iie_memory" class="md-nav__link">
+  <a href="#motherboard-iie-auxiliary-memory" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Motherboard: IIe memory (iie_memory)
+        Motherboard: IIe auxiliary memory
       
     </span>
   </a>
@@ -2965,6 +2965,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -4507,10 +4535,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#motherboard-iie-memory-iie_memory" class="md-nav__link">
+  <a href="#motherboard-iie-auxiliary-memory" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Motherboard: IIe memory (iie_memory)
+        Motherboard: IIe auxiliary memory
       
     </span>
   </a>
@@ -5790,7 +5818,7 @@
 <td>Complete</td>
 <td>all</td>
 <td>Ports present</td>
-<td>File/modem/clipboard/serial</td>
+<td>File/modem/clipboard/serial/netprinter</td>
 <td>manual</td>
 <td><a href="../SerialConnections/">SerialConnections.md</a></td>
 </tr>
@@ -5857,9 +5885,19 @@
 <td>Complete</td>
 <td>all</td>
 <td>Network</td>
-<td>Releases page</td>
+<td>Updates page</td>
 <td>manual</td>
 <td>Docs menu</td>
+</tr>
+<tr>
+<td><code>workflow.docs.notify-update</code></td>
+<td>New-version button on System Select</td>
+<td>Complete</td>
+<td>macOS, win, linux</td>
+<td>Network; behind latest release</td>
+<td>Button under + New / Launch / Edit...; click opens HTML updates page</td>
+<td>manual</td>
+<td>Fail-closed; not on web. <a href="../NotifyUpdate/">NotifyUpdate.md</a></td>
 </tr>
 </tbody>
 </table>
@@ -7001,9 +7039,19 @@
 <td>Complete</td>
 <td>all</td>
 <td>Card + <code>[[connections]]</code></td>
-<td>Modem/file/serial</td>
+<td>Modem/file/serial/netprinter</td>
 <td>manual</td>
 <td><a href="../Cards_SuperSerial/">Cards_SuperSerial.md</a></td>
+</tr>
+<tr>
+<td><code>device.ssc.net-printer</code></td>
+<td>Raw TCP printer client</td>
+<td>Complete</td>
+<td>macOS, win, linux</td>
+<td>Card + <code>device = "netprinter"</code></td>
+<td>Host:port under button; bytes on TCP</td>
+<td>manual</td>
+<td><a href="../NetPrinter/">NetPrinter.md</a>; absent on web</td>
 </tr>
 </tbody>
 </table>
@@ -7267,8 +7315,8 @@
 </table>
 <h3 id="motherboard-keyboards-keyboard_iiplus-keyboard_iie">Motherboard: keyboards (<code>keyboard_iiplus</code>, <code>keyboard_iie</code>)<a class="headerlink" href="#motherboard-keyboards-keyboard_iiplus-keyboard_iie" title="Permanent link">&para;</a></h3>
 <p>Composed per platform; mapping docs are the user surface (<a href="../KeyboardShortcuts/">KeyboardShortcuts.md</a>). No separate slot config.</p>
-<h3 id="motherboard-iie-memory-iie_memory">Motherboard: IIe memory (<code>iie_memory</code>)<a class="headerlink" href="#motherboard-iie-memory-iie_memory" title="Permanent link">&para;</a></h3>
-<p>Aux / main memory layout for //e family — platform-composed, not user-pluggable.</p>
+<h3 id="motherboard-iie-auxiliary-memory">Motherboard: IIe auxiliary memory<a class="headerlink" href="#motherboard-iie-auxiliary-memory" title="Permanent link">&para;</a></h3>
+<p>Main versus auxiliary mapping for the IIe family lives on <code>MMU_IIe2</code>. It is not a slot card.</p>
 <h3 id="motherboard-cassette-cassette">Motherboard: cassette (<code>cassette</code>)<a class="headerlink" href="#motherboard-cassette-cassette" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -7371,9 +7419,19 @@
 <td>Partial</td>
 <td>all</td>
 <td>IIgs</td>
-<td>Print to file</td>
+<td><code>device = "printer"</code></td>
 <td>manual</td>
-<td>Not full printer</td>
+<td>Capture + gs2print ticket; not ImageWriter</td>
+</tr>
+<tr>
+<td><code>device.scc.net-printer</code></td>
+<td>Raw TCP printer client</td>
+<td>Complete</td>
+<td>macOS, win, linux</td>
+<td>IIgs</td>
+<td><code>device = "netprinter"</code></td>
+<td>Host:port under button; bytes on TCP</td>
+<td>manual</td>
 </tr>
 <tr>
 <td><code>device.scc.modem-b</code></td>
@@ -7490,10 +7548,6 @@
 <tr>
 <td>REPT key</td>
 <td>Use host keyboard repeat</td>
-</tr>
-<tr>
-<td>IIgs ROMBANK softswitch</td>
-<td>No effect; matches unused ROM 01 behavior</td>
 </tr>
 <tr>
 <td>IIgs DMABank register</td>

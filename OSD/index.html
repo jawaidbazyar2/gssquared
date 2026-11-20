@@ -810,10 +810,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#serial-parallel" class="md-nav__link">
+  <a href="#serial-parallel-host-folder" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serial / Parallel
+        Serial / Parallel / Host Folder
       
     </span>
   </a>
@@ -2364,6 +2364,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3393,10 +3421,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#serial-parallel" class="md-nav__link">
+  <a href="#serial-parallel-host-folder" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serial / Parallel
+        Serial / Parallel / Host Folder
       
     </span>
   </a>
@@ -3473,14 +3501,15 @@
 <p>To open, press <strong>F4</strong> or click the triangle tab that appears near the upper left corner of the display when the mouse is moving.</p>
 <p>Inside the Control Panel, you can select:</p>
 <h3 id="display-mode">Display mode<a class="headerlink" href="#display-mode" title="Permanent link">&para;</a></h3>
-<p>NTSC, RGB, and three colors of monochrome</p>
+<p>NTSC, RGB, and three colors of monochrome. On an Apple IIgs, <strong>Display → Monitor → GS Composite</strong> (or <strong>F2</strong>) is the extra engine that encodes IIgs RGB as composite. The Control Panel color buttons do not include it.</p>
 <h3 id="speed">Speed<a class="headerlink" href="#speed" title="Permanent link">&para;</a></h3>
 <p>1 MHz, 2.8 MHz, 7.1 MHz, 14.3 MHz, and Ludicrous speed. Ludicrous speed still ties into the normal 1 MHz video system so speaker, Ensoniq, and disk devices keep running (if ludicrously).</p>
 <h3 id="slots">Slots<a class="headerlink" href="#slots" title="Permanent link">&para;</a></h3>
 <p>Displays what virtual cards are present in slots.</p>
 <p>If you are seeing the Control Panel from the System Select screen, it's because you asked to create or edit a System Config, and you will be able to change what is in the slots. Otherwise, it is display-only.</p>
-<h3 id="serial-parallel">Serial / Parallel<a class="headerlink" href="#serial-parallel" title="Permanent link">&para;</a></h3>
-<p>Buttons for each serial or parallel port on the machine (IIgs built-in SCC, Super Serial, Parallel, etc.). Click a button to attach <strong>None</strong>, <strong>File</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, or a listed host serial port. See <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
+<h3 id="serial-parallel-host-folder">Serial / Parallel / Host Folder<a class="headerlink" href="#serial-parallel-host-folder" title="Permanent link">&para;</a></h3>
+<p>A row of cards for each serial or parallel port on the machine (IIgs built-in SCC, Super Serial, Parallel, etc.). Click a port card to attach <strong>None</strong>, <strong>File</strong>, <strong>Printer</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, <strong>Net Printer</strong>, or a listed host serial port. <strong>Net Printer</strong> shows the current host:port under the button. See <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
+<p>On Apple IIgs systems, a <strong>Host Folder</strong> card sits on the same row. Click the pencil to choose which real-computer directory is shared through Host FST (volume <code>:Host</code>). If you never pick a folder, GSSquared shares your <strong>Documents</strong> folder. Not available in the <a href="../Web/">browser build</a>. See <a href="../HostFST/">Host FST</a>.</p>
 <h3 id="disk-drives-storage">Disk Drives / Storage<a class="headerlink" href="#disk-drives-storage" title="Permanent link">&para;</a></h3>
 <p>Drive icons show slot, drive, and the mounted filename (if any).</p>
 <ul>
@@ -3489,7 +3518,6 @@
 <li>Drag a disk image onto the window: the Control Panel opens so you can drop the file on the drive you want.</li>
 </ul>
 <p>See <a href="../Storage/">Storage</a> for formats, write-back, BazFast, and errors.</p>
-<p>On Apple IIgs systems, <strong>Host Folder…</strong> chooses which real-computer directory is shared through Host FST (volume <code>:Host</code>). Not available in the <a href="../Web/">browser build</a>. See <a href="../HostFST/">Host FST</a>.</p>
 <h2 id="hover-controls">Hover controls<a class="headerlink" href="#hover-controls" title="Permanent link">&para;</a></h2>
 <p>When the mouse is over the main window and is <strong>not</strong> captured, a strip of face buttons fades in on the left:</p>
 <table>
@@ -3518,7 +3546,7 @@
 </tr>
 <tr>
 <td><strong>Display</strong></td>
-<td>Opens a picker for Composite / RGB / mono. The button accent follows the current monitor.</td>
+<td>Opens a picker for Composite / RGB / mono. The button accent follows the current monitor. <strong>GS Composite</strong> is on the Display menu / <strong>F2</strong>, not this picker.</td>
 </tr>
 </tbody>
 </table>

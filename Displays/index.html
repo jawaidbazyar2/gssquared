@@ -899,10 +899,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#crt-effect-shader" class="md-nav__link">
+  <a href="#shadow-mask-crt-effect" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CRT Effect / Shader
+        Shadow Mask (CRT effect)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phosphor-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phosphor Persistence
       
     </span>
   </a>
@@ -921,10 +932,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pixel-modes" class="md-nav__link">
+  <a href="#scaling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pixel Modes
+        Scaling
       
     </span>
   </a>
@@ -2369,6 +2380,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../PrinterEmulation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Printer emulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ADB/" class="md-nav__link">
         
   
@@ -3375,10 +3414,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#crt-effect-shader" class="md-nav__link">
+  <a href="#shadow-mask-crt-effect" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CRT Effect / Shader
+        Shadow Mask (CRT effect)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phosphor-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phosphor Persistence
       
     </span>
   </a>
@@ -3397,10 +3447,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pixel-modes" class="md-nav__link">
+  <a href="#scaling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pixel Modes
+        Scaling
       
     </span>
   </a>
@@ -3476,45 +3526,47 @@
 <p>These are matters of personal preference, so you get to pick the one you like best!</p>
 <p>Typically any mode / control can be used with any computer.</p>
 <h2 id="display-engines">Display Engines<a class="headerlink" href="#display-engines" title="Permanent link">&para;</a></h2>
-<p>GS2 supports three different Apple II Display Engines:</p>
+<p>GS2 supports four Apple II Display Engines:</p>
 <ul>
 <li>Composite / NTSC</li>
 <li>IIgs RGB</li>
-<li>Monochrome</li>
+<li><strong>GS Composite</strong> (Apple IIgs only)</li>
+<li>Monochrome (green, amber, or white)</li>
 </ul>
-<p>You can use any rendering mode (for the most part) with any computer type.</p>
-<p>In the Control Panel, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).</p>
-<p>Display engine can be selected by menu, from the Control Panel, from the hover Display picker, or by pressing <strong>F2</strong> to cycle through the display engines.</p>
-<p>NTSC mode has additional controls for Hue (Color) and Saturation, just like real composite monitors.</p>
+<p>You can use Composite, RGB, and Monochrome with any computer type. <strong>GS Composite</strong> is IIgs-only: it takes the IIgs RGB picture and encodes it as composite, the way a real GS looks on an AppleColor composite monitor. <strong>F2</strong> skips it on II / //e.</p>
+<p>In the Control Panel, there are buttons to change the display engine — NTSC, RGB, and Monochrome — and buttons to change the Monochrome color (green, amber, white). <strong>GS Composite</strong> is on <strong>Display → Monitor</strong> (and <strong>F2</strong> on a IIgs). The hover color buttons do not include it yet.</p>
+<p>Display engine can be selected by menu, from the Control Panel, from the hover Display picker (Composite / RGB / mono), or by pressing <strong>F2</strong> to cycle through the engines.</p>
+<p>NTSC and GS Composite have additional controls for Hue (Color) and Saturation, just like real composite monitors.</p>
 <p>Hue is adjusted with the keypad Plus and Minus Keys, while holding SHIFT.
 Saturation is adjusted with the keypad Plus and Minus Keys, while holding OPTION / WINDOWS.</p>
 <p>Reducing Saturation to 0.5 results in colors that are a little more subdued, similar to some other emulators and certain CRT monitors.
 Reducing Saturation to 0 results in a grayscale (not monochrome) display.</p>
+<p>Composite and monochrome decoding run on the GPU when one is available (macOS Metal, Windows D3D12, Linux Vulkan). The browser build and machines without that GPU path use the CPU decoder.</p>
 <h2 id="display-configuration">Display Configuration<a class="headerlink" href="#display-configuration" title="Permanent link">&para;</a></h2>
 <p>In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).</p>
 <ul>
-<li>F2 cycles through the display engines.  </li>
-<li>F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.</li>
+<li>F2 cycles through the display engines (including GS Composite on a IIgs).  </li>
+<li>F5 toggles <strong>Display → Scaling</strong>: Smooth (a little more analog upscaling) and Sharp (square pixels).</li>
 <li>F3 toggles between Full-Screen and Windowed modes.</li>
 </ul>
 <p>These are matters of personal preference, so you get to pick the one you like best.</p>
-<h2 id="crt-effect-shader">CRT Effect / Shader<a class="headerlink" href="#crt-effect-shader" title="Permanent link">&para;</a></h2>
-<p>GS2 has a "CRT Shader" option under the Display menu, that turns on a "CRT Emulation" effect.</p>
-<p>The effect modifies the normal display output, applying a "shadow mask" and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.</p>
+<h2 id="shadow-mask-crt-effect">Shadow Mask (CRT effect)<a class="headerlink" href="#shadow-mask-crt-effect" title="Permanent link">&para;</a></h2>
+<p><strong>Display → Shadow Mask</strong> turns on a CRT-style shadow-mask effect over the current picture.</p>
+<p>The effect modifies the normal display output, applying a shadow mask and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.</p>
 <p>Available on macOS (Metal), Windows (D3D12), and Linux (Vulkan / SPIR-V). Works best on Retina / high-DPI displays but works pretty well on other monitors such as 27" e.g. 1440p (2560 x 1440).</p>
-<p>The shader mode can be activated with Display &gt; CRT Shader, or by pressing F7. The <a href="../CommandLine/"><code>-g</code></a> command-line flag enables it at boot.</p>
+<p>Activate it with <strong>Display → Shadow Mask</strong>, or by pressing <strong>F7</strong>. The <a href="../CommandLine/"><code>-g</code></a> command-line flag enables it at boot.</p>
+<h2 id="phosphor-persistence">Phosphor Persistence<a class="headerlink" href="#phosphor-persistence" title="Permanent link">&para;</a></h2>
+<p><strong>Display → Phosphor Persistence</strong> (on by default when the GPU decoder is available) keeps a short glow from the previous frame on green, amber, and white monitors, like a real phosphor. Uncheck it for a perfectly sharp mono picture.</p>
 <h2 id="second-sight-text">Second Sight Text<a class="headerlink" href="#second-sight-text" title="Permanent link">&para;</a></h2>
 <p>If the current machine has a <strong>Second Sight</strong> card, <strong>Display → Second Sight Text</strong> renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.</p>
 <p>The menu item is grayed out when no Second Sight card is present. The setting is remembered in app settings. See <a href="../Cards_SecondSight/">Second Sight</a>.</p>
-<h2 id="pixel-modes">Pixel Modes<a class="headerlink" href="#pixel-modes" title="Permanent link">&para;</a></h2>
-<p>GS2 has two Pixel Modes:</p>
+<h2 id="scaling">Scaling<a class="headerlink" href="#scaling" title="Permanent link">&para;</a></h2>
+<p><strong>Display → Scaling</strong> has two modes:</p>
 <ul>
-<li>Pixel blur ("Analog")</li>
-<li>Rectangular</li>
+<li><strong>Smooth</strong> — a little more analog upscaling of Apple II dots to modern displays</li>
+<li><strong>Sharp</strong> — exact square upscaling/downscaling, common in other emulators</li>
 </ul>
-<p>Pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays, that gives it more of that old CRT feel.</p>
-<p>Rectangular performs an exact square upscaling/downscaling, which is common in other emulators, and may be more to some people's liking.</p>
-<p>Pixel Mode can be selected from the hover Display picker or by pressing <strong>F5</strong> to toggle between pixel-blur and rectangular. F5 is <strong>not</strong> a switch between “accurate NTSC” and a legacy renderer — that path is always the Composite engine (<strong>F2</strong>).</p>
+<p><strong>F5</strong> toggles Smooth and Sharp. F5 is <strong>not</strong> a switch between “accurate NTSC” and a legacy renderer — that path is always the Composite (or GS Composite) engine (<strong>F2</strong>).</p>
 <h2 id="hud-overlays">HUD overlays<a class="headerlink" href="#hud-overlays" title="Permanent link">&para;</a></h2>
 <p><strong>Display → HUD → Stats</strong> shows a small performance overlay (off by default).<br />
 <strong>Display → HUD → Drives</strong> shows the drive-activity strip at the bottom of the screen (on by default).</p>
