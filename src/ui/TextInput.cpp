@@ -145,9 +145,17 @@ void TextInput_t::render() {
     uint32_t bgcolor = edit_active ? style.background_color : dim(style.background_color, 0.7f);
 
     SDL_FRect eb = {tp.x, tp.y, tp.w, tp.h};
-    ctx->fill_rect(eb, bgcolor);
-    if (style.border_width > 0) {
-        ctx->draw_rect(eb, style.border_color);
+    if (style.corner_radius > 0.0f) {
+        ctx->fill_rounded_rect(eb, style.corner_radius, bgcolor);
+        if (style.border_width > 0) {
+            ctx->draw_rounded_rect(eb, style.corner_radius, style.border_color,
+                                   static_cast<float>(style.border_width));
+        }
+    } else {
+        ctx->fill_rect(eb, bgcolor);
+        if (style.border_width > 0) {
+            ctx->draw_rect(eb, style.border_color);
+        }
     }
 
     text_renderer->set_color(

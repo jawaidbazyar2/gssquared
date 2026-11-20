@@ -366,13 +366,23 @@ bool validate_connections(PlatformId_t platform,
         const std::string device = to_lower(conn.device);
         if (device != "none" && device != "file" && device != "echo" &&
             device != "modem" && device != "clipboard" && device != "serial" &&
-            device != "printer") {
+            device != "printer" && device != "netprinter") {
             error_out = "Unknown connection device: " + conn.device;
             return false;
         }
         if (device == "serial" && conn.path.empty()) {
             error_out = "[[connections]] serial device requires path";
             return false;
+        }
+        if (device == "netprinter") {
+            if (conn.host.empty()) {
+                error_out = "[[connections]] netprinter device requires host";
+                return false;
+            }
+            if (conn.tcp_port < 1 || conn.tcp_port > 65535) {
+                error_out = "[[connections]] netprinter device requires port in 1-65535";
+                return false;
+            }
         }
         // path is optional for device=file (runtime may auto-generate capture names).
     }
@@ -760,6 +770,14 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
         if (!conn.remote_url.empty()) {
             out << "remote_url = \"" << toml_escape(conn.remote_url) << "\"\n";
         }
+        if (to_lower(conn.device) == "netprinter") {
+            if (!conn.host.empty()) {
+                out << "host = \"" << toml_escape(conn.host) << "\"\n";
+            }
+            if (conn.tcp_port > 0) {
+                out << "port = " << conn.tcp_port << "\n";
+            }
+        }
     }
 
     if (!out) {
@@ -1069,7 +1087,11 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
                 return false;
             }
 
-            if (const auto port_node = (*conn_table)["port"]; port_node.is_string()) {
+            const auto port_node = (*conn_table)["port"];
+            if (port_node.is_integer()) {
+                conn.port = "a";
+                conn.tcp_port = static_cast<int>(*port_node.value<int64_t>());
+            } else if (port_node.is_string()) {
                 conn.port = to_lower(std::string(*port_node.value<std::string>()));
             } else {
                 conn.port = "a";
@@ -1089,6 +1111,9 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
             }
             if (const auto url_node = (*conn_table)["remote_url"]; url_node.is_string()) {
                 conn.remote_url = std::string(*url_node.value<std::string>());
+            }
+            if (const auto host_node = (*conn_table)["host"]; host_node.is_string()) {
+                conn.host = std::string(*host_node.value<std::string>());
             }
 
             // Canonicalize to firmware slot form (IIgs A→1, B→2; cards keep their slot).
@@ -1175,6 +1200,12 @@ void SystemConfig::dump(std::ostream& out) const {
         }
         if (!conn.remote_url.empty()) {
             out << " remote_url " << conn.remote_url;
+        }
+        if (!conn.host.empty()) {
+            out << " host " << conn.host;
+        }
+        if (conn.tcp_port > 0) {
+            out << " tcp_port " << conn.tcp_port;
         }
         out << "\n";
     }

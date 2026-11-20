@@ -66,6 +66,8 @@
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/host/HostSerial.hpp"
 #include "serial_devices/host/SerialPortManager.hpp"
+#include "serial_devices/modem/ModemDevice.hpp"
+#include "serial_devices/netprinter/NetPrinterDevice.hpp"
 #include "StorageButtonFactory.hpp"
 #include "version.h"
 
@@ -395,28 +397,44 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
     // Serial / parallel ports between slots and storage.
     Style_t SP = {
-        .background_color = 0x00000040,
-        .border_color = 0xFFFFFF80,
-        .hover_color = 0x008080FF,
-        .padding = 4,
-        .border_width = 2,
-    };
-    // Match SlotButton readability: mid blue fill, white text.
-    Style_t SPB = {
-        .background_color = 0x2E86ABFF,
-        .border_color = 0xF0F7FAFF,
-        .hover_color = 0x3D9BC4FF,
-        .padding = 4,
+        .background_color = 0x006030FF,
+        .border_color = 0xFFFFFF90,
+        .hover_color = 0x006030FF,
+        .padding = 6,
         .border_width = 1,
-        .text_color = 0xFFFFFFFF,
+        .corner_radius = 6.0f,
     };
     serial_ports_container = new SerialPortsOSD_t(&ui_ctx, SP);
     serial_ports_container->set_position(360, 140);
     serial_ports_container->size(230, 304);
-    serial_ports_container->set_button_style(SPB);
-    serial_ports_container->set_click_handler([this](SerialPortButton *button, const SDL_Event&) {
-        show_connection_picker(button->get_key(), button->get_kind());
-    });
+    serial_ports_container->set_serial_port_manager(computer->serial_ports);
+    serial_ports_container->set_apply_handler(
+        [this](connection_key_t key, connection_device_type_t type,
+               const std::string &path, const std::string &host, int tcp_port) {
+            if (this->computer && this->computer->connections) {
+                this->computer->connections->attach(key, type, path, host, tcp_port);
+                refresh_serial_ports();
+            }
+        });
+    serial_ports_container->set_status_provider(
+        [this](connection_key_t key, connection_device_type_t device) -> std::pair<std::string, bool> {
+            if (this->computer && this->computer->connections) {
+                if (device == connection_device_type_t::NET_PRINTER) {
+                    if (auto *np = dynamic_cast<NetPrinterDevice *>(this->computer->connections->device(key))) {
+                        return np->is_socket_open() ? std::make_pair(std::string("Up"), true)
+                                                    : std::make_pair(std::string("Idle"), false);
+                    }
+                } else if (device == connection_device_type_t::MODEM) {
+                    if (auto *md = dynamic_cast<ModemDevice *>(this->computer->connections->device(key))) {
+                        if (md->is_online()) return {"Online", true};
+                        if (md->is_ringing()) return {"Ringing", true};
+                        if (md->is_listening()) return {"Listen :6502", false};
+                        return {"Outbound", false};
+                    }
+                }
+            }
+            return {"", false};
+        });
     refresh_serial_ports();
     containers.push_back(serial_ports_container);
 
@@ -649,7 +667,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 }
 
 OSD::~OSD() {
-    dismiss_connection_picker();
     SDL_DestroyTexture(cpTexture);
     delete text_render;
     delete title_trender;
@@ -675,107 +692,22 @@ void OSD::refresh_serial_ports() {
         spec.kind = info.kind;
         spec.device = info.device;
         spec.path = info.path;
+        spec.host = info.host;
+        spec.tcp_port = info.tcp_port;
+        for (connection_device_type_t dev : computer->connections->allowed_devices(info.key)) {
+            if (dev == connection_device_type_t::PRINTER) {
+                spec.offers_printer = true;
+                break;
+            }
+        }
         specs.push_back(std::move(spec));
     }
     serial_ports_container->rebuild(specs);
 }
 
-void OSD::dismiss_connection_picker() {
-    delete connection_picker;
-    connection_picker = nullptr;
-}
-
-void OSD::show_connection_picker(connection_key_t key, connection_port_kind_t kind) {
-    dismiss_connection_picker();
-    picking_connection_key_ = key;
-    picking_connection_kind_ = kind;
-
-    // Dark slate panel; choice buttons use white text on ocean blue (not black-on-purple).
-    Style_t MS{
-        .background_color = 0x1A2332FF,
-        .border_color = 0x7EB8D8FF,
-        .hover_color = 0x243044FF,
-        .padding = 8,
-        .border_width = 3,
-    };
-    Style_t btn_style{
-        .background_color = 0x2E86ABFF,
-        .border_color = 0xF0F7FAFF,
-        .hover_color = 0xE36414FF,
-        .padding = 4,
-        .border_width = 1,
-        .text_color = 0xFFFFFFFF,
-    };
-    connection_picker = new Container_t(&ui_ctx, MS);
-    connection_picker->set_position(380, 160);
-
-    constexpr float kBtnW = 280.0f;
-    constexpr float kBtnH = 28.0f;
-    constexpr float kPanelW = 320.0f;
-
-    auto add_choice = [this, btn_style](connection_device_type_t type, const char *label) {
-        Button_t *b = new Button_t(&ui_ctx, label, btn_style);
-        b->size(kBtnW, kBtnH);
-        b->on_click([this, type](const SDL_Event&) -> bool {
-            if (computer && computer->connections) {
-                computer->connections->attach(picking_connection_key_, type);
-                refresh_serial_ports();
-            }
-            dismiss_connection_picker();
-            return true;
-        });
-        connection_picker->add(b);
-    };
-
-    std::vector<connection_device_type_t> choices;
-    if (computer && computer->connections) {
-        choices = computer->connections->allowed_devices(key);
-    }
-    for (connection_device_type_t type : choices) {
-        const char *label = "Nothing";
-        if (type == connection_device_type_t::FILE) label = "File";
-        else if (type == connection_device_type_t::PRINTER) label = "Printer";
-        else if (type == connection_device_type_t::CLIPBOARD) label = "Clipboard";
-        else if (type == connection_device_type_t::MODEM) label = "Modem";
-        add_choice(type, label);
-    }
-
-#if !defined(__EMSCRIPTEN__)
-    if (kind == connection_port_kind_t::SERIAL && computer && computer->serial_ports) {
-        computer->serial_ports->poll(SDL_GetTicks());
-        picker_generation_ = computer->serial_ports->generation();
-        for (const host_serial_info_t &info : computer->serial_ports->ports()) {
-            Button_t *b = new Button_t(&ui_ctx, host_serial_basename(info.display).c_str(), btn_style);
-            b->size(kBtnW, kBtnH);
-            b->on_click([this, path = info.path](const SDL_Event&) -> bool {
-                if (computer && computer->connections) {
-                    computer->connections->attach(picking_connection_key_,
-                                                  connection_device_type_t::SERIAL, path);
-                    refresh_serial_ports();
-                }
-                dismiss_connection_picker();
-                return true;
-            });
-            connection_picker->add(b);
-        }
-    }
-#endif
-
-    const size_t n = connection_picker->count();
-    const float pad = static_cast<float>(MS.padding);
-    const float cell_h = kBtnH + pad * 2;
-    const float panel_h = pad * 2 + n * cell_h + static_cast<float>(MS.border_width) * 2;
-    connection_picker->size(kPanelW, panel_h);
-    connection_picker->layout();
-}
-
 void OSD::update() {
-    if (is_control_panel_active() && computer && computer->serial_ports) {
-        computer->serial_ports->poll(SDL_GetTicks());
-        if (connection_picker &&
-            computer->serial_ports->generation() != picker_generation_) {
-            show_connection_picker(picking_connection_key_, picking_connection_kind_);
-        }
+    if (is_control_panel_active() && serial_ports_container) {
+        serial_ports_container->update();
     }
 
     if (!mstack.stack.empty()) {
@@ -934,10 +866,6 @@ void OSD::render() {
             }
         }
 
-        if (connection_picker) {
-            connection_picker->render();
-        }
-
         // Build version near bottom-left of the control panel slide-out
         {
             const int version_x = 20;
@@ -1081,12 +1009,8 @@ bool OSD::event(const SDL_Event &event) {
         return true;
     }
 
-    if (connection_picker) {
-        if (connection_picker->handle_mouse_event(event)) {
-            return true;
-        }
-        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            dismiss_connection_picker();
+    if (active && serial_ports_container && serial_ports_container->has_overlay()) {
+        if (serial_ports_container->handle_overlay_event(event)) {
             return true;
         }
     }
@@ -1177,6 +1101,9 @@ void OSD::open_panel() {
 }
 
 void OSD::close_panel() {
+    if (serial_ports_container) {
+        serial_ports_container->dismiss_overlay();
+    }
     slideStatus = SLIDE_OUT;   
     slidePosition = 0;
     slidePositionDelta = slidePositionDeltaMin;

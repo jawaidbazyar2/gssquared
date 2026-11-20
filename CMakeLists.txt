@@ -526,6 +526,7 @@ endif()
 add_library(gs2_serial_devices
     src/serial_devices/SerialDevice.cpp
     src/serial_devices/print/Gs2PrintSession.cpp
+    src/serial_devices/netprinter/NetPrinterDevice.cpp
     ${GS2_HOST_SERIAL_SRC}
 )
 if(WIN32)

@@ -28,6 +28,7 @@
 #include "util/EventQueue.hpp"
 #if !defined(__EMSCRIPTEN__)
 #include "serial_devices/modem/ModemDevice.hpp"
+#include "serial_devices/netprinter/NetPrinterDevice.hpp"
 #include "serial_devices/serial/SerialPortDevice.hpp"
 #endif
 
@@ -39,7 +40,8 @@ Connections::~Connections() {
 }
 
 SerialDevice *Connections::create_device(connection_device_type_t type, const std::string &port_id,
-                                         const std::string &path) {
+                                         const std::string &path, const std::string &host,
+                                         int tcp_port) {
     switch (type) {
         case connection_device_type_t::NONE:
             return nullptr;
@@ -66,6 +68,13 @@ SerialDevice *Connections::create_device(connection_device_type_t type, const st
 #else
             return new SerialPortDevice(event_queue_, device_frame_dispatcher_,
                                         port_id.c_str(), path);
+#endif
+        case connection_device_type_t::NET_PRINTER:
+#if defined(__EMSCRIPTEN__)
+            return nullptr;
+#else
+            return new NetPrinterDevice(event_queue_, device_frame_dispatcher_,
+                                        port_id.c_str(), host, tcp_port);
 #endif
     }
     return nullptr;
@@ -102,7 +111,7 @@ int Connections::register_port(connection_key_t key,
 }
 
 bool Connections::attach(connection_key_t key, connection_device_type_t type,
-                         const std::string &path) {
+                         const std::string &path, const std::string &host, int tcp_port) {
     auto it = ports_.find(key);
     if (it == ports_.end()) {
         std::cerr << "Connections: no port registered at slot " << key.slot
@@ -111,7 +120,8 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
     }
     port_registration_t &reg = it->second;
 #if defined(__EMSCRIPTEN__)
-    if (type == connection_device_type_t::SERIAL) {
+    if (type == connection_device_type_t::SERIAL ||
+        type == connection_device_type_t::NET_PRINTER) {
         type = connection_device_type_t::NONE;
     }
 #endif
@@ -129,11 +139,17 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
     reg.device = nullptr;
     reg.current_device = connection_device_type_t::NONE;
     reg.path.clear();
+    reg.host.clear();
+    reg.tcp_port = 0;
 
-    SerialDevice *dev = create_device(type, reg.port_id, path);
+    SerialDevice *dev = create_device(type, reg.port_id, path, host, tcp_port);
     reg.device = dev;
     reg.current_device = type;
     reg.path = (type == connection_device_type_t::SERIAL) ? path : std::string{};
+    if (type == connection_device_type_t::NET_PRINTER) {
+        reg.host = host;
+        reg.tcp_port = tcp_port;
+    }
     reg.attached_once = true;
     if (reg.attach_fn) {
         reg.attach_fn(dev, type);
@@ -174,6 +190,8 @@ const std::vector<connection_port_info_t> &Connections::get_all_ports() const {
         info.kind = kv.second.kind;
         info.device = kv.second.current_device;
         info.path = kv.second.path;
+        info.host = kv.second.host;
+        info.tcp_port = kv.second.tcp_port;
         cached_ports_.push_back(std::move(info));
     }
     std::sort(cached_ports_.begin(), cached_ports_.end(),
@@ -212,6 +230,8 @@ void Connections::clear() {
         reg.device = nullptr;
         reg.current_device = connection_device_type_t::NONE;
         reg.path.clear();
+        reg.host.clear();
+        reg.tcp_port = 0;
     }
     ports_.clear();
     cached_ports_.clear();

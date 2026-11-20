@@ -16,6 +16,7 @@
  */
 
 #include "serial_devices/print/Gs2PrintSession.hpp"
+#include "serial_devices/print/PrintTiming.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -64,7 +65,7 @@ bool Gs2PrintSession::take_peer_closed() { return false; }
 
 namespace {
 
-constexpr uint64_t kConnectTimeoutMs = 5000;
+constexpr uint64_t kConnectTimeoutMs = print_timing::kConnectTimeoutMs;
 
 #if defined(_WIN32)
 using sock_t = SOCKET;

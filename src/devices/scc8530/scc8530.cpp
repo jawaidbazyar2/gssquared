@@ -121,6 +121,12 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
 
     computer->register_reset_handler([st](bool cold_start) {
         (void)cold_start;
+        if (st->channel_a_device) {
+            st->channel_a_device->q_host.send(SerialMessage{MESSAGE_CLOSE, 0});
+        }
+        if (st->channel_b_device) {
+            st->channel_b_device->q_host.send(SerialMessage{MESSAGE_CLOSE, 0});
+        }
         st->scc->reset();
         return true;
     });
