@@ -216,16 +216,25 @@ void Container_t::render() {
 
     // Draw container background
     SDL_FRect container_rect = {tp.x, tp.y, tp.w, tp.h};
-    ctx->fill_rect(container_rect, bgcolor);
+    if (style.corner_radius > 0.0f) {
+        ctx->fill_rounded_rect(container_rect, style.corner_radius, bgcolor);
+    } else {
+        ctx->fill_rect(container_rect, bgcolor);
+    }
 
     // Draw border if needed
     if (style.border_width > 0) {
-        for (uint32_t i = 0; i < style.border_width; i++) {
-            SDL_FRect border_rect = {
-                tp.x + i, tp.y + i,
-                tp.w - 2 * i, tp.h - 2 * i
-            };
-            ctx->draw_rect(border_rect, style.border_color);
+        if (style.corner_radius > 0.0f) {
+            ctx->draw_rounded_rect(container_rect, style.corner_radius, style.border_color,
+                                   static_cast<float>(style.border_width));
+        } else {
+            for (uint32_t i = 0; i < style.border_width; i++) {
+                SDL_FRect border_rect = {
+                    tp.x + i, tp.y + i,
+                    tp.w - 2 * i, tp.h - 2 * i
+                };
+                ctx->draw_rect(border_rect, style.border_color);
+            }
         }
     }
 

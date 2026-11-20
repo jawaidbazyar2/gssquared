@@ -1055,6 +1055,8 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
     uint32_t eaddr;
 
     //phantom_read needed here similar to address_abs_x
+    // All 65816 traits also set has_65c02_ops, so 65C02-only behavior
+    // must be else-if after has_65816_ops (same pattern as RMW).
     if constexpr (CPUTraits::has_65816_ops) {
         base = cpu->full_db | eaddr_16; // add data bank
         eaddr = base + index; // calculate effective address
@@ -1068,10 +1070,15 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
             phantom_read(cpu, eaddr);
         }
         write_data(cpu, eaddr, reg);
-    } else { // 65c02 and NMOS 6502
+    } else if constexpr (CPUTraits::has_65c02_ops) {
+        // 65C02 STA (zp),Y: extra cycle is not a dummy-read of EA
+        // (mb-audit 41:01:09 / AppleWin GH#52). 65816 is NMOS-like
+        // and must not take this path.
         base = eaddr_16;
-        eaddr = (uint16_t)(base + index); // calculate effective address
-
+        eaddr = (uint16_t)(base + index);
+        phantom_read_ign(cpu, (base & 0x00FF00) | (eaddr & 0xFF));
+        write_data(cpu, (uint16_t)eaddr, reg);
+    } else {
         // NMOS 6502 phantom read for STA (zp),Y: always occurs, at
         // (base_hi << 8) | ((base_lo + index) & 0xFF)  i.e. the final
         // effective-address low byte combined with the *un-carried* high
@@ -1080,6 +1087,8 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
         // byte and causing bogus register-side-effect reads e.g. clearing
         // IFR.T2 on a Mockingboard 6522 during another 6522's setup
         // (mb-audit 11:14:02).
+        base = eaddr_16;
+        eaddr = (uint16_t)(base + index);
         phantom_read(cpu, (base & 0x00FF00) | (eaddr & 0xFF));
         write_data(cpu, (uint16_t)eaddr, reg);
     }

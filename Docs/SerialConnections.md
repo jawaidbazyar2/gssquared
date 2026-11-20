@@ -8,9 +8,10 @@ GSSquared treats each serial or parallel port as a jack you can plug a virtual d
 |------------|----------------------------------------|---------------|
 | **None** | Port idle | Port idle |
 | **File** | Capture TX data to a host file | Capture printer bytes to a host file |
-| **Printer** | Super Serial Card only. Same capture as File, and on native builds the same bytes go to a gs2print socket. The worker opens the ticket without blocking the emulator. Sets the card to SIC P8 so firmware does not wait for ACK. | — |
+| **Printer** | IIgs SCC and Super Serial. Same capture as File, and on native builds the same bytes go to a gs2print socket. The worker opens the ticket without blocking the emulator. On SSC, sets the card to SIC P8 so firmware does not wait for ACK. | — |
 | **Clipboard** | Capture TX to the host clipboard | Capture printer bytes to the host clipboard |
 | **Modem** | Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502). Native builds only; absent in the [browser](Web.md). | — |
+| **Net Printer** | Raw TCP client to a host:port (often 9100). Opens on the first guest byte, closes after 60 seconds idle. Native builds only; absent in the [browser](Web.md). Spec: [NetPrinter.md](NetPrinter.md). | — |
 | **Serial** | Real host UART (macOS `/dev/cu.*`; Windows `COMn`; Linux `/dev/ttyS*` `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`) | — |
 
 GS2 ignores Bluetooth/debug/wlan system fake serial devices. On Linux, motherboard `/dev/ttyS*` nodes with no UART (empty 8250 placeholders) are omitted from the picker.
@@ -22,7 +23,7 @@ When a **File** attachment closes, a short on-screen message shows the filename.
 1. Press **F4** (or click the Control Panel tab).
 2. Find the **Serial / Parallel** buttons (between the slot list and the drive icons).
 3. Click a port button.
-4. Pick **None**, **File**, **Printer**, **Clipboard**, **Modem**, or a host serial port listed by name (Modem and host ports only on serial jacks; **Printer** only on a Super Serial Card). The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.
+4. Pick **None**, **File**, **Printer**, **Clipboard**, **Modem**, **Net Printer**, or a host serial port listed by name (Modem, Net Printer, and host ports only on serial jacks; **Printer** on IIgs SCC and Super Serial). **Net Printer** asks for a host and TCP port; the chosen address is shown under the port button. The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.
 
 On Apple IIgs machines you will see the built-in ports (often labeled like printer/modem). Slot cards such as Super Serial or Parallel appear as their own buttons.
 
@@ -56,7 +57,7 @@ slot = 2
 device = "modem"
 ```
 
-Optional `path` sets the capture filename for `device = "file"`. For `device = "serial"`, `path` is the host port name stored as written (`/dev/cu.usbserial-…`, `cu.usbserial-…`, `COM3`, `/dev/ttyUSB0`, `/dev/ttyS0`, …) — it is not resolved relative to the config file.
+Optional `path` sets the capture filename for `device = "file"`. For `device = "serial"`, `path` is the host port name stored as written (`/dev/cu.usbserial-…`, `cu.usbserial-…`, `COM3`, `/dev/ttyUSB0`, `/dev/ttyS0`, …) — it is not resolved relative to the config file. For `device = "netprinter"`, `host` is a DNS name or IP and integer `port` is the TCP port (preferred configs use `slot` for the jack, so `port` here is not the SCC channel).
 
 ```toml
 [[connections]]
@@ -67,7 +68,15 @@ path = "cu.usbserial-A50285BI"   # macOS; on Windows use path = "COM3"; on Linux
 
 Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. Host **CD, CTS, and DSR** are passed through to the emulated UART so BBS software can see carrier loss. If the dongle is unplugged, the emulator keeps the attachment and retries (handshake lines read as deasserted until it reopens). On Linux, `/dev/ttyUSB*` and `/dev/ttyS*` are owned by group `dialout` (some distros use `uucp`); the local user must be in that group and re-login before GSSquared can open the port.
 
-A **Modem** attachment asserts CD only while the TCP session is connected. File and clipboard attachments keep handshake asserted. Details: [SerialPortSpec.md](SerialPortSpec.md).
+```toml
+[[connections]]
+slot = 1
+device = "netprinter"
+host = "printer.local"
+port = 9100
+```
+
+A **Modem** attachment asserts CD only while the TCP session is connected. File, clipboard, printer, and Net Printer attachments keep handshake asserted. Details: [SerialPortSpec.md](SerialPortSpec.md).
 
 If you omit `[[connections]]`, GSSquared applies sensible defaults (IIgs: file on one port and modem on the other on native builds; SSC → modem; parallel → file).
 
@@ -80,4 +89,5 @@ If you omit `[[connections]]`, GSSquared applies sensible defaults (IIgs: file o
 - [Serial / Modem](Serial_Modem.md)
 - [Play in the browser](Web.md) — no modem on web
 - [Serial port spec](SerialPortSpec.md)
+- [Net Printer](NetPrinter.md)
 - [Writing Config Files Manually](ConfigFiles.md)

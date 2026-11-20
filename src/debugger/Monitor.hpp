@@ -48,6 +48,7 @@ enum mon_cmd_type_t {
     MON_CMD_SLOAD,
     MON_CMD_SCLEAR,
     MON_CMD_SLOOKUP,
+    MON_CMD_TRSAVE,
     MON_CMD_M, // set/show assumed M width for list disasm (8 or 16)
     MON_CMD_X, // set/show assumed X width for list disasm (8 or 16)
     MON_CMD_VIDEO,
@@ -141,6 +142,7 @@ private:
     void cmd_sload();
     void cmd_slookup();
     void cmd_sclear();
+    void cmd_trsave();
     void cmd_map();
     void cmd_move();
     void cmd_debug();

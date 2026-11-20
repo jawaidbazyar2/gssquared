@@ -30,6 +30,7 @@ struct Style_t {
     // Layout
     uint32_t padding = 5;
     uint32_t border_width = 1;
+    float corner_radius = 0.0f;
     
     // Button-specific
     uint32_t text_color = 0x000000FF;  // For text buttons

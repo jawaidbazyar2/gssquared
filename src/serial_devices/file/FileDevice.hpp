@@ -8,6 +8,7 @@
 
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/print/Gs2PrintSession.hpp"
+#include "serial_devices/print/PrintTiming.hpp"
 #include "util/DeviceFrameDispatcher.hpp"
 #include "util/Event.hpp"
 #include "util/EventQueue.hpp"
@@ -90,6 +91,13 @@ class FileDevice : public SerialDevice {
                 return;
             }
             session_.poll();
+            uint8_t byte = 0;
+            while (!q_dev.is_full()) {
+                if (session_.take_rx(&byte, 1) == 0) {
+                    break;
+                }
+                q_dev.send(SerialMessage{MESSAGE_DATA, byte});
+            }
             if (session_.take_app_missing()) {
                 notify_printer_missing();
             }
@@ -196,8 +204,10 @@ class FileDevice : public SerialDevice {
                 SDL_Delay(10);
                 service_print();
 
+                const uint64_t close_after_ms =
+                    gs2print_ ? print_timing::kIdleCloseMs : idle_close_ms;
                 if (file && last_write_ticks != 0 &&
-                    (SDL_GetTicks() - last_write_ticks) >= idle_close_ms) {
+                    (SDL_GetTicks() - last_write_ticks) >= close_after_ms) {
                     close_file();
                 }
 

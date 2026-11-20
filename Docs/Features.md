@@ -191,7 +191,7 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 | `workflow.osd.open` | Open Control Panel | Complete | all | — | F4 or tab button | manual | |
 | `workflow.osd.mount-drive` | Mount/unmount via drive icons | Complete | all | — | Picker; dirty save prompt | both | `MOUNT` / `UNMOUNT` |
 | `workflow.osd.drag-drop-disk` | Drag disk image onto window | Complete | all | — | Panel opens; drop on drive | manual | |
-| `workflow.osd.serial-buttons` | Serial/parallel attachment UI | Complete | all | Ports present | File/modem/clipboard/serial | manual | [SerialConnections.md](SerialConnections.md) |
+| `workflow.osd.serial-buttons` | Serial/parallel attachment UI | Complete | all | Ports present | File/modem/clipboard/serial/netprinter | manual | [SerialConnections.md](SerialConnections.md) |
 | `workflow.osd.host-folder` | Host Folder… (Host FST) | Complete | macOS, win, linux | IIgs running | `:Host` path changes | manual | Not on web |
 | `workflow.osd.slot-view` | Slot card display | Complete | all | — | Cards listed | manual | Editable when configuring |
 
@@ -201,7 +201,8 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `workflow.docs.online` | Online Documentation | Complete | all | Network | Browser opens docs | manual | [Menus.md](Menus.md) |
 | `workflow.docs.donate` | Donate link | Complete | all | Network | Browser opens | manual | |
-| `workflow.docs.check-updates` | Check For Updates | Complete | all | Network | Releases page | manual | Docs menu |
+| `workflow.docs.check-updates` | Check For Updates | Complete | all | Network | Updates page | manual | Docs menu |
+| `workflow.docs.notify-update` | New-version button on System Select | Complete | macOS, win, linux | Network; behind latest release | Button under + New / Launch / Edit...; click opens HTML updates page | manual | Fail-closed; not on web. [NotifyUpdate.md](NotifyUpdate.md) |
 
 ---
 
@@ -427,7 +428,8 @@ See [Cards_Parallel.md](Cards_Parallel.md).
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
-| `device.ssc.connections` | Same virtual devices as SCC | Complete | all | Card + `[[connections]]` | Modem/file/serial | manual | [Cards_SuperSerial.md](Cards_SuperSerial.md) |
+| `device.ssc.connections` | Same virtual devices as SCC | Complete | all | Card + `[[connections]]` | Modem/file/serial/netprinter | manual | [Cards_SuperSerial.md](Cards_SuperSerial.md) |
+| `device.ssc.net-printer` | Raw TCP printer client | Complete | macOS, win, linux | Card + `device = "netprinter"` | Host:port under button; bytes on TCP | manual | [NetPrinter.md](NetPrinter.md); absent on web |
 
 ### Uthernet II (`uthernet2`)
 
@@ -515,7 +517,8 @@ Main versus auxiliary mapping for the IIe family lives on `MMU_IIe2`. It is not 
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
-| `device.scc.printer-port` | GS printer on serial | Partial | all | IIgs | Print to file | manual | Not full printer |
+| `device.scc.printer-port` | GS printer on serial | Partial | all | IIgs | `device = "printer"` | manual | Capture + gs2print ticket; not ImageWriter |
+| `device.scc.net-printer` | Raw TCP printer client | Complete | macOS, win, linux | IIgs | `device = "netprinter"` | Host:port under button; bytes on TCP | manual | [NetPrinter.md](NetPrinter.md); absent on web |
 | `device.scc.modem-b` | Modem on port B | Complete | macOS, win, linux | IIgs | Hayes TCP | manual | Absent on web |
 
 ### Motherboard: RTC / PRAM (`rtc_pram`)

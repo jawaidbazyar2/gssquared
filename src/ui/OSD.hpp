@@ -42,6 +42,7 @@
 #include "SerialPortsOSD.hpp"
 #include "SlotsPanel.hpp"
 #include "SystemBadge.hpp"
+#include "TextInput.hpp"
 
 #define SLIDE_IN 1
 #define SLIDE_OUT 2
@@ -78,10 +79,6 @@ protected:
     //Container_t *drive_container = nullptr;
     DrivesOSD_t *drive_container = nullptr;
     SerialPortsOSD_t *serial_ports_container = nullptr;
-    Container_t *connection_picker = nullptr;
-    connection_key_t picking_connection_key_{};
-    connection_port_kind_t picking_connection_kind_ = connection_port_kind_t::SERIAL;
-    uint64_t picker_generation_ = 0;
 
     Container_t *speed_con = nullptr;
     SelectButton_t *speed_btn_10 = nullptr;
@@ -91,9 +88,6 @@ protected:
     SelectButton_t *speed_btn_14 = nullptr;
 
     Container_t *mon_color_con = nullptr;
-
-    Container_t *host_fst_con = nullptr;
-    Button_t *host_fst_btn = nullptr;
 
     Button_t *save_btn = nullptr;
     Button_t *save_as_btn = nullptr;
@@ -203,8 +197,6 @@ public:
     void open_host_fst_folder_dialog();
     void refresh_host_fst_button();
 
-    void show_connection_picker(connection_key_t key, connection_port_kind_t kind);
-    void dismiss_connection_picker();
     void refresh_serial_ports();
 
     void show_diskii_modal(storage_key_t key, uint64_t data);

@@ -295,6 +295,40 @@ Always 0's in B channel. (So, only read in A Channel)
 | 1 | x | Channel B Tx IP |
 | 0 | x | Channel B Ext/Status IP |
 
+#### Tx IP lifetime
+
+Tx IP is latched when the transmit buffer goes from full to empty (with WR1 TxIE
+set). It stays set until software either writes the next character to the
+transmit buffer or issues WR0 command 5, Reset Tx Int Pending. Reading RR0/RR3
+does not clear it.
+
+Sources:
+
+- Zilog SCC/ESCC User Manual, ch. 5, WR0: "Reset Tx Interrupt Pending Command
+  (101). This command is used in cases where there are no more characters to be
+  sent ... This command prevents further transmit interrupts until after the next
+  character has been loaded into the transmit buffer or until CRC has been
+  completely sent."
+- Zilog AN0096 (Z180 with SCC at 10 MHz): "The interrupt acknowledge cycle does
+  not reset the IP bit. The IP bit clears by a software command to the SCC, or
+  when the action that generated the interrupt ends ... writing data to the
+  transmitter data register, issuing Reset Tx interrupt pending command for Tx
+  buffer empty interrupt".
+- Apple IIgs firmware `GSFirmware/Serial/serialdrvr.aii`, `Serpint` /
+  `CLEARTXINT`: the ISR loops on RR3 until it reads zero, and acks each Tx
+  interrupt with `LDA #%00101000 / STA SCCCmd,y` (cmd 5) before dequeuing the
+  next byte. If IP were cleared by the RR3 read, the ISR would see no Tx bit and
+  the output queue would never drain (the GS/OS Printer-port hang).
+
+WR0 command 7, Reset Highest IUS, does *not* touch IP. Zilog ch. 5: "This
+command resets the highest priority Interrupt Under Service (IUS) bit, allowing
+lower priority conditions to request interrupts." IUS is only set during an
+interrupt-acknowledge cycle (AN0096: "Only software commands clear the IUS bit
+in the SCC"). The IIgs runs the SCC with WR9 No Vector and never generates INTACK,
+so IUS is never set and cmd 7 is effectively a no-op; GSSquared ignores it.
+(KEGS clears the highest pending IP on cmd 7; that is a shortcut, not hardware
+behavior, and would drop e.g. a pending channel B DCD Ext/Status interrupt.)
+
 ### R10
 
 | 7 | x | one clocks missing |

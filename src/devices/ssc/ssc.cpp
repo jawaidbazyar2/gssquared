@@ -193,7 +193,8 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
             if (st->acia) {
                 st->acia->set_device(dev);
             }
-            if (type == connection_device_type_t::PRINTER) {
+            if (type == connection_device_type_t::PRINTER ||
+                type == connection_device_type_t::NET_PRINTER) {
                 st->dipsw1 = static_cast<uint8_t>((SSC_DEFAULT_DIPSW1 & ~SSC_DIPSW1_MODE_MASK) |
                                                   SSC_DIPSW1_P8);
             } else {
@@ -224,6 +225,9 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
     });
 
     computer->register_reset_handler([st](bool /*cold_start*/) {
+        if (st->serial_device) {
+            st->serial_device->q_host.send(SerialMessage{MESSAGE_CLOSE, 0});
+        }
         if (st->acia) {
             st->acia->reset();
         }

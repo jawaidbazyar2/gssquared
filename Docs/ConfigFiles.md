@@ -231,7 +231,7 @@ image = "volumes/Games.po"
 
 ## Serial / parallel ports — `[[connections]]`
 
-Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, or a real host UART. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md).
+Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, a Net Printer, or a real host UART. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md). Net Printer: [NetPrinter.md](NetPrinter.md).
 
 **IIgs built-in ports** (no `slot` — these are on the motherboard):
 

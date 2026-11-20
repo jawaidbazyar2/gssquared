@@ -166,6 +166,7 @@ Watched regions refresh every frame in the Watch pane as hex + ASCII.
 | --- | --- | --- |
 | `load` | `load "file.bin" 2000` | Load a binary file into memory |
 | `save` | `save "out.bin" 2000.2FFF` | Save a memory range to a file |
+| `trsave` | `trsave "trace.bin"` | Save the current CPU trace ring buffer to a file |
 | `sload` | `sload "labels.lbl"` | Load cc65/ca65 symbol labels |
 | `slookup` | `slookup C000` | Look up a label for an address |
 | `sclear` | `sclear` | Clear loaded symbols |
@@ -276,9 +277,9 @@ For everyday software debugging, use the **Video pane** or **Static** main-windo
 
 ## Trace file on exit
 
-When you quit emulation (or exit the application while a machine is running), GSSquared automatically saves the instruction trace ring buffer to a binary file named **`gssquared-trace.bin`** in your documents folder. The file contains raw `system_trace_entry_t` records for offline analysis.
+When **Settings → Debug → Write Trace File on Exit** is enabled (off by default; stored as `debug.save_trace_on_exit` in `system_settings.toml`), quitting emulation or exiting the application while a machine is running saves the instruction trace ring buffer to a binary file named **`gssquared-trace.bin`** in your documents folder. The file contains raw `system_trace_entry_t` records for offline analysis.
 
-There is not yet a built-in menu command to save or reload a trace mid-session; use the automatic save on exit, or the external debug protocol for scripted capture.
+To save the trace buffer mid-session, run `trsave "filename"` in the Monitor pane, or use the external debug protocol (`GET_TRACE`) for scripted capture.
 
 ---
 

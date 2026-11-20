@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 
@@ -22,6 +23,8 @@ public:
     void write(uint8_t byte);
     /** Accept, flush, reap the OS open, and apply the connect timeout. */
     void poll();
+    /** Printer-to-host bytes from the sidecar. Copies at most cap, leaves the rest. */
+    size_t take_rx(uint8_t *buf, size_t cap);
     /** Close the socket, unlink it, and remove the ticket. */
     void end();
 

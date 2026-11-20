@@ -130,8 +130,8 @@ std::vector<connection_port_spec_t> derive_ports_from_config(
     std::vector<connection_port_spec_t> out;
 
     if (platform_is_iigs(platform_id)) {
-        push_port(out, 1, "Serial Slot 1", connection_port_kind_t::SERIAL);
-        push_port(out, 2, "Serial Slot 2", connection_port_kind_t::SERIAL);
+        push_port(out, 1, "Serial Slot 1", connection_port_kind_t::SERIAL, true);
+        push_port(out, 2, "Serial Slot 2", connection_port_kind_t::SERIAL, true);
     }
 
     for (int slot = 0; slot < NUM_SLOTS; ++slot) {
@@ -318,9 +318,12 @@ void ConfigDraft::prune_orphan_connections() {
             if (p.kind == connection_port_kind_t::PARALLEL) {
                 const connection_device_type_t dt = connection_device_type_from_string(c.device);
                 if (dt == connection_device_type_t::MODEM ||
-                    dt == connection_device_type_t::SERIAL) {
+                    dt == connection_device_type_t::SERIAL ||
+                    dt == connection_device_type_t::NET_PRINTER) {
                     c.device = "file";
                     c.path.clear();
+                    c.host.clear();
+                    c.tcp_port = 0;
                 }
             }
             if (!p.offers_printer &&
@@ -338,7 +341,7 @@ void ConfigDraft::prune_orphan_connections() {
 }
 
 void ConfigDraft::set_connection(connection_key_t key, connection_device_type_t device,
-                                const std::string &path) {
+                                const std::string &path, const std::string &host, int tcp_port) {
     key = normalize_connection_key(key.slot, key.port);
     // Find port kind for validation.
     const auto ports = derive_ports_from_config(config_.platform_id, config_.slot_devices);
@@ -364,6 +367,13 @@ void ConfigDraft::set_connection(connection_key_t key, connection_device_type_t 
             c.path = path;
         } else {
             c.path.clear();
+        }
+        if (device == connection_device_type_t::NET_PRINTER) {
+            c.host = host;
+            c.tcp_port = tcp_port;
+        } else {
+            c.host.clear();
+            c.tcp_port = 0;
         }
     };
 
@@ -411,6 +421,8 @@ std::vector<connection_port_spec_t> ConfigDraft::port_specs() const {
             if (normalize_connection_key(c.slot, c.port) == spec.key) {
                 spec.device = connection_device_type_from_string(c.device);
                 spec.path = c.path;
+                spec.host = c.host;
+                spec.tcp_port = c.tcp_port;
                 break;
             }
         }

@@ -372,7 +372,21 @@ target_link_libraries(gs2_devices_parallel PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/videx_80x24.cpp )
 
-add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb2.cpp )
+add_library(gs2_devices_mockingboard
+    src/devices/mockingboard/mb2.cpp
+    src/devices/mockingboard/ssi263/ssi263.c
+    src/devices/mockingboard/ssi263/ssi263dsp.c
+)
+set_source_files_properties(
+    src/devices/mockingboard/ssi263/ssi263.c
+    src/devices/mockingboard/ssi263/ssi263dsp.c
+    PROPERTIES LANGUAGE C
+)
+target_include_directories(gs2_devices_mockingboard PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/devices/mockingboard
+)
+# Static link: don't dllexport/visibility-default the engine symbols.
+target_compile_definitions(gs2_devices_mockingboard PRIVATE SSI263_API=)
 
 # Apple Mouse III (PIA+6805 / Apple ROM). Former BazMouse sources remain under
 # src/devices/applemouseii/ but are not built.
@@ -512,6 +526,7 @@ endif()
 add_library(gs2_serial_devices
     src/serial_devices/SerialDevice.cpp
     src/serial_devices/print/Gs2PrintSession.cpp
+    src/serial_devices/netprinter/NetPrinterDevice.cpp
     ${GS2_HOST_SERIAL_SRC}
 )
 if(WIN32)
@@ -657,7 +672,7 @@ if(WIN32)
     target_link_libraries(gs2_debugger ws2_32)
 endif()
 # Connections.cpp constructs SerialDevice subclasses; link after gs2_util for GNU ld.
-target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3} ${GS2_SDL3_TTF})
+target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3} ${GS2_SDL3_TTF} gs2_toml)
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
@@ -911,7 +926,7 @@ endif()
 
 if(NOT EMSCRIPTEN)
     cmake_policy(SET CMP0079 NEW)
-    target_sources(GSSquared PRIVATE src/ui/PackFetchModal.cpp)
+    target_sources(GSSquared PRIVATE src/ui/PackFetchModal.cpp src/util/UpdateCheck.cpp)
     target_link_libraries(gs2packtest PRIVATE platform_specific)
     if(APPLE)
         target_link_libraries(gs2packtest PRIVATE "-framework Foundation" "-framework Cocoa")
