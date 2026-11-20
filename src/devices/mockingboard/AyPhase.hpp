@@ -25,8 +25,8 @@ constexpr double TWO_PI = 2.0 * PI;
 constexpr uint64_t NYQUIST_PHASE_INC = 1ULL << 31;
 
 // Fundamental amplitude of a [0, 1] square wave is 2/pi (~0.6366).
-// Additive waveforms center at 0.5 (matching square wave's DC midpoint so
-// live switching produces no DC pop) and scale to stay within 3-channel headroom.
+// Additive waveforms are bipolar around 0 so volume/mixer gating (silence = 0)
+// does not thump. Live square ↔ additive switches will DC-pop; that is expected.
 constexpr float SINE_FUND_AMP = static_cast<float>(2.0 / PI); // ~0.63662
 
 // 1024-step (+1 guard entry) bipolar sine lookup table in [-1.0, 1.0],
@@ -75,7 +75,7 @@ inline float evalAdditive(uint32_t phase, uint64_t phase_inc,
             sum += harmonics[i].weight * evalSinBipolar(phase * k);
         }
     }
-    return 0.5f + gain * sum;
+    return gain * sum;
 }
 
 // Warm Sine: smooth sine body with gentle 2nd & 3rd harmonics for presence.
@@ -88,24 +88,32 @@ inline float evalWarmSine(uint32_t phase, uint64_t phase_inc) {
     return evalAdditive(phase, phase_inc, kHarmonics, SINE_FUND_AMP);
 }
 
-// Organ: drawbar-style blend of fundamental + 2nd, 3rd, 4th harmonics.
+// Organ: drawbar-style blend of fundamental through 8th harmonic.
 inline float evalOrgan(uint32_t phase, uint64_t phase_inc) {
     static constexpr Harmonic kHarmonics[] = {
         { 1, 1.00f },
         { 2, 0.50f },
         { 3, 0.30f },
         { 4, 0.20f },
+        { 5, 0.14f },
+        { 6, 0.10f },
+        { 7, 0.08f },
+        { 8, 0.06f },
     };
     return evalAdditive(phase, phase_inc, kHarmonics, 0.56f);
 }
 
-// Soft Square: band-limited odd harmonics 1, 3, 5, 7 (Fourier series of square).
+// Soft Square: band-limited odd harmonics 1, 3, ..., 15 (Fourier series of square).
 inline float evalSoftSquare(uint32_t phase, uint64_t phase_inc) {
     static constexpr Harmonic kHarmonics[] = {
-        { 1, 1.0f },
-        { 3, 1.0f / 3.0f },
-        { 5, 1.0f / 5.0f },
-        { 7, 1.0f / 7.0f },
+        { 1,  1.0f },
+        { 3,  1.0f / 3.0f },
+        { 5,  1.0f / 5.0f },
+        { 7,  1.0f / 7.0f },
+        { 9,  1.0f / 9.0f },
+        { 11, 1.0f / 11.0f },
+        { 13, 1.0f / 13.0f },
+        { 15, 1.0f / 15.0f },
     };
     return evalAdditive(phase, phase_inc, kHarmonics, SINE_FUND_AMP);
 }
