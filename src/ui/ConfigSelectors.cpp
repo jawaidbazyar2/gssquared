@@ -19,7 +19,7 @@ Style_t config_selector_button_style() {
         .background_color = 0x00000000,
         .border_color = 0x000000FF,
         .hover_color = 0x00C0C0FF,
-        .padding = 2,
+        .padding = 1,
         .border_width = 1,
     };
 }
@@ -33,7 +33,7 @@ void populate_speed_selector(Container_t *container, UIContext *ctx, const Style
     for (int i = 0; i < 4; i++) {
         FaceButton *face = new FaceButton(ctx, speed_button_label(modes[i]), button_style, modes[i]);
         face->set_accent(0x5C78FFFF);
-        face->size(56, 56);
+        face->size(54, 54);
         btns[i] = face;
     }
     btns[4] = new SelectButton_t(ctx, MHzInfinityButton, button_style, CLOCK_FREE_RUN);

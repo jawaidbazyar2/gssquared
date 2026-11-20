@@ -170,7 +170,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         return draft.slot_device_name(slot);
     });
     slots_panel->set_position(30 + layout_dx, 140 + body_dy);
-    slots_panel->size(320, 304);
+    slots_panel->size(290, 304);
     slots_panel->layout();
 
     for (int i = 0; i < NUM_SLOTS; i++) {
@@ -212,8 +212,8 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         .corner_radius = 6.0f,
     };
     serial_ports_panel = new SerialPortsOSD_t(&ui_ctx, SP);
-    serial_ports_panel->set_position(360 + layout_dx, 140 + body_dy);
-    serial_ports_panel->size(230, 450);
+    serial_ports_panel->set_position(330 + layout_dx, 140 + body_dy);
+    serial_ports_panel->size(260, 450);
     serial_ports_panel->set_serial_port_manager(&serial_ports_);
     serial_ports_panel->set_apply_handler(
         [this](connection_key_t key, connection_device_type_t type,
@@ -227,9 +227,11 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
     });
 
     Style_t CB = config_selector_button_style();
-    speed_con = new Container_t(&ui_ctx, clear_panel_style());
+    Style_t clear_sel = clear_panel_style();
+    clear_sel.padding = 2;
+    speed_con = new Container_t(&ui_ctx, clear_sel);
     speed_con->set_position(30 + layout_dx, 480 + body_dy);
-    speed_con->size(320, 65);
+    speed_con->size(290, 58);
     populate_speed_selector(speed_con, &ui_ctx, CB);
     for (size_t i = 0; i < speed_con->count(); i++) {
         Tile_t *tile = speed_con->get_tile(i);
@@ -241,9 +243,9 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         });
     }
 
-    display_con = new Container_t(&ui_ctx, clear_panel_style());
+    display_con = new Container_t(&ui_ctx, clear_sel);
     display_con->set_position(30 + layout_dx, 575 + body_dy);
-    display_con->size(320, 65);
+    display_con->size(290, 58);
     populate_display_selector(display_con, &ui_ctx, CB);
     for (size_t i = 0; i < display_con->count(); i++) {
         Tile_t *tile = display_con->get_tile(i);
@@ -464,7 +466,7 @@ void EditSystem::show_card_picker(int slot) {
         .border_width = 3,
     };
     card_picker = new Container_t(&ui_ctx, MS);
-    card_picker->set_position(360 + layout_dx, 160 + body_dy);
+    card_picker->set_position(330 + layout_dx, 160 + body_dy);
 
     constexpr float kBtnW = 320.0f;
     constexpr float kBtnH = 28.0f;
@@ -703,7 +705,7 @@ void EditSystem::render() {
 
     text_renderer->set_color(0, 0, 0, 0xFF);
     text_renderer->render("Slots", 30 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
-    text_renderer->render("Connections", 360 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Connections", 330 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Storage (pre-mount)", 600 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Speed", 30 + layout_dx, 455 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Display", 30 + layout_dx, 550 + body_dy, TEXT_ALIGN_LEFT);
@@ -721,7 +723,7 @@ void EditSystem::render() {
             snprintf(title, sizeof(title), "Card for slot %d", picking_slot);
         }
         text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        text_renderer->render(title, 370 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
+        text_renderer->render(title, 340 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
         card_picker->render();
     }
 

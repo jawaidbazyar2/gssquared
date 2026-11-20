@@ -89,9 +89,6 @@ protected:
 
     Container_t *mon_color_con = nullptr;
 
-    Container_t *host_fst_con = nullptr;
-    Button_t *host_fst_btn = nullptr;
-
     Button_t *save_btn = nullptr;
     Button_t *save_as_btn = nullptr;
     Button_t *discard_btn = nullptr;

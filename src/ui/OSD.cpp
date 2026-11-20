@@ -161,48 +161,9 @@ void OSD::open_local_file_dialog(storage_key_t key) {
 
 namespace {
 
-constexpr float kHostFstButtonSpan = 300.f;
-constexpr float kHostFstLabelGap = 8.f;
-constexpr const char *kHostFstButtonLabel = "Host Folder…";
-constexpr const char *kHostFstEllipsis = "…";
-
 struct host_fst_dialog_data_t {
     OSD *osd = nullptr;
 };
-
-size_t utf8_codepoint_len(unsigned char lead) {
-    if ((lead & 0x80) == 0x00) return 1;
-    if ((lead & 0xE0) == 0xC0) return 2;
-    if ((lead & 0xF0) == 0xE0) return 3;
-    if ((lead & 0xF8) == 0xF0) return 4;
-    return 1;
-}
-
-/** Keep the tail of `path`, prefixing an ellipsis when the front must be dropped. */
-std::string crop_path_front_to_width(TextRenderer *tr, const std::string &path, float max_w) {
-    if (path.empty() || max_w <= 0.f || tr == nullptr) {
-        return {};
-    }
-    if (static_cast<float>(tr->string_width(path)) <= max_w) {
-        return path;
-    }
-    if (static_cast<float>(tr->string_width(kHostFstEllipsis)) > max_w) {
-        return {};
-    }
-    size_t i = 0;
-    while (i < path.size()) {
-        size_t len = utf8_codepoint_len(static_cast<unsigned char>(path[i]));
-        if (i + len > path.size()) {
-            len = 1;
-        }
-        i += len;
-        const std::string tail = std::string(kHostFstEllipsis) + path.substr(i);
-        if (static_cast<float>(tr->string_width(tail)) <= max_w) {
-            return tail;
-        }
-    }
-    return kHostFstEllipsis;
-}
 
 void host_fst_folder_dialog_callback(void *userdata, const char *const *filelist, int /*filter*/) {
     auto *data = static_cast<host_fst_dialog_data_t *>(userdata);
@@ -405,8 +366,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         .corner_radius = 6.0f,
     };
     serial_ports_container = new SerialPortsOSD_t(&ui_ctx, SP);
-    serial_ports_container->set_position(360, 140);
-    serial_ports_container->size(230, 304);
+    serial_ports_container->set_position(330, 140);
+    serial_ports_container->size(260, 468);
     serial_ports_container->set_serial_port_manager(computer->serial_ports);
     serial_ports_container->set_apply_handler(
         [this](connection_key_t key, connection_device_type_t type,
@@ -435,6 +396,11 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             }
             return {"", false};
         });
+    if (computer->platform && platform_is_iigs(computer->platform->id)) {
+        serial_ports_container->set_host_folder_callbacks(
+            []() { return hostfst_resolved_dir(); },
+            [this]() { open_host_fst_folder_dialog(); });
+    }
     refresh_serial_ports();
     containers.push_back(serial_ports_container);
 
@@ -449,17 +415,19 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
     slot_container = new SlotsPanel_t(&ui_ctx, SC, slot_manager_name_resolver(slot_manager));
     slot_container->set_position(30, 140);
-    slot_container->size(320, 304);
+    slot_container->size(290, 304);
     slot_container->layout();
     slot_container->set_slot0_aux(
         computer->platform && platform_has_aux_slot(computer->platform->id));
     containers.push_back(slot_container);
 
     Style_t CB = config_selector_button_style();
+    Style_t SC_sel = SC;
+    SC_sel.padding = 2;
 
-    mon_color_con = new Container_t(&ui_ctx, SC);
+    mon_color_con = new Container_t(&ui_ctx, SC_sel);
     mon_color_con->set_position(30, 550);
-    mon_color_con->size(320, 65);
+    mon_color_con->size(290, 58);
     containers.push_back(mon_color_con);
     populate_display_selector(mon_color_con, &ui_ctx, CB);
     for (size_t i = 0; i < mon_color_con->count(); i++) {
@@ -470,9 +438,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         });
     }
 
-    speed_con = new Container_t(&ui_ctx, SC);
+    speed_con = new Container_t(&ui_ctx, SC_sel);
     speed_con->set_position(30, 475);
-    speed_con->size(320, 65);
+    speed_con->size(290, 58);
     containers.push_back(speed_con);
     SelectButton_t *speed_btns[5] = {};
     populate_speed_selector(speed_con, &ui_ctx, CB, speed_btns);
@@ -512,33 +480,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         if (ds) display_update_video_scanner(ds);
         return true;
     });
-
-    if (computer->platform && platform_is_iigs(computer->platform->id)) {
-        Style_t hostFstBtnStyle;
-        hostFstBtnStyle.background_color = 0xE0E0FFFF;
-        hostFstBtnStyle.text_color = 0x000000FF;
-        hostFstBtnStyle.border_width = 1;
-        hostFstBtnStyle.border_color = 0x000000FF;
-        hostFstBtnStyle.padding = 2;
-
-        host_fst_con = new Container_t(&ui_ctx, SC);
-        host_fst_con->set_position(30, 630);
-        host_fst_con->size(320, 50);
-        containers.push_back(host_fst_con);
-
-        host_fst_btn = new Button_t(&ui_ctx, kHostFstButtonLabel, hostFstBtnStyle);
-        const float label_w = static_cast<float>(text_render->string_width(kHostFstButtonLabel));
-        const float btn_w = label_w
-            + static_cast<float>(hostFstBtnStyle.padding * 2)
-            + static_cast<float>(hostFstBtnStyle.border_width * 2);
-        host_fst_btn->size(btn_w, 36);
-        host_fst_btn->on_click([this](const SDL_Event&) -> bool {
-            open_host_fst_folder_dialog();
-            return true;
-        });
-        host_fst_con->add(host_fst_btn);
-        host_fst_con->layout();
-    }
 
     // Create text buttons for the disk save dialog
     Style_t TextButtonCfg;
@@ -847,23 +788,6 @@ void OSD::render() {
         SDL_SetRenderTarget(renderer, cpTexture);
         for (Container_t* container : containers) {
             container->render();
-        }
-
-        if (host_fst_btn != nullptr) {
-            float bx = 0, by = 0, bw = 0, bh = 0;
-            host_fst_btn->get_tile_position(bx, by);
-            host_fst_btn->get_tile_size(&bw, &bh);
-            const float max_w = kHostFstButtonSpan - bw - kHostFstLabelGap;
-            const std::string path_label = crop_path_front_to_width(
-                text_render, hostfst_resolved_dir(), max_w);
-            if (!path_label.empty()) {
-                const float line_h = static_cast<float>(text_render->get_font_line_height());
-                const float label_x = bx + bw + kHostFstLabelGap;
-                const float label_y = by + (bh - line_h) / 2.f;
-                text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-                text_render->render(path_label, static_cast<int>(label_x), static_cast<int>(label_y),
-                                     TEXT_ALIGN_LEFT);
-            }
         }
 
         // Build version near bottom-left of the control panel slide-out

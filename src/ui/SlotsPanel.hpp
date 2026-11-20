@@ -39,6 +39,7 @@ public:
     /** Slot 0 reads "Aux" on IIe family profiles, "0" otherwise. */
     void set_slot0_aux(bool aux);
     SlotButton *get_slot_button(int slot) const;
+    void layout() override;
 };
 
 /** Resolver that reads device names from a SlotManager_t. */

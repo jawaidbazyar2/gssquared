@@ -9,6 +9,8 @@
 
 #include "SlotsPanel.hpp"
 
+#include <algorithm>
+
 #include "devices.hpp"
 #include "slots.hpp"
 
@@ -46,6 +48,18 @@ void SlotsPanel_t::set_slot0_aux(bool aux) {
 SlotButton *SlotsPanel_t::get_slot_button(int slot) const {
     if (slot < 0 || slot >= NUM_SLOTS) return nullptr;
     return slot_buttons[slot];
+}
+
+void SlotsPanel_t::layout() {
+    if (tp.w > 0.0f) {
+        const float btn_w = std::max(120.0f, tp.w - 20.0f);
+        for (int i = 0; i < NUM_SLOTS; i++) {
+            if (slot_buttons[i]) {
+                slot_buttons[i]->size(btn_w, 30);
+            }
+        }
+    }
+    Container_t::layout();
 }
 
 SlotNameResolver slot_manager_name_resolver(SlotManager_t *slot_manager) {

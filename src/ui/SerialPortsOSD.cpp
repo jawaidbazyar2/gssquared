@@ -102,6 +102,14 @@ void SerialPortsOSD_t::set_status_provider(SerialPortButton::StatusProvider prov
     layout();
 }
 
+void SerialPortsOSD_t::set_host_folder_callbacks(std::function<std::string()> path_provider,
+                                                 std::function<void()> on_pick) {
+    host_folder_path_provider_ = std::move(path_provider);
+    host_folder_pick_cb_ = std::move(on_pick);
+    hover_host_folder_pencil_ = false;
+    layout();
+}
+
 const connection_port_spec_t *SerialPortsOSD_t::find_spec(connection_key_t key) const {
     for (const auto &s : specs_) {
         if (s.key == key) return &s;
@@ -189,6 +197,7 @@ void SerialPortsOSD_t::layout() {
 
     has_serial_section_ = false;
     has_parallel_section_ = false;
+    has_host_folder_section_ = false;
 
     const float card_x = tp.x + kOuterPad;
     const float card_w = std::max(120.0f, tp.w - kOuterPad * 2.0f);
@@ -231,6 +240,16 @@ void SerialPortsOSD_t::layout() {
         card->size(card_w, ch);
         card->set_position(card_x, y);
         y += ch + kCardGap;
+    }
+
+    if (host_folder_path_provider_) {
+        if (placed_serial || placed_parallel) {
+            y += (kSectionBreakGap - kCardGap);
+        }
+        has_host_folder_section_ = true;
+        host_folder_header_y_ = y;
+        y += kSectionHeaderH + kSectionHeaderGap;
+        host_folder_card_ = SDL_FRect{card_x, y, card_w, 56.0f};
     }
 
     if (has_overlay()) {
@@ -446,6 +465,15 @@ SDL_FRect SerialPortsOSD_t::overlay_row_rect(int index) const {
     };
 }
 
+SDL_FRect SerialPortsOSD_t::host_folder_pencil_rect() const {
+    return SDL_FRect{
+        host_folder_card_.x + host_folder_card_.w - 8.0f - 20.0f + 2.0f,
+        host_folder_card_.y + (28.0f - 20.0f) * 0.5f,
+        20.0f,
+        20.0f,
+    };
+}
+
 bool SerialPortsOSD_t::net_printer_valid() const {
     if (!net_host_input_ || !net_port_input_) return false;
     const std::string host = trim_copy(net_host_input_->get_text());
@@ -654,12 +682,19 @@ bool SerialPortsOSD_t::handle_overlay_event(const SDL_Event &event) {
 bool SerialPortsOSD_t::handle_mouse_event(const SDL_Event &event) {
     if (!active || !visible) return false;
     if (has_overlay()) {
+        hover_host_folder_pencil_ = false;
         return handle_overlay_event(event);
+    }
+
+    if (event.type == SDL_EVENT_WINDOW_MOUSE_LEAVE) {
+        hover_host_folder_pencil_ = false;
+        return Container_t::handle_mouse_event(event);
     }
 
     if (event.type == SDL_EVENT_MOUSE_MOTION) {
         const bool inside = hit_rect(event.motion.x, event.motion.y, SDL_FRect{tp.x, tp.y, tp.w, tp.h});
         if (!inside) {
+            hover_host_folder_pencil_ = false;
             SDL_Event leave{};
             leave.type = SDL_EVENT_WINDOW_MOUSE_LEAVE;
             for (SerialPortButton *card : cards_) {
@@ -667,6 +702,9 @@ bool SerialPortsOSD_t::handle_mouse_event(const SDL_Event &event) {
             }
             return false;
         }
+        hover_host_folder_pencil_ =
+            has_host_folder_section_ &&
+            hit_rect(event.motion.x, event.motion.y, host_folder_pencil_rect(), 2.0f);
         for (SerialPortButton *card : cards_) {
             if (card && card->is_visible()) {
                 card->handle_mouse_event(event);
@@ -675,7 +713,62 @@ bool SerialPortsOSD_t::handle_mouse_event(const SDL_Event &event) {
         return false;
     }
 
+    if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_LEFT) {
+        if (has_host_folder_section_ &&
+            hit_rect(event.button.x, event.button.y, host_folder_pencil_rect(), 2.0f)) {
+            if (host_folder_pick_cb_) {
+                host_folder_pick_cb_();
+            }
+            return true;
+        }
+    }
+
     return Container_t::handle_mouse_event(event);
+}
+
+void SerialPortsOSD_t::render_host_folder_card() {
+    if (!has_host_folder_section_ || !ctx) return;
+
+    TextRenderer *tr = ctx->text_render;
+    constexpr float kCardRadius = 6.0f;
+    constexpr float kHeaderH = 28.0f;
+    constexpr float kPadX = 8.0f;
+
+    // Match SerialPortButton's blue card palette
+    ctx->fill_rounded_rect(host_folder_card_, kCardRadius, 0x006399FF);
+    SDL_FRect header_rect{host_folder_card_.x, host_folder_card_.y, host_folder_card_.w, kHeaderH};
+    ctx->fill_rounded_rect(header_rect, kCardRadius, 0x0084C6FF, true, false);
+
+    const SDL_FRect pencil_r = host_folder_pencil_rect();
+    if (tr) {
+        const float lh = static_cast<float>(tr->get_font_line_height());
+        render_text(tr, "Host Folder", host_folder_card_.x + kPadX,
+                    host_folder_card_.y + (kHeaderH - lh) * 0.5f, 0xFFFFFFFF);
+    }
+
+    ctx->fill_rounded_rect(pencil_r, 4.0f, hover_host_folder_pencil_ ? 0xE36414FF : 0x004E7ACC);
+    ui_icons::draw_pencil(ctx, {pencil_r.x + 4.0f, pencil_r.y + 4.0f,
+                                pencil_r.w - 8.0f, pencil_r.h - 8.0f},
+                          hover_host_folder_pencil_ ? 0xFFFFFFFF : 0xF0F8FFFF);
+
+    const float div_y = host_folder_card_.y + kHeaderH;
+    ctx->fill_rect({host_folder_card_.x + 1.0f, div_y, host_folder_card_.w - 2.0f, 1.0f}, 0xFFFFFF66);
+
+    if (tr) {
+        const float body_y = div_y + 1.0f;
+        const float body_h = host_folder_card_.y + host_folder_card_.h - body_y;
+        const float lh = static_cast<float>(tr->get_font_line_height());
+        std::string dir = host_folder_path_provider_ ? host_folder_path_provider_() : std::string();
+        const float max_w = host_folder_card_.w - kPadX * 2.0f;
+        const std::string label = dir.empty()
+            ? std::string("Not configured")
+            : ui_crop_text_front(tr, dir, max_w);
+        render_text(tr, label, host_folder_card_.x + kPadX,
+                    body_y + (body_h - lh) * 0.5f,
+                    dir.empty() ? 0xCBEBFFFF : 0xFFFFFFFF);
+    }
+
+    ctx->draw_rounded_rect(host_folder_card_, kCardRadius, 0xFFFFFFFF, 1.0f);
 }
 
 void SerialPortsOSD_t::render_overlay() {
@@ -841,6 +934,13 @@ void SerialPortsOSD_t::render() {
         if (has_parallel_section_) {
             render_text(hdr_tr, "PARALLEL PORTS", hx, parallel_header_y_, kSectionLabelColor);
         }
+        if (has_host_folder_section_) {
+            render_text(hdr_tr, "HOST FST", hx, host_folder_header_y_, kSectionLabelColor);
+        }
+    }
+
+    if (has_host_folder_section_) {
+        render_host_folder_card();
     }
 
     if (has_overlay()) {

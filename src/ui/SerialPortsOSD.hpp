@@ -54,8 +54,14 @@ class SerialPortsOSD_t : public Container_t {
 
     bool has_serial_section_ = false;
     bool has_parallel_section_ = false;
+    bool has_host_folder_section_ = false;
     float serial_header_y_ = 0.0f;
     float parallel_header_y_ = 0.0f;
+    float host_folder_header_y_ = 0.0f;
+    SDL_FRect host_folder_card_{0, 0, 0, 0};
+    bool hover_host_folder_pencil_ = false;
+    std::function<std::string()> host_folder_path_provider_;
+    std::function<void()> host_folder_pick_cb_;
 
     // In-bounds overlay state
     OverlayMode overlay_mode_ = OverlayMode::NONE;
@@ -90,7 +96,9 @@ class SerialPortsOSD_t : public Container_t {
     SDL_FRect overlay_close_rect() const;
     SDL_FRect overlay_back_rect() const;
     SDL_FRect overlay_row_rect(int index) const;
+    SDL_FRect host_folder_pencil_rect() const;
 
+    void render_host_folder_card();
     void render_overlay();
     void apply_and_dismiss(connection_key_t key, connection_device_type_t type,
                            const std::string &path = {}, const std::string &host = {},
@@ -105,6 +113,8 @@ public:
     void set_status_provider(SerialPortButton::StatusProvider provider);
     void set_serial_port_manager(SerialPortManager *mgr) { serial_port_manager_ = mgr; }
     void set_overlay_open_handler(std::function<void()> cb) { overlay_open_handler_ = std::move(cb); }
+    void set_host_folder_callbacks(std::function<std::string()> path_provider,
+                                   std::function<void()> on_pick);
 
     void rebuild(const std::vector<connection_port_spec_t> &ports);
     void layout() override;
