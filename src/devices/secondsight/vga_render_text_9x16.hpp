@@ -90,3 +90,12 @@ inline int vga_text_pitch_from_crtc_offset(uint8_t crtc_offset) {
 void vga_raster_text_9x16(const uint8_t *vram, int vram_pitch, uint32_t *pixels, int pitch,
     vga_text_vram_layout_t layout = vga_text_vram_layout_t::Interleaved,
     int cols = VGA_TEXT_COLS);
+
+// Second Sight's Oak renderer supplies glyph bits (bit 7 first), character
+// code, ninth-column line-graphics enable, blink suppression and cursor state.
+// Write columns ARGB pixels in the two supplied colors without changing the
+// simulated Second Sight card's stored font. Oak OTI-087 Attribute Mode
+// Control, index $10.
+void vga_raster_text_glyph_row(uint32_t *pixels, unsigned columns,
+    uint8_t glyph, uint8_t character, bool line_graphics, bool blink_off, bool cursor,
+    uint32_t foreground, uint32_t background);

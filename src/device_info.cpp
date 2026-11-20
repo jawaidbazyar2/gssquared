@@ -61,6 +61,11 @@ static const DeviceInfo_t DeviceInfos[NUM_DEVICE_IDS - 1] = {
     {DEVICE_ID_VOC, "Video Overlay Card", false, 0b00001000, PLATFLAG_ANY_IIGS},
     {DEVICE_ID_RAMWORKS, "RamWorks", false, 0b00000001,
         PLATFLAG_APPLE_IIE | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
+    // Slot 7 has the color reference on pin 35, where the Second Sight reads
+    // M2B0 (manual p. 30: slots 1-6). Not on the unenhanced IIe: its 6502
+    // does not stop a write when the card holds RDY, which is not modelled.
+    {DEVICE_ID_SECOND_SIGHT_Z180, "Second Sight (with Z180)", false, 0b01111110,
+        PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816 | PLATFLAG_ANY_IIGS},
 };
 
 const DeviceInfo_t *get_device_info(device_id id) {
