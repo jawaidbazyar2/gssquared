@@ -335,15 +335,15 @@ Shaders Galore to move a lot of rendering into GPU:
 
 [ ] ProDOS 8 host "FST".
 
-[ ] Implement the new fixed-point mockingboard AY synths
+[X] Implement the new fixed-point mockingboard AY synths
 
-[ ] Auto Updating.
+[x] Auto Updating. Have a notifier that alerts users when there is a new version.
 
 [ ] Get added to AppImage directory with a "correct" ubuntu 22 build.
 
-[x] if debug build display that in title bar
+[X] if debug build display that in title bar
 
-[ ] Mockingboard Speech support
+[X] Mockingboard Speech support
 
 [ ] AppleTini card
 
