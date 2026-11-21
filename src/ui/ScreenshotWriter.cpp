@@ -25,6 +25,7 @@ int SDLCALL ScreenshotWriter::thread_entry(void *data) {
 ScreenshotWriter::ScreenshotWriter() {
     const size_t buf_size = static_cast<size_t>(MAX_SCREENSHOT_WIDTH) * MAX_SCREENSHOT_HEIGHT * 4;
     buffer_ = new uint8_t[buf_size];
+    buffer_size_ = buf_size;
     sem_ = SDL_CreateSemaphore(0);
     thread_ = SDL_CreateThread(thread_entry, "gs2-screenshot", this);
     if (!thread_) {
@@ -50,7 +51,7 @@ ScreenshotWriter::~ScreenshotWriter() {
     buffer_ = nullptr;
 }
 
-bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path) {
+bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path, bool double_scanlines) {
     if (!surface || !buffer_ || !sem_ || !thread_) {
         return false;
     }
@@ -68,7 +69,7 @@ bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path)
 
     const int w = converted->w;
     const int h = converted->h;
-    if (w <= 0 || h <= 0 || w > MAX_SCREENSHOT_WIDTH || h > MAX_SCREENSHOT_SRC_HEIGHT) {
+    if (w <= 0 || h <= 0) {
         SDL_DestroySurface(converted);
         pending_.store(false, std::memory_order_release);
         return false;
@@ -76,18 +77,27 @@ bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path)
 
     const int bpp = 4;
     const int src_row_bytes = w * bpp;
+    const int copies = double_scanlines ? 2 : 1;
+    // A card monitor's picture can be larger than the emulated display. The
+    // worker does not use the buffer while no write is pending.
+    const size_t needed = static_cast<size_t>(src_row_bytes) * h * copies;
+    if (needed > buffer_size_) {
+        delete[] buffer_;
+        buffer_ = new uint8_t[needed];
+        buffer_size_ = needed;
+    }
     uint8_t *dst = buffer_;
     for (int y = 0; y < h; y++) {
         const uint8_t *src = static_cast<const uint8_t *>(converted->pixels) + y * converted->pitch;
-        std::memcpy(dst, src, static_cast<size_t>(src_row_bytes));
-        dst += src_row_bytes;
-        std::memcpy(dst, src, static_cast<size_t>(src_row_bytes));
-        dst += src_row_bytes;
+        for (int copy = 0; copy < copies; copy++) {
+            std::memcpy(dst, src, static_cast<size_t>(src_row_bytes));
+            dst += src_row_bytes;
+        }
     }
     SDL_DestroySurface(converted);
 
     width_ = w;
-    height_ = h * 2;
+    height_ = h * copies;
     path_ = path;
     SDL_SignalSemaphore(sem_);
     return true;
