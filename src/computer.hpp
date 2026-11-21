@@ -14,6 +14,7 @@
 #include "util/EventDispatcher.hpp"
 #include "util/EventQueue.hpp"
 #include "util/DeviceFrameDispatcher.hpp"
+#include "util/DeviceMenu.hpp"
 #include "platforms.hpp"
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
@@ -137,6 +138,7 @@ struct computer_t {
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
     std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
+    std::vector<device_menu_entry_t> device_menus[NUM_DEVICE_MENU_PLACES];
     DeviceDebugHandler device_debug_handlers[NUM_DEVICE_IDS]{};
 
     void *module_store[MODULE_NUM_MODULES];
@@ -245,6 +247,8 @@ struct computer_t {
     void register_reset_handler(ResetHandler handler);
     void register_shutdown_handler(ShutdownHandler handler);
     void register_debug_display_handler(std::string name, uint64_t id, DebugDisplayHandler handler);
+    // Add a device's menu to an application menu until the machine closes.
+    void register_device_menu(device_menu_place place, device_menu_entry_t menu);
     DebugFormatter *call_debug_display_handler(std::string name);
 
     void register_device_debug(device_id id, DeviceDebugHandler handler);
