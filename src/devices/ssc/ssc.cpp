@@ -53,7 +53,7 @@ constexpr uint8_t SSC_CONTROL = 0x0B;
  * SW2-6 (IRQ enable) is a hardware gate, not in the DIPSW2 read byte — default on.
  */
 constexpr uint8_t SSC_DEFAULT_DIPSW1 = 0xEF;
-constexpr uint8_t SSC_DEFAULT_DIPSW2 = 0x5A;
+constexpr uint8_t SSC_DEFAULT_DIPSW2 = 0x1A;
 /** Low two bits of DIPSW1 are SW1-5 (bit 1) and SW1-6 (bit 0). */
 constexpr uint8_t SSC_DIPSW1_MODE_MASK = 0x03;
 /** SIC P8: SW1-5 ON, SW1-6 OFF. Firmware skips ETX/ACK. */
