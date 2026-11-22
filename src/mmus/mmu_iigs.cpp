@@ -3,8 +3,92 @@
 #include "devices/languagecard/languagecard.hpp"
 #include "mmus/mmu.hpp"
 #include "memoryspecs.hpp"
-
 #include <cstring>
+
+// A slot card can watch the slow Apple II bus supplied by the Mega II chip.
+// This reports one access to the observer before the access completes: the
+// card may supply a read byte or hold RDY (Ready) low to make the Apple wait.
+// address is the original CPU address, value carries the byte, and read
+// selects direction.
+// Return true only when the card supplies read data. The delay is counted
+// in ticks of the host's 14.31818 MHz clock, about 70 ns each.
+// Source: Apple IIgs Technical Note 68, Mega II Select and Ready sections.
+bool MMU_IIgs::observe_megaii_access(uint32_t address, uint8_t &value, bool read) {
+    // The FPI (Fast Processor Interface) serves these accesses without the
+    // slow bus. /M2SEL is the active-low signal that tells a slot card the
+    // slow-bus address is valid. Reporting these accesses to the observer
+    // would show a card bus cycles that do not occur. STATEREG ($C068) writes
+    // do reach the bus; reads do not. See Apple IIgs Technical Note 68, "The
+    // Mega II Select Signal"; the $C071-$C07F read-only ROM is likewise
+    // served on the fast side.
+    const uint16_t a = address;
+    if (a == 0xc035 || a == 0xc036 || a == 0xc037) return false;
+    if (read && (a == 0xc02d || a == 0xc068 || (a >= 0xc071 && a <= 0xc07f))) return false;
+    slot_bus_transfer_t transfer;
+    if (debug_access) {
+        // The debugger's access never reaches the card's bus pins. Leave the
+        // clock untouched and hold nothing; a paused machine stays put.
+        // A read may still show what the card would drive.
+        if (!read) return false;
+        transfer.address = address;
+        transfer.data = value;
+        transfer.m2b0 = ((address >> 16) & 1) && slot_has_m2b0(bus_observer_slot);
+        transfer.inspect = true;
+        bus_observer(transfer);
+        value = transfer.data;
+        return transfer.driven;
+    }
+    // The bus record names the PH0 fall that ends this cycle, rather than
+    // the instruction's request time. The CPU's own clock step goes there.
+    transfer.ticks = clock ? slot_bus_cycle_end(clock->get_c14m()) : 0;
+    transfer.address = address;
+    transfer.data = value;
+    transfer.read = read;
+    // The observer gets the CPU bank bit (M2B0), before soft switches choose
+    // main or auxiliary RAM. A soft switch is an address that controls a
+    // hardware setting. Technical Note 68 explicitly distinguishes bank and RAM selection.
+    transfer.m2b0 = ((address >> 16) & 1) && slot_has_m2b0(bus_observer_slot);
+    uint64_t held_ticks = bus_observer(transfer);
+    // A card RDY hold postpones completion of this Apple access, so the
+    // Apple spends those bus periods before the card's data returns.
+    if (clock && held_ticks) advance_bus_hold(transfer.ticks + held_ticks);
+    value = transfer.data;
+    return transfer.driven;
+}
+
+// ticks is the absolute 14.31818 MHz time through which RDY stays low.
+// While RDY is low the 65816 repeats its bus cycle, so each held period is
+// one more slow cycle of the clock. The last period is left to the CPU's
+// own clock step, which ends the access. The Mega II presents a held write
+// again in each period: RAM and selected write strobes stay live while the
+// 65816 waits (Apple IIgs Technical Note 68, pp. 3-4; Cortland Custom ICs,
+// 14 February 1986, pp. 22-24).
+void MMU_IIgs::advance_bus_hold(uint64_t ticks) {
+    if (!clock) return;
+    while (slot_bus_cycle_end(clock->get_c14m()) < ticks) {
+        clock->incr_cycles();
+        // The clock step set the next cycle back to a fast one.
+        set_next_cycle_type(CYCLE_TYPE_SYNC);
+        clock->process_due();
+        if (!held_write_active) continue;
+        if (held_write_destination) *held_write_destination = held_write_data;
+        else megaii->write(held_write_address, held_write_data);
+    }
+}
+
+// Keep the original write byte and physical RAM destination across a card
+// wait. Null destination selects ordinary Mega II decoding. The write at
+// function return is the one of the last bus period.
+void MMU_IIgs::write_megaii_observed_access(uint32_t address, uint8_t value, uint8_t *destination) {
+    held_write_active = true;
+    held_write_destination = destination;
+    held_write_address = address;
+    held_write_data = value;
+    observe_megaii_access(address, value, false);
+    held_write_active = false;
+    if (destination) *destination = value;
+    else megaii->write(address & 0xffff, value);
+}
 
 // These two routines create static lookup tables for shadow memory, and aux-mapping.
 
@@ -69,7 +153,8 @@ inline uint8_t bank_e0_read(void *context, uint32_t address) {
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
     //if ((address & 0xFF00) == 0xC000) return mmu_iigs->read_c0xx(address); // MegaII will call back to us
-    return mmu_iigs->megaii->read(address & 0xFFFF);
+    // The observer sees this slow-bus read with the original bank address.
+    return mmu_iigs->megaii_bus_read(address);
 }
 
 inline void bank_e0_write(void *context, uint32_t address, uint8_t value) {
@@ -77,7 +162,8 @@ inline void bank_e0_write(void *context, uint32_t address, uint8_t value) {
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
     //if ((address & 0xFF00) == 0xC000) {mmu_iigs->write_c0xx(address, value); return;} // MegaII will call back to us
-    mmu_iigs->megaii->write(address & 0xFFFF, value);
+    // The observer must see this write before normal slow-bus storage changes.
+    mmu_iigs->megaii_bus_write(address, value);
 }
 
 /* Bank E1 read/write */
@@ -86,12 +172,18 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
-    if ((address & 0xF000) == 0xC000) return mmu_iigs->megaii->read(address & 0xFFFF);  // return mmu_iigs->read_c0xx(address);
+    // The observer sees this slow-bus read with the original bank address.
+    if ((address & 0xF000) == 0xC000) return mmu_iigs->megaii_bus_read(address);
     
     if (!mmu_iigs->is_bank_latch()) {
-        return mmu_iigs->megaii->read(address & 0xFFFF);
+        // The observer sees this slow-bus read with the original bank address.
+        return mmu_iigs->megaii_bus_read(address);
     } else 
     {
+        uint8_t value = 0;
+        // This auxiliary-RAM path bypasses Mega II decode, but a slot card
+        // still sees the physical bus access and may hold RDY before it ends.
+        mmu_iigs->observe_megaii(address, value, true);
         uint16_t a16 = (uint16_t)address;
         /* $FF ROM overlays the LC window here just as it does in bank $E0; verified
            against a real ROM 01. Cycle type stays SYNC - whether the FPI serves this
@@ -109,18 +201,25 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
     if ((address & 0xF000) == 0xC000) { 
-        mmu_iigs->megaii->write(address & 0xFFFF, value); 
+        // The observer must see this write before normal slow-bus storage changes.
+        mmu_iigs->megaii_bus_write(address, value);
         return;
     }
 
     if (!mmu_iigs->is_bank_latch()) {
-        mmu_iigs->megaii->write(address & 0xFFFF, value);
+        // The observer must see this write before normal slow-bus storage changes.
+        mmu_iigs->megaii_bus_write(address, value);
     } else 
     {
+        // This auxiliary-RAM path bypasses Mega II decode, but a slot card
+        // still sees the physical bus access and may hold RDY before it ends.
         uint16_t a16 = (uint16_t)address;
-        if (a16 >= 0xD000 && !mmu_iigs->is_lc_write_enable()) return; // LC write protected
+        if (a16 >= 0xD000 && !mmu_iigs->is_lc_write_enable()) {
+            mmu_iigs->observe_megaii(address, value, false);
+            return; // LC write protected
+        }
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
-        ram[mmu_iigs->e1_aux_index(a16)] = value;
+        mmu_iigs->write_megaii_observed(address, value, ram + mmu_iigs->e1_aux_index(a16));
     }
 }
 
@@ -594,7 +693,8 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
     if ( mmu_iigs->is_iolc_shadowed() && (page >= 0xC0 && page <= 0xCF)) {
         mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
         //return mmu_iigs->megaiiRead(address & 0x1'FFFF);
-        return mmu_iigs->megaii->read(address & 0xFFFF);
+        // The observer sees this slow-bus read with the original bank address.
+        return mmu_iigs->megaii_bus_read(address);
     }
     
     // if IOLC is "shadowed" (enabled) and it's a language card location, map the address.
@@ -633,7 +733,8 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
     if ( (mmu_iigs->is_iolc_shadowed()) && (page >= 0xC0 && page <= 0xCF) ) {
         //mmu_iigs->megaiiWrite(address & 0x1'FFFF, value);
         mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
-        mmu_iigs->megaii->write(address & 0xFFFF, value);
+        // The observer must see this write before normal slow-bus storage changes.
+        mmu_iigs->megaii_bus_write(address, value);
         return; // we delegated this to the MegaII
     }
     
@@ -650,11 +751,17 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
         }
     }
 
+    // Save the original CPU bank for the observer before calc_aux_write()
+    // applies soft switches. M2B0 does not encode that auxiliary selection
+    // (Apple IIgs Technical Note 68, "The Mega II Bank 0 Signal").
+    const bool m2b0 = (address >> 16) & 1;
     address += mmu_iigs->calc_aux_write(address);   // handle RAMWRT, 80STORE, ALTZP, PAGE2, HIRES
 
     if ( mmu_iigs->shadow_is_enabled(address)) {
         // Shadowed
-        mmu_iigs->megaiiWrite(address & 0x1'FFFF, value); // this will cover case of writing to bank 01 -> shadow to E1
+        // Shadowing copies fast RAM writes onto the slow bus. The observer
+        // needs that bus copy, including writes made through bank $01.
+        mmu_iigs->megaiiWrite(address & 0x1'FFFF, value, m2b0);
     }
     if (DEBUG(DEBUG_MMUGS)) printf("Write: Effective address: %06X\n", address);
     // Unpopulated banks: Mega II shadow already applied; discard RAM store.

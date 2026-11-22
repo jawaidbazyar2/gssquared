@@ -4,6 +4,8 @@
 #include "mmus/mmu_ii.hpp"
 #include "util/printf_helper.hpp"
 
+uint64_t debug_level = 0;
+
 /* With optimizations on, this test takes about 1ns per byte read/written from emulated memory */
 
 #define MEM_SIZE 48*1024

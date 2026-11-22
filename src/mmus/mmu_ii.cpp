@@ -1,4 +1,5 @@
 #include "mmu_ii.hpp"
+#include "NClock.hpp"
 
 /**
  * Sets base memory map without any specificity for various devices.
@@ -160,6 +161,48 @@ void MMU_II::compose_c1cf() {
     }
 }
 
+// A slot card can watch the bus of an Apple II or IIe, where each CPU access
+// is one bus cycle. This reports one access to the observer before the access
+// completes: the card may supply a read byte or hold RDY (Ready) low to make
+// the CPU wait. Return true only when the card supplies read data. These
+// machines have no M2SEL or M2B0: slot pin 39 carries SYNC, which is not
+// modelled, so each cycle is selected.
+bool MMU_II::observe_bus_access(uint16_t address, uint8_t &value, bool read) {
+    slot_bus_transfer_t transfer;
+    transfer.address = address;
+    transfer.data = value;
+    if (debug_access) {
+        // The debugger's access is not a bus cycle. A read may still show
+        // what the card would drive.
+        if (!read) return false;
+        transfer.inspect = true;
+        bus_observer(transfer);
+        value = transfer.data;
+        return transfer.driven;
+    }
+    // The CPU's own clock step, which follows the access, ends this cycle.
+    transfer.ticks = clock ? slot_bus_cycle_end(clock->get_c14m()) : 0;
+    transfer.read = read;
+    const uint64_t held_ticks = bus_observer(transfer);
+    if (held_ticks) advance_bus_hold(transfer.ticks + held_ticks);
+    value = transfer.data;
+    return transfer.driven;
+}
+
+// While RDY is low the CPU repeats its bus cycle, so each held period is one
+// more cycle of the clock. ticks is the absolute 14.31818 MHz time of the PH0
+// fall that ends the access; the CPU's own clock step is its last period. A
+// held write stays on the bus: memory and write strobes get it again in each
+// period.
+void MMU_II::advance_bus_hold(uint64_t ticks) {
+    if (!clock) return;
+    while (slot_bus_cycle_end(clock->get_c14m()) < ticks) {
+        clock->incr_cycles();
+        clock->process_due();
+        if (held_write_active) write(held_write_address, held_write_data);
+    }
+}
+
 /**
  * read
  * Applies some of the Apple II built-in memory map logic. 
@@ -174,6 +217,11 @@ uint8_t MMU_II::read(uint32_t address) {
     
     if (eaddress != address) {
         printf("MMU_II::read: address %06X is out of bounds\n", address);
+    }
+
+    if (bus_observer) {
+        uint8_t value = floating_bus_read();
+        if (observe_bus_access(eaddress, value, true)) return value;
     }
 
     // TODO: we may have to check all the handlers to make sure they're returning correct values (i.e., just the bits they're responsible for)
@@ -227,6 +275,16 @@ void MMU_II::write(uint32_t address, uint8_t value) {
     page_t page = eaddress >> 8;
     if (eaddress != address) {
         printf("MMU_II::write: address %06X is out of bounds\n", address);
+    }
+
+    // The observer sees the write, and may hold it, before it completes.
+    // advance_bus_hold() calls back here for each held period.
+    if (bus_observer && !held_write_active) {
+        held_write_active = true;
+        held_write_address = eaddress;
+        held_write_data = value;
+        observe_bus_access(eaddress, value, false);
+        held_write_active = false;
     }
 
     if (bank == 0xC) {

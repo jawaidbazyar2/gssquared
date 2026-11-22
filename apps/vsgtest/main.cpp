@@ -45,6 +45,7 @@
 #include "RefComposite.hpp"
 
 gs2_app_t gs2_app_values;
+uint64_t debug_level = 0;
 
 namespace {
 

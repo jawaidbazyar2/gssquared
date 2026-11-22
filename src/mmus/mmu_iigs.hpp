@@ -91,6 +91,22 @@ class MMU_IIgs : public MMU {
 
         //cpu_state *cpu = nullptr;
         NClock *clock = nullptr;
+        // Only the outstanding CPU write owns these strobes. A null RAM
+        // destination means use the ordinary selected Mega II bus decoder.
+        uint8_t *held_write_destination = nullptr;
+        uint16_t held_write_address = 0;
+        uint8_t held_write_data = 0;
+        bool held_write_active = false;
+        // M2B0 is on slots 1-6 of a ROM 03 board and only on slot 3 of a
+        // ROM 01 board (Apple IIgs Technical Note 68). Slot 7 has the color
+        // reference on that pin.
+        bool slot_has_m2b0(SlotType_t slot) const {
+            return is_rom03 ? slot >= SLOT_1 && slot <= SLOT_6 : slot == SLOT_3;
+        }
+        // Called only with an installed observer; the check for one stays
+        // inline so ordinary Apple accesses need no callback or transfer record.
+        bool observe_megaii_access(uint32_t address, uint8_t &value, bool read);
+        void write_megaii_observed_access(uint32_t address, uint8_t value, uint8_t *destination);
 
     public:
         MMU_IIe2 *megaii = nullptr;
@@ -163,17 +179,54 @@ class MMU_IIgs : public MMU {
             else return megaii->read(address & 0xFFFF);
         } */
 
-        inline void megaiiWrite(uint32_t address, uint8_t value) { 
+        // Called on the thread that runs the CPU, never on a card's own
+        // thread. Only the current retained access may advance motherboard
+        // time while RDY holds it.
+        void advance_bus_hold(uint64_t ticks) override;
+        // Perform a write with a retained physical destination across RDY.
+        inline void write_megaii_observed(uint32_t address, uint8_t value, uint8_t *destination = nullptr) {
+            // Keep the ordinary store inline when no card observes the bus.
+            if (bus_observer) write_megaii_observed_access(address, value, destination);
+            else if (destination) *destination = value;
+            else megaii->write(address & 0xffff, value);
+        }
+
+        // Report an original CPU address before completion; true means the card
+        // supplied value for a read. Any card delay advances the host clock.
+        bool observe_megaii(uint32_t address, uint8_t &value, bool read) {
+            return bus_observer && observe_megaii_access(address, value, read);
+        }
+        // Fetch the retained bus byte only when a card can answer. Without
+        // a card, use ordinary Mega II decode directly.
+        uint8_t megaii_bus_read(uint32_t address) {
+            if (bus_observer) {
+                uint8_t value = megaii->floating_bus_read();
+                if (observe_megaii_access(address, value, true)) return value;
+            }
+            return megaii->read(address & 0xffff);
+        }
+        // Capture and finish an RDY hold before the ordinary write completes.
+        void megaii_bus_write(uint32_t address, uint8_t value) {
+            write_megaii_observed(address, value);
+        }
+
+        // A shadow copy also reaches the observer. m2b0 is the original CPU
+        // bank bit, saved before soft switches redirected the RAM destination
+        // (Apple IIgs Technical Note 68, "The Mega II Bank 0 Signal").
+        inline void megaiiWrite(uint32_t address, uint8_t value, bool m2b0) {
+            // Select the bus cycle before the observer runs: the periods of
+            // an RDY hold are slow cycles too.
+            set_next_cycle_type(CYCLE_TYPE_SYNC);
+            const uint32_t original = (address & 0xffff) | (uint32_t(m2b0) << 16);
             if ((address & 0x1'0000) && g_bank_latch) {
                 uint32_t idx = address & 0x1'FFFF;
                 if (is_aux_linear()) {
                     idx = 0x1'0000 | iigs_aux_linear_to_phys((uint16_t)idx);
                 }
-                megaii->get_memory_base()[idx] = value;
+                write_megaii_observed(original, value, megaii->get_memory_base() + idx);
             } else {
-                megaii->write(address & 0xFFFF, value);
+                write_megaii_observed(original, value);
             }
-            set_next_cycle_type(CYCLE_TYPE_SYNC);
         }
 
         void megaii_compose_map();
