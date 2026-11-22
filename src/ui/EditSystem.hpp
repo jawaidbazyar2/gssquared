@@ -66,11 +66,7 @@ protected:
     modal_stack mstack;
     int picking_slot = -1;
     Container_t *card_picker = nullptr;
-    connection_key_t picking_connection_key_{};
-    connection_port_kind_t picking_connection_kind_ = connection_port_kind_t::SERIAL;
-    Container_t *connection_picker = nullptr;
     SerialPortManager serial_ports_;
-    uint64_t picker_generation_ = 0;
 
     std::string status_text;
     storage_key_t pending_mount_key{};
@@ -81,8 +77,6 @@ protected:
     bool handle_text_field_event(const SDL_Event& ev);
     void show_card_picker(int slot);
     void dismiss_card_picker();
-    void show_connection_picker(connection_key_t key, connection_port_kind_t kind);
-    void dismiss_connection_picker();
     void open_premount_dialog(storage_key_t key);
     /** Overwrite the current .gs2. No-op when there is no file yet. */
     void begin_save();

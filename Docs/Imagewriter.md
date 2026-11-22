@@ -1,5 +1,7 @@
 # ImageWriter II Printer Emulation
 
+Research notes. The spec that came out of them is [PrinterEmulation.md](PrinterEmulation.md).
+
 ImageWriter II was Apple's standard printer for the Apple II series, dot matrix.
 
 Contains a link to a copy of the ImageWriter II ROM:

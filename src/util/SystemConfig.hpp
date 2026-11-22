@@ -40,6 +40,9 @@ struct connection_config_t {
     std::string device;
     std::string path;
     std::string remote_url;
+    std::string host;
+    /** TCP port for `device = "netprinter"`. 0 means unset. Channel remains `port`. */
+    int tcp_port = 0;
 };
 
 enum class ConfigFileKind {

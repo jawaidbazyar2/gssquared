@@ -10,8 +10,9 @@
 // colorburst (text, MONOCOLOR, Monochrome engine) show the encoder's luma of
 // each pixel: on hardware those are solid grays with no dot pattern or blur.
 //
-// Edit this file, then run scripts/compile_shaders_macos.sh to regenerate
-// gscomposite.frag.metal.
+// Edit this file, then regenerate the blobs:
+//   scripts/compile_shaders_macos.sh gscomposite   # gscomposite.frag.metal
+//   scripts/compile_crt_shader.sh all gscomposite  # gscomposite.frag.dxil / .spv
 
 cbuffer GsComposite : register(b0, space3) {
     float4 b14[4];         // (sin, cos) of 14-dot sample phase (x & 3)

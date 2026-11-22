@@ -490,9 +490,9 @@ void debug_window_t::render_pane_trace() {
     bool single_step = computer->execution_mode == EXEC_STEP_INTO;
 
     int view_size = (window_height - control_area_height) / font_line_height;
-    size_t trace_head = cpu->trace_buffer->head;
-    size_t trace_size = cpu->trace_buffer->size;
-    size_t trace_count = cpu->trace_buffer->count;
+    size_t trace_head = cpu->trace_buffer->head_index();
+    size_t trace_mask = cpu->trace_buffer->mask;
+    size_t trace_count = cpu->trace_buffer->count();
     
     // if we're single-stepping, we need to leave room for proactive disassembly
     constexpr size_t disasm_line_count = kTraceDisasmLineCount;
@@ -504,21 +504,21 @@ void debug_window_t::render_pane_trace() {
         // THIS WORKS but is complex.
         if (trace_count < view_size-disasm_line_count) {
             trace_displayed = trace_count;
-            start_idx = cpu->trace_buffer->tail;
+            start_idx = cpu->trace_buffer->tail_index();
             disasm_displayed = disasm_line_count;
         } else if (view_position < (int)disasm_line_count) {
             disasm_displayed = disasm_line_count - view_position;
             trace_displayed = view_size - disasm_displayed;
-            start_idx = (trace_head - trace_displayed ) % trace_size;
+            start_idx = (trace_head - trace_displayed) & trace_mask;
         } else {
             disasm_displayed = 0;
             trace_displayed = view_size - disasm_displayed;
-            start_idx = (trace_head - view_size - view_position + disasm_line_count) % trace_size;
+            start_idx = (trace_head - view_size - view_position + disasm_line_count) & trace_mask;
         }
     } else {
         disasm_displayed = 0;
-        trace_displayed = view_size;
-        start_idx = (trace_head - view_position) % trace_size;
+        trace_displayed = std::min<size_t>(view_size, trace_count);
+        start_idx = (trace_head - trace_displayed - view_position) & trace_mask;
     }
     
     // Calculate the starting index to show the last numlines entries
@@ -533,7 +533,7 @@ void debug_window_t::render_pane_trace() {
     const trace_column_layout &trace_layout = cpu->trace_buffer->get_layout();
     const bool show_opbytes = cpu->trace_buffer->decode_opts.show_opbytes;
     for (int i = 0; i < trace_displayed; i++) {
-        size_t idx = (start_idx + i) % trace_size;
+        size_t idx = (start_idx + i) & trace_mask;
         char *line = cpu->trace_buffer->decode_trace_entry(&cpu->trace_buffer->entries[idx]);
         draw_trace_line_colored(DEBUG_PANEL_TRACE, x, 8 + i, line, trace_layout, show_opbytes,
                                 false);
@@ -620,7 +620,7 @@ void debug_window_t::sync_trace_scrollbar() {
     }
 
     const bool single_step = computer->execution_mode == EXEC_STEP_INTO;
-    const int trace_count = static_cast<int>(cpu->trace_buffer->count);
+    const int trace_count = static_cast<int>(cpu->trace_buffer->count());
     const int view_size = (window_height - control_area_height) / font_line_height;
     const int content_size =
         single_step ? (trace_count + static_cast<int>(kTraceDisasmLineCount)) : trace_count;

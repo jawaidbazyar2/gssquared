@@ -236,6 +236,149 @@ bool https_get_to_file(const std::string& url, const std::string& dest_path, uin
 
 namespace {
 
+struct CurlStringGet {
+    const std::atomic<bool> *cancel = nullptr;
+    uint64_t max_bytes = 0;
+    int status = 0;
+    bool failed = false;
+    std::string error;
+    std::string body;
+};
+
+size_t string_header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
+    auto *get = static_cast<CurlStringGet *>(userdata);
+    const size_t len = size * nitems;
+    if (get->cancel != nullptr && get->cancel->load()) {
+        get->error = "Download canceled";
+        get->failed = true;
+        return 0;
+    }
+    if (len >= 5 && std::strncmp(buffer, "HTTP/", 5) == 0) {
+        get->status = 0;
+        const char *space = static_cast<const char *>(std::memchr(buffer, ' ', len));
+        if (space != nullptr && space + 1 < buffer + len) {
+            get->status = std::atoi(space + 1);
+        }
+        return len;
+    }
+    if (header_name_is(buffer, len, "content-length")) {
+        const char *value = static_cast<const char *>(std::memchr(buffer, ':', len));
+        if (value != nullptr) {
+            const long content_length = std::atol(value + 1);
+            if (content_length > static_cast<long>(get->max_bytes)) {
+                get->error = "Response too large";
+                get->failed = true;
+                return 0;
+            }
+        }
+    }
+    return len;
+}
+
+size_t string_write_cb(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    auto *get = static_cast<CurlStringGet *>(userdata);
+    if (get->failed) {
+        return 0;
+    }
+    if (get->status != 200) {
+        get->error = "Server returned status " + std::to_string(get->status);
+        get->failed = true;
+        return 0;
+    }
+    const size_t n = size * nmemb;
+    if (get->body.size() + n > get->max_bytes) {
+        get->error = "Response too large";
+        get->failed = true;
+        return 0;
+    }
+    get->body.append(ptr, n);
+    return n;
+}
+
+int string_xfer_cb(void *userdata, curl_off_t, curl_off_t, curl_off_t, curl_off_t) {
+    auto *get = static_cast<CurlStringGet *>(userdata);
+    if (get->cancel != nullptr && get->cancel->load()) {
+        get->error = "Download canceled";
+        get->failed = true;
+        return 1;
+    }
+    return 0;
+}
+
+}  // namespace
+
+bool https_get_to_string(const std::string& url, uint64_t max_bytes, int timeout_ms,
+                         const std::string& user_agent, const std::atomic<bool> *cancel,
+                         HttpsGetResult& out) {
+    out = HttpsGetResult{};
+    const int timeout = timeout_ms > 0 ? timeout_ms : 8000;
+    const std::string ua = user_agent.empty() ? std::string("GSSquared") : user_agent;
+    static std::once_flag curl_once;
+    std::call_once(curl_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
+    if (url.compare(0, 8, "https://") != 0 && url.compare(0, 8, "HTTPS://") != 0) {
+        out.error = "URL must be https";
+        return false;
+    }
+
+    CURL *curl = curl_easy_init();
+    if (curl == nullptr) {
+        out.error = "Failed to start download";
+        return false;
+    }
+
+    CurlStringGet get;
+    get.cancel = cancel;
+    get.max_bytes = max_bytes;
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, ua.c_str());
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, string_header_cb);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &get);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, string_write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &get);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, string_xfer_cb);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &get);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, static_cast<long>(timeout));
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 3000L);
+#if LIBCURL_VERSION_NUM >= 0x075500
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "https");
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+#else
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+#endif
+
+    const CURLcode rc = curl_easy_perform(curl);
+    long status = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+    out.status = static_cast<int>(status != 0 ? status : get.status);
+    curl_easy_cleanup(curl);
+
+    if (rc != CURLE_OK && get.error.empty()) {
+        get.error = curl_easy_strerror(rc);
+        get.failed = true;
+    }
+    if (out.status != 200 && get.error.empty()) {
+        get.error = "Server returned status " + std::to_string(out.status);
+        get.failed = true;
+    }
+    out.error = get.error;
+    out.body = get.failed ? std::string() : get.body;
+    out.ok = rc == CURLE_OK && !get.failed && out.status == 200 && get.error.empty();
+    if (!out.ok && out.error.empty()) {
+        out.error = "Download failed";
+    }
+    if (!out.ok) {
+        out.body.clear();
+    }
+    return out.ok;
+}
+
+namespace {
+
 struct CurlUpload {
     const std::atomic<bool> *cancel = nullptr;
     int status = 0;

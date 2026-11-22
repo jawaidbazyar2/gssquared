@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <deque>
+#include <filesystem>
+#include <fstream>
 #include <limits>
 #include <vector>
 
@@ -65,6 +67,7 @@ constexpr uint32_t kTypeSetRegs   = 0x00000203;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
 constexpr uint32_t kTypeFindMem   = 0x00000303;
+constexpr uint32_t kTypeLoadMem   = 0x00000304;
 constexpr uint32_t kTypeStateGet  = 0x00000601;
 constexpr uint32_t kTypeStateSet  = 0x00000602;
 constexpr uint32_t kTypeBpSet     = 0x00000401;
@@ -90,6 +93,9 @@ constexpr uint32_t kSetRegsPayloadSize = 24;
 constexpr uint32_t kFindMemHeaderSize = 24;
 constexpr uint32_t kMaxFindPattern = 256;
 constexpr uint32_t kMaxFindHits = 256;
+constexpr uint32_t kLoadMemHeaderSize = 16;
+constexpr uint32_t kMaxLoadMem = 0x01000000;
+constexpr uint32_t kMaxLoadPathLen = 4096;
 
 constexpr uint32_t kRegPc = 1u << 0;
 constexpr uint32_t kRegPb = 1u << 1;
@@ -336,7 +342,7 @@ bool read_domain_bytes(computer_t *computer, uint32_t domain, uint32_t address, 
         return true;
     }
     if (domain == kMemEnsoniq) {
-        if (!computer || !computer->platform || computer->platform->id != PLATFORM_APPLE_IIGS) {
+        if (!computer || !computer->platform || !platform_is_iigs(computer->platform->id)) {
             error = kEInternal;
             return false;
         }
@@ -355,6 +361,194 @@ bool read_domain_bytes(computer_t *computer, uint32_t domain, uint32_t address, 
     }
     error = kEInternal;
     return false;
+}
+
+/** Poke `data` into a WRITEMEM / LOADMEM domain. On failure sets error fields. */
+bool write_domain_bytes(computer_t *computer, uint32_t domain, uint32_t address,
+                        const std::vector<uint8_t> &data, uint32_t &error, bool &megaii_reject,
+                        std::string &error_text) {
+    error = 0;
+    megaii_reject = false;
+    error_text.clear();
+    MMUDebugAccess debug_access(computer && computer->cpu ? computer->cpu->mmu : nullptr);
+
+    const size_t length = data.size();
+
+    if (domain == kMemMain) {
+        if (!computer || !computer->cpu || !computer->cpu->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->cpu->mmu;
+        const uint32_t space = mmu->get_address_space_size();
+        if (address > space || length > space - address) {
+            error = kEBadLength;
+            return false;
+        }
+        for (size_t i = 0; i < length; ++i) {
+            mmu->write(address + static_cast<uint32_t>(i), data[i]);
+        }
+        return true;
+    }
+    if (domain == kMemMegaII) {
+        if (!computer || !computer->platform || !platform_is_iigs(computer->platform->id)) {
+            error = kEInternal;
+            megaii_reject = true;
+            return false;
+        }
+        if (!computer->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->mmu;
+        const uint32_t space = mmu->get_address_space_size();
+        if (address > space || length > space - address) {
+            error = kEBadLength;
+            return false;
+        }
+        for (size_t i = 0; i < length; ++i) {
+            mmu->write(address + static_cast<uint32_t>(i), data[i]);
+        }
+        return true;
+    }
+    if (domain == kMemMainRaw) {
+        if (!computer || !computer->cpu || !computer->cpu->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->cpu->mmu;
+        uint8_t *base = mmu->get_memory_base();
+        uint32_t size = mmu->get_memory_size();
+        if (!base || size == 0) {
+            error = kEInternal;
+            return false;
+        }
+        if (address > size || length > size - address) {
+            error = kEBadLength;
+            return false;
+        }
+        if (length > 0) {
+            std::memcpy(base + address, data.data(), length);
+        }
+        return true;
+    }
+    if (domain == kMemMegaIIRaw) {
+        if (!computer || !computer->platform || !platform_is_iigs(computer->platform->id)) {
+            error = kEInternal;
+            megaii_reject = true;
+            return false;
+        }
+        if (!computer->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->mmu;
+        uint8_t *base = mmu->get_memory_base();
+        uint32_t size = mmu->get_memory_size();
+        if (!base || size == 0) {
+            error = kEInternal;
+            return false;
+        }
+        if (address > size || length > size - address) {
+            error = kEBadLength;
+            return false;
+        }
+        if (length > 0) {
+            std::memcpy(base + address, data.data(), length);
+        }
+        return true;
+    }
+    if (domain == kMemEnsoniq) {
+        if (!computer || !computer->platform || !platform_is_iigs(computer->platform->id)) {
+            error = kEInternal;
+            return false;
+        }
+        auto *st = static_cast<ensoniq_state_t *>(computer->module_store[MODULE_ENSONIQ]);
+        if (!st || !st->doc_ram) {
+            error = kEInternal;
+            error_text = "no ensoniq";
+            return false;
+        }
+        if (address > kDocRamSize || length > kDocRamSize - address) {
+            error = kEBadLength;
+            return false;
+        }
+        if (length > 0) {
+            std::memcpy(st->doc_ram + address, data.data(), length);
+        }
+        return true;
+    }
+    error = kEInternal;
+    return false;
+}
+
+/** Read a slice of a host file on the protocol thread (never blocks main emu loop). */
+bool read_host_file_slice(const std::string &path_str, uint32_t file_offset, uint32_t max_length,
+                          uint32_t max_allowed, std::vector<uint8_t> &out,
+                          uint32_t &error_code, std::string &error_msg) {
+    out.clear();
+    error_code = 0;
+    error_msg.clear();
+
+    std::error_code ec;
+    const std::filesystem::path fspath = std::filesystem::u8path(path_str);
+    if (!std::filesystem::exists(fspath, ec) || ec) {
+        error_code = kEInternal;
+        error_msg = "LOADMEM failed to open file";
+        return false;
+    }
+    if (!std::filesystem::is_regular_file(fspath, ec) || ec) {
+        error_code = kEInternal;
+        error_msg = "LOADMEM path is not a regular file";
+        return false;
+    }
+    const uintmax_t file_size = std::filesystem::file_size(fspath, ec);
+    if (ec) {
+        error_code = kEInternal;
+        error_msg = "LOADMEM failed to stat file";
+        return false;
+    }
+    if (static_cast<uintmax_t>(file_offset) > file_size) {
+        error_code = kEBadLength;
+        error_msg = "LOADMEM file_offset past EOF";
+        return false;
+    }
+    const uintmax_t remaining = file_size - static_cast<uintmax_t>(file_offset);
+    const uintmax_t want = (max_length == 0)
+        ? remaining
+        : std::min<uintmax_t>(remaining, static_cast<uintmax_t>(max_length));
+    if (want > static_cast<uintmax_t>(max_allowed)) {
+        error_code = kEBadLength;
+        error_msg = "LOADMEM length exceeds limit";
+        return false;
+    }
+
+    std::ifstream ifs(fspath, std::ios::binary);
+    if (!ifs.is_open()) {
+        error_code = kEInternal;
+        error_msg = "LOADMEM failed to open file";
+        return false;
+    }
+    if (want == 0) {
+        return true;
+    }
+    if (file_offset > 0) {
+        ifs.seekg(static_cast<std::streamoff>(file_offset), std::ios::beg);
+        if (!ifs) {
+            error_code = kEInternal;
+            error_msg = "LOADMEM seek failed";
+            return false;
+        }
+    }
+    out.resize(static_cast<size_t>(want));
+    ifs.read(reinterpret_cast<char *>(out.data()), static_cast<std::streamsize>(want));
+    if (ifs.bad() || static_cast<uintmax_t>(ifs.gcount()) != want) {
+        out.clear();
+        error_code = kEInternal;
+        error_msg = "LOADMEM failed to read file";
+        return false;
+    }
+    return true;
 }
 
 } // namespace
@@ -564,91 +758,22 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
         const uint32_t domain = bridge_arg0_;
         const uint32_t address = bridge_arg1_;
         const uint32_t length = bridge_arg2_;
-        MMUDebugAccess debug_access(computer && computer->cpu ? computer->cpu->mmu : nullptr);
-
-        if (domain == kMemMain) {
-            if (!computer || !computer->cpu || !computer->cpu->mmu) {
-                bridge_error_ = kEInternal;
-            } else if (bridge_request_.size() != length) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->cpu->mmu;
-                for (uint32_t i = 0; i < length; ++i) {
-                    mmu->write(address + i, bridge_request_[i]);
-                }
-            }
-        } else if (domain == kMemMegaII) {
-            if (!computer || !computer->platform
-                || !platform_is_iigs(computer->platform->id)) {
-                bridge_error_ = kEInternal;
-                bridge_megaii_platform_reject_ = true;
-            } else if (!computer->mmu) {
-                bridge_error_ = kEInternal;
-            } else if (bridge_request_.size() != length) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->mmu;
-                for (uint32_t i = 0; i < length; ++i) {
-                    mmu->write(address + i, bridge_request_[i]);
-                }
-            }
-        } else if (domain == kMemMainRaw) {
-            if (!computer || !computer->cpu || !computer->cpu->mmu) {
-                bridge_error_ = kEInternal;
-            } else if (bridge_request_.size() != length) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->cpu->mmu;
-                uint8_t *base = mmu->get_memory_base();
-                uint32_t size = mmu->get_memory_size();
-                if (!base || size == 0) {
-                    bridge_error_ = kEInternal;
-                } else if (address > size || length > size - address) {
-                    bridge_error_ = kEBadLength;
-                } else {
-                    std::memcpy(base + address, bridge_request_.data(), length);
-                }
-            }
-        } else if (domain == kMemMegaIIRaw) {
-            if (!computer || !computer->platform
-                || !platform_is_iigs(computer->platform->id)) {
-                bridge_error_ = kEInternal;
-                bridge_megaii_platform_reject_ = true;
-            } else if (!computer->mmu) {
-                bridge_error_ = kEInternal;
-            } else if (bridge_request_.size() != length) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->mmu;
-                uint8_t *base = mmu->get_memory_base();
-                uint32_t size = mmu->get_memory_size();
-                if (!base || size == 0) {
-                    bridge_error_ = kEInternal;
-                } else if (address > size || length > size - address) {
-                    bridge_error_ = kEBadLength;
-                } else {
-                    std::memcpy(base + address, bridge_request_.data(), length);
-                }
-            }
-        } else if (domain == kMemEnsoniq) {
-            if (!computer || !computer->platform
-                || computer->platform->id != PLATFORM_APPLE_IIGS) {
-                bridge_error_ = kEInternal;
-            } else if (bridge_request_.size() != length) {
-                bridge_error_ = kEInternal;
-            } else {
-                auto *st = static_cast<ensoniq_state_t *>(computer->module_store[MODULE_ENSONIQ]);
-                if (!st || !st->doc_ram) {
-                    bridge_error_ = kEInternal;
-                    bridge_error_text_ = "no ensoniq";
-                } else if (address > kDocRamSize || length > kDocRamSize - address) {
-                    bridge_error_ = kEBadLength;
-                } else {
-                    std::memcpy(st->doc_ram + address, bridge_request_.data(), length);
-                }
-            }
-        } else {
+        if (bridge_request_.size() != length) {
             bridge_error_ = kEInternal;
+        } else if (!write_domain_bytes(computer, domain, address, bridge_request_, bridge_error_,
+                                       bridge_megaii_platform_reject_, bridge_error_text_)) {
+            // bridge_error_ / flags already set
+        }
+    } else if (bridge_type_ == kTypeLoadMem) {
+        const uint32_t domain = bridge_arg0_;
+        const uint32_t address = bridge_arg1_;
+        const uint32_t length = bridge_arg2_;
+        if (bridge_request_.size() != length) {
+            bridge_error_ = kEInternal;
+        } else if (write_domain_bytes(computer, domain, address, bridge_request_, bridge_error_,
+                                      bridge_megaii_platform_reject_, bridge_error_text_)) {
+            bridge_reply_.resize(4);
+            std::memcpy(bridge_reply_.data(), &length, 4);
         }
     } else if (bridge_type_ == kTypePause) {
         if (!computer) {
@@ -694,7 +819,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             const uint32_t ago = bridge_arg0_;
             const uint32_t want = bridge_arg1_;
             system_trace_buffer *tb = computer->cpu->trace_buffer;
-            const uint32_t available = static_cast<uint32_t>(tb->count);
+            const uint32_t available = static_cast<uint32_t>(tb->count());
             uint32_t returned = 0;
             if (ago < available && want > 0) {
                 const uint32_t max_from_ago = available - ago;
@@ -704,16 +829,14 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             std::memcpy(bridge_reply_.data() + 0, &available, 4);
             std::memcpy(bridge_reply_.data() + 4, &returned, 4);
             if (returned > 0) {
-                const size_t sz = tb->size;
-                size_t idx = (tb->head + sz - static_cast<size_t>(ago) - static_cast<size_t>(returned)) % sz;
+                const size_t mask = tb->mask;
+                size_t idx = static_cast<size_t>(
+                    tb->head - static_cast<uint64_t>(ago) - static_cast<uint64_t>(returned)) & mask;
                 uint8_t *out = bridge_reply_.data() + 8;
                 for (uint32_t i = 0; i < returned; ++i) {
                     std::memcpy(out + static_cast<size_t>(i) * kTraceEntrySize,
                                 &tb->entries[idx], kTraceEntrySize);
-                    idx++;
-                    if (idx >= sz) {
-                        idx = 0;
-                    }
+                    idx = (idx + 1) & mask;
                 }
             }
         }
@@ -2040,6 +2163,64 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "bad writemem reply");
             }
             REPLY_OK(kTypeWriteMem, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeLoadMem: {
+            if (hdr.length < kLoadMemHeaderSize) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM payload too short");
+            }
+            uint32_t domain = 0, address = 0, file_offset = 0, max_length = 0;
+            std::memcpy(&domain, payload.data() + 0, 4);
+            std::memcpy(&address, payload.data() + 4, 4);
+            std::memcpy(&file_offset, payload.data() + 8, 4);
+            std::memcpy(&max_length, payload.data() + 12, 4);
+
+            if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq
+                && domain != kMemAdbMicro && domain != kMemMainRaw && domain != kMemMegaIIRaw) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM invalid domain");
+            }
+            if (max_length > kMaxLoadMem) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM max_length out of range");
+            }
+            const size_t path_len = payload.size() - kLoadMemHeaderSize;
+            if (path_len == 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM empty path");
+            }
+            if (path_len > kMaxLoadPathLen) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM path too long");
+            }
+            const char *path_ptr = reinterpret_cast<const char *>(payload.data() + kLoadMemHeaderSize);
+            if (std::memchr(path_ptr, '\0', path_len) != nullptr) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM path contains NUL");
+            }
+            std::string path_str(path_ptr, path_len);
+
+            std::vector<uint8_t> file_bytes;
+            uint32_t io_err = 0;
+            std::string io_msg;
+            if (!read_host_file_slice(path_str, file_offset, max_length, kMaxLoadMem, file_bytes,
+                                      io_err, io_msg)) {
+                REJECT(client_fd, hdr.seq, io_err, io_msg.c_str());
+            }
+
+            const uint32_t length = static_cast<uint32_t>(file_bytes.size());
+            if (address > std::numeric_limits<uint32_t>::max() - length) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "LOADMEM address wrap");
+            }
+
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypeLoadMem, hdr.seq, domain, address, length, file_bytes, reply,
+                                 err, kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err, domain));
+            }
+            if (reply.size() != 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad loadmem reply");
+            }
+            REPLY_OK(kTypeLoadMem, hdr.seq, reply.data(), 4);
             break;
         }
         case kTypeBpSet: {

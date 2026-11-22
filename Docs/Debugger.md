@@ -179,7 +179,7 @@ Alternatively, can we just construct this from the softswitches? That requires i
 
 [ ] Also, some way to put in a memory location and have it tell you which application it belongs to  
 
-[ ] "save trace right now to file name" command  
+[x] "save trace right now to file name" command (`trsave "filename"`)
 
 [ ] change "debug" to "watch", keying on the string argument vs number argument.  
 

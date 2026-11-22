@@ -69,6 +69,7 @@ nav:
     - Video Term: VideoTerm.md
     - Epson MX-80: EpsonMX80.md
     - Imagewriter: Imagewriter.md
+    - Printer emulation: PrinterEmulation.md
     - ADB: ADB.md
     - Joyport: Joyport.md
     - WDM: WDM.md

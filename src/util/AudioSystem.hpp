@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 
 #include "DebugFormatter.hpp"
+#include "devices/mockingboard/AyPhase.hpp"
 
 // forward declare.
 class computer_t;
@@ -28,6 +29,7 @@ private:
     uint16_t volume_setting = 6;
     float gain = 1.0f;
     bool decorrelation_enabled = true;
+    ay::Waveform ay_waveform = ay::Waveform::Square;
     void printSpec(SDL_AudioSpec spec);
 
     // Callbacks invoked when the audio device format changes (e.g. user
@@ -87,6 +89,10 @@ public:
     inline bool get_decorrelation() const { return decorrelation_enabled; }
     inline void set_decorrelation(bool v) { decorrelation_enabled = v; }
     inline void toggle_decorrelation()    { decorrelation_enabled = !decorrelation_enabled; }
+
+    // Mockingboard AY tone waveform shape (default: hardware Square).
+    inline ay::Waveform get_ay_waveform() const { return ay_waveform; }
+    inline void set_ay_waveform(ay::Waveform wf) { ay_waveform = wf; }
 
     /*     void set_mute(bool mute); // TODO: leave here for ideas.
     bool get_mute();

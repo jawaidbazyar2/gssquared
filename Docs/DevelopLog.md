@@ -12837,3 +12837,9 @@ B) write to E1/2001, notice bank latch is off, redirect to E0/, not linearize
 The HWRef doesn't say, but the hardware actually does B)
 
 ok, double checked and we already work that way.
+
+## Nov 17, 2026
+
+well wow a lot has happened. the mmu refactors were done, test cleanly. There are outstanding IWM and Ensoniq tests failing, that need fixin. I guess I can do that last bit before the 1.1 release.
+
+I don't know if I want to bundle gs2print in the main package. it's easy enough to grab and install if someone's using KEGS etc. Link to it? Unsure! Stew on this.

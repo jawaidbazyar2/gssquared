@@ -11,12 +11,12 @@ On the Mac, disable “Pressing Option 5 Times enables Mouse Keys” and Dictati
 | Key | Platform | Action |
 | --- | --- | --- |
 | F1 | All | Release (or capture) the mouse cursor |
-| F2 | All | Cycle Composite, RGB, and Monochrome display engines |
+| F2 | All | Cycle Composite, RGB, Monochrome, and (IIgs) GS Composite display engines |
 | F3 | All | Toggle fullscreen and windowed mode |
 | F4 | All | Open/Close Control Panel |
-| F5 | All | Toggle pixel-blur (analog upscale) and rectangular (square) scaling |
+| F5 | All | Toggle Smooth and Sharp scaling |
 | F6 | All | Cycle Joystick, Joyport, and mouse-emulated joystick modes |
-| F7 | All | Toggle CRT Shader (when the GPU shader is available) |
+| F7 | All | Toggle Shadow Mask (when the GPU shader is available) |
 | F9 | All | Increase speed — 1 MHz, 2.8 MHz, 7.1 MHz, 14.3 MHz, and Ludicrous Speed |
 | Shift - F9 | All | Decrease speed |
 | F10 | All | Open/close the debugger window |
@@ -26,7 +26,7 @@ On the Mac, disable “Pressing Option 5 Times enables Mouse Keys” and Dictati
 | Ctrl + F12 | MacOS,Windows | Reset |
 | Ctrl + BREAK | Linux | Reset (sometimes this key is labelled Pause) |
 
-F5 is a **scaling** preference, not a switch between “accurate NTSC” and a legacy renderer. Composite / RGB / mono is **F2**. See [Displays](Displays.md).
+F5 is a **scaling** preference (Smooth vs Sharp), not a switch between “accurate NTSC” and a legacy renderer. Composite / RGB / GS Composite / mono is **F2**. See [Displays](Displays.md).
 
 # Apple Keys - Modifier Keys
 

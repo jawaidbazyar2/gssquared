@@ -5,6 +5,7 @@
 #include "EditSystem.hpp"
 
 #include <cstdio>
+#include <string>
 
 #include "Button.hpp"
 #include "ConfigSelectors.hpp"
@@ -169,7 +170,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         return draft.slot_device_name(slot);
     });
     slots_panel->set_position(30 + layout_dx, 140 + body_dy);
-    slots_panel->size(320, 304);
+    slots_panel->size(290, 304);
     slots_panel->layout();
 
     for (int i = 0; i < NUM_SLOTS; i++) {
@@ -202,26 +203,35 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         }
     });
 
-    Style_t SPB{
-        .background_color = 0x2E86ABFF,
-        .border_color = 0xF0F7FAFF,
-        .hover_color = 0x3D9BC4FF,
-        .padding = 4,
+    Style_t SP{
+        .background_color = 0x006030FF,
+        .border_color = 0xFFFFFF90,
+        .hover_color = 0x006030FF,
+        .padding = 6,
         .border_width = 1,
-        .text_color = 0xFFFFFFFF,
+        .corner_radius = 6.0f,
     };
-    serial_ports_panel = new SerialPortsOSD_t(&ui_ctx, DC);
-    serial_ports_panel->set_position(360 + layout_dx, 140 + body_dy);
-    serial_ports_panel->size(230, 450);
-    serial_ports_panel->set_button_style(SPB);
-    serial_ports_panel->set_click_handler([this](SerialPortButton *button, const SDL_Event&) {
-        show_connection_picker(button->get_key(), button->get_kind());
+    serial_ports_panel = new SerialPortsOSD_t(&ui_ctx, SP);
+    serial_ports_panel->set_position(330 + layout_dx, 140 + body_dy);
+    serial_ports_panel->size(260, 450);
+    serial_ports_panel->set_serial_port_manager(&serial_ports_);
+    serial_ports_panel->set_apply_handler(
+        [this](connection_key_t key, connection_device_type_t type,
+               const std::string &path, const std::string &host, int tcp_port) {
+            draft.set_connection(key, type, path, host, tcp_port);
+            rebuild_ui_from_draft();
+        });
+    serial_ports_panel->set_overlay_open_handler([this]() {
+        dismiss_card_picker();
+        updated = true;
     });
 
     Style_t CB = config_selector_button_style();
-    speed_con = new Container_t(&ui_ctx, clear_panel_style());
+    Style_t clear_sel = clear_panel_style();
+    clear_sel.padding = 2;
+    speed_con = new Container_t(&ui_ctx, clear_sel);
     speed_con->set_position(30 + layout_dx, 480 + body_dy);
-    speed_con->size(320, 65);
+    speed_con->size(290, 58);
     populate_speed_selector(speed_con, &ui_ctx, CB);
     for (size_t i = 0; i < speed_con->count(); i++) {
         Tile_t *tile = speed_con->get_tile(i);
@@ -233,9 +243,9 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         });
     }
 
-    display_con = new Container_t(&ui_ctx, clear_panel_style());
+    display_con = new Container_t(&ui_ctx, clear_sel);
     display_con->set_position(30 + layout_dx, 575 + body_dy);
-    display_con->size(320, 65);
+    display_con->size(290, 58);
     populate_display_selector(display_con, &ui_ctx, CB);
     for (size_t i = 0; i < display_con->count(); i++) {
         Tile_t *tile = display_con->get_tile(i);
@@ -319,7 +329,6 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
 
 EditSystem::~EditSystem() {
     dismiss_card_picker();
-    dismiss_connection_picker();
     delete badge;
     delete name_input;
     delete desc_input;
@@ -444,82 +453,8 @@ void EditSystem::dismiss_card_picker() {
     picking_slot = -1;
 }
 
-void EditSystem::dismiss_connection_picker() {
-    delete connection_picker;
-    connection_picker = nullptr;
-}
-
-void EditSystem::show_connection_picker(connection_key_t key, connection_port_kind_t kind) {
-    dismiss_connection_picker();
-    dismiss_card_picker();
-    picking_connection_key_ = key;
-    picking_connection_kind_ = kind;
-
-    // Dark slate panel; choice buttons keep white text (card_picker_btn_style).
-    Style_t MS{
-        .background_color = 0x1A2332FF,
-        .border_color = 0x7EB8D8FF,
-        .hover_color = 0x243044FF,
-        .padding = 8,
-        .border_width = 3,
-    };
-    connection_picker = new Container_t(&ui_ctx, MS);
-    connection_picker->set_position(380 + layout_dx, 160 + body_dy);
-
-    constexpr float kBtnW = 280.0f;
-    constexpr float kBtnH = 28.0f;
-    constexpr float kPanelW = 320.0f;
-
-    auto add_choice = [this](connection_device_type_t type, const char *label) {
-        Button_t *b = new Button_t(&ui_ctx, label, card_picker_btn_style());
-        b->size(kBtnW, kBtnH);
-        b->on_click([this, type](const SDL_Event&) -> bool {
-            draft.set_connection(picking_connection_key_, type);
-            dismiss_connection_picker();
-            rebuild_ui_from_draft();
-            return true;
-        });
-        connection_picker->add(b);
-    };
-
-    for (connection_device_type_t type : connection_allowed_devices(kind)) {
-        const char *label = "Nothing";
-        if (type == connection_device_type_t::FILE) label = "File";
-        else if (type == connection_device_type_t::CLIPBOARD) label = "Clipboard";
-        else if (type == connection_device_type_t::MODEM) label = "Modem";
-        add_choice(type, label);
-    }
-
-#if !defined(__EMSCRIPTEN__)
-    if (kind == connection_port_kind_t::SERIAL) {
-        serial_ports_.poll(SDL_GetTicks());
-        picker_generation_ = serial_ports_.generation();
-        for (const host_serial_info_t &info : serial_ports_.ports()) {
-            Button_t *b = new Button_t(&ui_ctx, host_serial_basename(info.display).c_str(),
-                                       card_picker_btn_style());
-            b->size(kBtnW, kBtnH);
-            b->on_click([this, path = info.path](const SDL_Event&) -> bool {
-                draft.set_connection(picking_connection_key_, connection_device_type_t::SERIAL, path);
-                dismiss_connection_picker();
-                rebuild_ui_from_draft();
-                return true;
-            });
-            connection_picker->add(b);
-        }
-    }
-#endif
-
-    const size_t n = connection_picker->count();
-    const float pad = static_cast<float>(MS.padding);
-    const float cell_h = kBtnH + pad * 2;
-    const float panel_h = pad * 2 + n * cell_h + static_cast<float>(MS.border_width) * 2;
-    connection_picker->size(kPanelW, panel_h);
-    connection_picker->layout();
-    updated = true;
-}
-
 void EditSystem::show_card_picker(int slot) {
-    dismiss_connection_picker();
+    if (serial_ports_panel) serial_ports_panel->dismiss_overlay();
     dismiss_card_picker();
     picking_slot = slot;
 
@@ -531,7 +466,7 @@ void EditSystem::show_card_picker(int slot) {
         .border_width = 3,
     };
     card_picker = new Container_t(&ui_ctx, MS);
-    card_picker->set_position(360 + layout_dx, 160 + body_dy);
+    card_picker->set_position(330 + layout_dx, 160 + body_dy);
 
     constexpr float kBtnW = 320.0f;
     constexpr float kBtnH = 28.0f;
@@ -723,15 +658,14 @@ void EditSystem::begin_save_as() {
 
 bool EditSystem::update() {
     if (serial_ports_.poll(SDL_GetTicks())) {
-        if (connection_picker) {
-            show_connection_picker(picking_connection_key_, picking_connection_kind_);
-        }
         updated = true;
     }
     if (name_input) name_input->update();
     if (desc_input) desc_input->update();
+    if (serial_ports_panel) serial_ports_panel->update();
     if ((name_input && name_input->needs_redraw()) ||
-        (desc_input && desc_input->needs_redraw())) {
+        (desc_input && desc_input->needs_redraw()) ||
+        (serial_ports_panel && serial_ports_panel->needs_redraw())) {
         updated = true;
     }
     return updated;
@@ -771,7 +705,7 @@ void EditSystem::render() {
 
     text_renderer->set_color(0, 0, 0, 0xFF);
     text_renderer->render("Slots", 30 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
-    text_renderer->render("Serial", 360 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Connections", 330 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Storage (pre-mount)", 600 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Speed", 30 + layout_dx, 455 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Display", 30 + layout_dx, 550 + body_dy, TEXT_ALIGN_LEFT);
@@ -789,13 +723,8 @@ void EditSystem::render() {
             snprintf(title, sizeof(title), "Card for slot %d", picking_slot);
         }
         text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        text_renderer->render(title, 370 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
+        text_renderer->render(title, 340 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
         card_picker->render();
-    }
-    if (connection_picker) {
-        text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        text_renderer->render("Attach device", 390 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
-        connection_picker->render();
     }
 
     ui_ctx.color(0x000000FF);
@@ -829,13 +758,8 @@ bool EditSystem::event(const SDL_Event &event) {
             return true;
         }
     }
-    if (connection_picker) {
-        if (connection_picker->handle_mouse_event(ev)) {
-            updated = true;
-            return true;
-        }
-        if (ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            dismiss_connection_picker();
+    if (serial_ports_panel && serial_ports_panel->has_overlay()) {
+        if (serial_ports_panel->handle_overlay_event(ev)) {
             updated = true;
             return true;
         }

@@ -25,12 +25,16 @@
 
 #include "AY8910-2.hpp"
 #include "W6522.hpp"
+#include "Ssi263.hpp"
 
 #include "gs2.hpp"
 #include "mb2.hpp"
 #include "debug.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
+
+#include <algorithm>
+#include <cstddef>
 
 const char *register_names[] = {
     "A_Tone_Low",
@@ -51,8 +55,8 @@ const char *register_names[] = {
     "Unknown 15",
 };
 
-void debug_register_change(double current_time, uint8_t chip_index, uint8_t reg, uint8_t value) {
-    std::cout << "[" << current_time << "] Register " << register_names[reg] << " set to: " << static_cast<int>(value) << std::endl;
+void debug_register_change(uint64_t cycle, uint8_t chip_index, uint8_t reg, uint8_t value) {
+    std::cout << "[" << cycle << "] Register " << register_names[reg] << " set to: " << static_cast<int>(value) << std::endl;
 }
 
 #if 0
@@ -97,7 +101,7 @@ DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
     df->addLine("Ampl A: %02X  Ampl B: %02X  Ampl C: %02X", mb->read_register(1, Ampl_A), mb->read_register(1, Ampl_B), mb->read_register(1, Ampl_C));
     df->addLine("Env Period: %04X  Env Shape: %02X", mb->chips[1].envelope_period, mb->chips[1].envelope_shape);
     df->addLine("--------------------------------");
-    df->addLine("Last event: %14.6f  Last time: %14.6f", mb->dbg_last_event, mb->dbg_last_time);
+    df->addLine("Last event: %llu  Last time: %llu", (unsigned long long)mb->dbg_last_event, (unsigned long long)mb->dbg_last_time);
     return df;
 }
 #endif
@@ -106,25 +110,117 @@ class Mockingboard {
 private:
     N6522 *n6522[2];
     AY8910s *ay8910s;
+    Ssi263 *ssi263;
     SDL_AudioStream *stream;
-    uint64_t last_cycle;
     uint8_t slot;
     VidRail *vid;
     InterruptController *irq_control = nullptr;
     AudioSystem *audio_system;
-
-    float samples_accumulated = 0.0f;
-    float frame_rate;
-    float samples_per_frame;
-    uint32_t samples_per_frame_int;
-    float samples_per_frame_remainder;
-    uint64_t vid_cycles_rate;
 
     NClock *clock;
 
     // TODO: this is an undimensioned vector, which will be doing all kinds of memory allocation
     std::vector<float> audio_buffer;
 
+    // SSI-263 sample horizon (vid-cycles), matching AY sample_vid_.
+    uint64_t speech_vid_ = 0;
+    uint64_t speech_accum_ = 0;
+    std::vector<float> speech_pending;
+
+    // Engine peaks ~0.24–0.54 at AMP=15 (RMS ~0.08–0.19). AY one channel
+    // max is 0.25 (RMS ~0.18); speaker default vol 6 is 4125/32767 ≈ 0.13.
+    // 0.85 puts loud phonemes next to a full-scale AY channel without
+    // clipping the engine. Mixed to L+R: the card sums SSI with both AYs.
+    static constexpr float SPEECH_MIX_GAIN = 0.85f;
+
+    void note_ar() {
+        // SSI-263 A/R is active-low, wired to CA1 of the 6522 at $Cn80.
+        n6522[0]->set_ca1(!ssi263->request());
+    }
+
+    void catchup_speech() {
+        if (!clock || !ssi263) {
+            return;
+        }
+        const uint64_t now = clock->get_vid_cycles();
+        const uint64_t vid_per_sec = clock->get_vid_cycles_per_second();
+        const uint64_t vid_per_frame = clock->get_vid_cycles_per_frame();
+
+        ssi263->set_xck((double)vid_per_sec);
+
+        if (now <= speech_vid_) {
+            note_ar();
+            return;
+        }
+
+        // Same stall window as the AY: drop a multi-frame gap instead of
+        // synthesizing a catch-up burst. Skip chip time so A/R stays honest.
+        if ((now - speech_vid_) > vid_per_frame * 3) {
+            const uint64_t new_vid = now - vid_per_frame;
+            const double skip_s =
+                (double)(new_vid - speech_vid_) / (double)vid_per_sec;
+            ssi263->skip(skip_s);
+            speech_pending.clear();
+            speech_vid_ = new_vid;
+            speech_accum_ = 0;
+            note_ar();
+        }
+
+        if (now <= speech_vid_) {
+            return;
+        }
+
+        long nsamples = 0;
+        uint64_t vid = speech_vid_;
+        uint64_t accum = speech_accum_;
+        while (vid < now) {
+            accum += vid_per_sec;
+            uint64_t cycles = accum / OUTPUT_SAMPLE_RATE_INT;
+            accum %= OUTPUT_SAMPLE_RATE_INT;
+            if (cycles == 0) {
+                continue;
+            }
+            uint64_t sample_end = vid + cycles;
+            if (sample_end > now) {
+                sample_end = now;
+            }
+            vid = sample_end;
+            nsamples++;
+        }
+        speech_vid_ = vid;
+        speech_accum_ = accum;
+
+        if (nsamples > 0) {
+            std::vector<float> tmp((size_t)nsamples + 1, 0.0f);
+            long got = ssi263->run(nsamples, tmp.data());
+            if (got < 0) {
+                got = 0;
+            }
+            speech_pending.insert(speech_pending.end(),
+                                  tmp.begin(), tmp.begin() + got);
+        }
+        note_ar();
+    }
+
+    void mix_speech() {
+        const size_t nframes = audio_buffer.size() / 2;
+        const size_t nspeech = speech_pending.size();
+        const size_t n = std::min(nframes, nspeech);
+        for (size_t i = 0; i < n; i++) {
+            float s = speech_pending[i] * SPEECH_MIX_GAIN;
+            if (s > 1.0f) {
+                s = 1.0f;
+            } else if (s < -1.0f) {
+                s = -1.0f;
+            }
+            audio_buffer[i * 2] += s;
+            audio_buffer[i * 2 + 1] += s;
+        }
+        if (n > 0) {
+            speech_pending.erase(speech_pending.begin(),
+                                 speech_pending.begin() + (std::ptrdiff_t)n);
+        }
+    }
 
 public:
     Mockingboard(NClock *clock, InterruptController *irq_control, VidRail *vid, AudioSystem *audio_system, uint8_t slot) {
@@ -152,19 +248,18 @@ public:
         this->vid = vid;
         this->slot = slot;
         this->audio_system = audio_system;
-        last_cycle = 0;
 
-        frame_rate = (double)clock->get_vid_cycles_per_second() / (double)clock->get_vid_cycles_per_frame();
-        samples_per_frame = (float)OUTPUT_SAMPLE_RATE_INT / frame_rate;
-        samples_per_frame_int = (int32_t)samples_per_frame;
-        samples_per_frame_remainder = samples_per_frame - samples_per_frame_int;
-        vid_cycles_rate = clock->get_vid_cycles_per_second();
+        const double xck = clock ? (double)clock->get_vid_cycles_per_second() : 1020484.0;
+        ssi263 = new Ssi263(xck, (double)OUTPUT_SAMPLE_RATE_INT);
+        speech_vid_ = clock ? clock->get_vid_cycles() : 0;
+        speech_accum_ = 0;
 
         stream = audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
 
         // Port A pull-ups hold the bus high at power-on; match reset().
         n6522[0]->set_ira(0xFF);
         n6522[1]->set_ira(0xFF);
+        n6522[0]->set_ca1(true); // A/R idle (pin high)
     }
     ~Mockingboard() {
         audio_system->destroy_stream(stream);
@@ -172,6 +267,7 @@ public:
         delete n6522[0];
         delete n6522[1];
         delete ay8910s;
+        delete ssi263;
     }
 
     void insert_empty_frame() {
@@ -182,6 +278,8 @@ public:
     void debug_registers();
 
     void write(uint32_t addr, uint8_t data) {   // this is address & 0xFF
+        catchup_speech();
+
         uint8_t reg = addr & 0x0F;
         uint8_t chip = (addr & 0x80) ? 0 : 1;
     
@@ -193,8 +291,7 @@ public:
         if (reg == MB_6522_ORB) {
             uint8_t pa = n6522[chip]->get_ora() & n6522[chip]->get_ddra();
             uint8_t pb = n6522[chip]->get_orb() & n6522[chip]->get_ddrb();
-            double  t  = (double)clock->get_vid_cycles() / (double)vid_cycles_rate;
-            AyBusResult r = ay8910s->busCycle(chip, pa, pb, t);
+            AyBusResult r = ay8910s->busCycle(chip, pa, pb, clock->get_vid_cycles());
             if (r.drove_data) {
                 n6522[chip]->set_ira(r.data);
             } else {
@@ -206,9 +303,18 @@ public:
                 n6522[chip]->set_ira(0xFF);
             }
         }
+
+        // Mockingboard C: A6 selects the primary SSI-263. The VIA is still
+        // selected (aliased); this write is additional.
+        if (addr & 0x40) {
+            ssi263->write(addr & 0x07, data);
+            note_ar();
+        }
     }
     
     uint8_t read(uint32_t addr) {               // this is address & 0xFF
+        catchup_speech();
+
         uint8_t reg = addr & 0x0F;
         uint8_t chip = (addr & 0x80) ? 0 : 1;
     
@@ -218,54 +324,101 @@ public:
     void generate_frame() {
         static int frames = 0;
 
-        samples_accumulated += samples_per_frame_remainder;
-        uint32_t samples_this_frame = samples_per_frame_int;
-        if (samples_accumulated >= 1.0f) {
-            samples_this_frame = samples_per_frame_int+1;
-            samples_accumulated -= 1.0f;
+        const uint64_t frame_end_vid = clock->get_vid_cycles();
+        const uint64_t vid_per_frame = clock->get_vid_cycles_per_frame();
+        const uint64_t sample_vid = ay8910s->sampleVid();
+
+        // Speaker-style stall: a stale SDL backlog (sleep / paused device)
+        // keeps the queue above MAX_QUEUE every frame and would permanently
+        // block generation unless we discard it when the synth horizon is
+        // this far behind. generateSamples still snaps sample_vid_ and
+        // drops pending register events.
+        if (frame_end_vid > sample_vid &&
+            (frame_end_vid - sample_vid) > vid_per_frame * 3) {
+            SDL_ClearAudioStream(stream);
         }
-    
-        last_cycle = clock->get_vid_cycles();
-    
-        ay8910s->generateSamples(samples_this_frame);
-    
-        // Clear the audio buffer after each frame to prevent memory buildup
-        // Send the generated audio data to the SDL audio stream
-        int abs = audio_buffer.size();
-        if (abs > 0) {
-            //printf("generate_mockingboard_frame: %zu\n", mb_d->audio_buffer.size());
-            SDL_PutAudioStreamData(stream, audio_buffer.data(), audio_buffer.size() * sizeof(float));
+
+        // Use SDL_GetAudioStreamQueued (input-format bytes) rather than
+        // SDL_GetAudioStreamAvailable (output-format bytes). Stereo F32:
+        // two floats per frame. 4410 frames is ~100ms at 44.1kHz.
+        const size_t MAX_QUEUE = 4410;
+        size_t queued_frames = 0;
+        if (stream) {
+            queued_frames = audio_system->get_stream_queued(stream) /
+                            (sizeof(float) * 2);
         }
-        audio_buffer.clear();
-    
+        int abs = 0;
+        if (queued_frames < MAX_QUEUE) {
+            catchup_speech();
+            ay8910s->generateSamples(frame_end_vid);
+            mix_speech();
+
+            abs = (int)audio_buffer.size();
+            if (abs > 0) {
+                audio_system->put_stream_data(stream, audio_buffer.data(),
+                                              audio_buffer.size() * sizeof(float));
+            }
+            audio_buffer.clear();
+        }
+
         if (DEBUG(DEBUG_MOCKINGBOARD)) {
             if (frames++ > 60) {
                 frames = 0;
-                // Get the number of samples in SDL audio stream buffer
-                int samples_in_buffer = 0;
                 if (stream) {
-                    samples_in_buffer = SDL_GetAudioStreamAvailable(stream) / sizeof(float);
+                    queued_frames = audio_system->get_stream_queued(stream) /
+                                    (sizeof(float) * 2);
                 }
-                printf("MB Status: buffer: %d, audio buffer size: %d, samples_per_frame: %d\n", samples_in_buffer, abs, samples_this_frame);
+                printf("MB Status: queued frames: %zu, audio buffer size: %d\n",
+                       queued_frames, abs);
             }
         }
+    }
+
+    void syncHorizon() {
+        ay8910s->syncHorizon();
+        if (!clock || !ssi263) {
+            return;
+        }
+        const uint64_t frame_end_vid = clock->get_vid_cycles();
+        const uint64_t vid_per_frame = clock->get_vid_cycles_per_frame();
+        const uint64_t vid_per_sec = clock->get_vid_cycles_per_second();
+        const uint64_t new_vid = (frame_end_vid > vid_per_frame)
+                                     ? frame_end_vid - vid_per_frame
+                                     : 0;
+        if (new_vid > speech_vid_ && vid_per_sec) {
+            ssi263->skip((double)(new_vid - speech_vid_) / (double)vid_per_sec);
+        }
+        speech_pending.clear();
+        speech_vid_ = new_vid;
+        speech_accum_ = 0;
+        note_ar();
     }
 
     void reset() {
         n6522[0]->reset();
         n6522[1]->reset();
         ay8910s->reset();
+        const double xck = clock ? (double)clock->get_vid_cycles_per_second() : 1020484.0;
+        ssi263->reset(xck, (double)OUTPUT_SAMPLE_RATE_INT);
+        speech_pending.clear();
+        speech_vid_ = clock ? clock->get_vid_cycles() : 0;
+        speech_accum_ = 0;
         // Port A pull-ups on the Mockingboard hold the bus high whenever
         // neither the AY nor the VIA is driving. Pre-seed IRA so the CPU
         // sees $FF on the very first ORA read (before any bus cycle).
         n6522[0]->set_ira(0xFF);
         n6522[1]->set_ira(0xFF);
+        n6522[0]->set_ca1(true);
     }
 
     DebugFormatter *debug() {
         DebugFormatter *df = new DebugFormatter();
         n6522[0]->debug(df);
         n6522[1]->debug(df);
+        df->addLine("====== SSI-263 (primary $Cn40) ======");
+        df->addLine("R0: %02X  R1: %02X  R2: %02X  R3: %02X  A/R: %d  CA1 pin: %d",
+                    ssi263->reg(0), ssi263->reg(1), ssi263->reg(2), ssi263->reg(3),
+                    (int)ssi263->request(), (int)n6522[0]->get_ca1());
         // TODO: add AY-8910s debug
         return df;
     }
@@ -300,6 +453,14 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     computer->mmu->map_c1cf_page_read_h(0xC0 + slot, { mb_read_Cx00, mb_d }, "MB_IO");
 
     mb_d->mockingboard->insert_empty_frame();
+
+    // When the audio device format changes, AudioSystem clears all streams
+    // and then invokes these callbacks so each generator can snap its
+    // timing state forward. Without this, the cleared stream would
+    // immediately refill with catch-up audio.
+    computer->audio_system->register_device_reset_callback([mb_d]() {
+        mb_d->mockingboard->syncHorizon();
+    });
 
     // this can move to the class
     // set up a reset handler to reset the chips on mockingboard

@@ -75,7 +75,7 @@ GSSquared models standard Apple II / IIgs behavior for supported machines and vi
 | `start.cli-platform` | CLI: `-p N` auto-launch | Complete | all | — | `get_status` → `platform_id` | both | `-p 0`…`5`; [CommandLine.md](CommandLine.md) |
 | `start.cli-mount` | CLI: `-dsXdY=path` mount | Complete | all | Config with slot X | Disk mounted at boot; `MOUNT` protocol | both | Overrides same slot/drive in `.gs2`; [CommandLine.md](CommandLine.md) |
 | `start.cli-sleep` | CLI: `-s` sleep vs busy-wait | Complete | all | — | Lower CPU when idle | cli | Same as Settings → Sleep/Busy Wait; [CommandLine.md](CommandLine.md) |
-| `start.cli-crt-boot` | CLI: `-g` CRT shader at boot | Complete | all | Native GPU | Shader on when guest starts | cli | Same as F7 at boot; [CommandLine.md](CommandLine.md) |
+| `start.cli-crt-boot` | CLI: `-g` Shadow Mask at boot | Complete | all | Native GPU | Shader on when guest starts | cli | Same as F7 at boot; [CommandLine.md](CommandLine.md) |
 | `start.cli-debug-socket` | CLI: `--debug PATH` | Complete | macOS, linux, win | AF_UNIX path | `HELLO` on socket | debug-socket | [CommandLine.md](CommandLine.md), [DebugProtocol.md](DebugProtocol.md) |
 | `start.cli-no-quit-confirm` | CLI: `--no-quit-confirm` | Complete | all | — | SIGTERM exits without Quit modal | cli | For harnesses; [CommandLine.md](CommandLine.md) |
 | `start.power-off-on` | Power off / on virtual machine | Complete | all | — | System Select vs running | manual | File → Close Emulation; [Select.md](Select.md) |
@@ -127,12 +127,14 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `workflow.settings.speed` | System Speed presets | Complete | all | — | 1.0 / 2.8 / 7.1 / 14.3 / Unlimited | manual | Menu is 1.0–14.3; Unlimited via F9 / OSD / hover; [Menus.md](Menus.md) |
-| `workflow.settings.sleep` | Sleep / busy-wait | Complete | all | — | CPU usage changes | cli | `-s` |
+| `workflow.settings.sleep` | Sleep / busy-wait | Complete | all | — | CPU usage changes | cli | `-s`; also sleeps when unfocused |
 | `workflow.settings.gamepad-mode` | Game Controller modes | Complete | all | — | Joyport / mouse-as-stick / gamepad | manual | [Joysticks.md](Joysticks.md) |
 | `workflow.settings.joyport-select` | Joyport Controller Select L/C/R | Complete | all | Joyport mode | AN0 behavior | manual | |
 | `workflow.settings.no-gamepad-float` | Disconnected When No Gamepad | Complete | all | — | Paddles float vs centered | manual | Total Replay visibility |
 | `workflow.settings.modifier-swap` | OA/CA modifier mapping swap | Planned | all | — | — | — | No host menu; mappings are fixed in [KeyboardShortcuts.md](KeyboardShortcuts.md) |
-| `workflow.settings.mono-helper` | Mono Helper (audio) | Complete | all | — | Menu toggle | manual | Settings → Mono Helper; [Menus.md](Menus.md) |
+| `workflow.settings.mono-helper` | Mono Helper (audio) | Complete | all | — | Menu toggle | manual | Settings → Mockingboard → Mono Helper; [Menus.md](Menus.md) |
+| `workflow.settings.mb-timbre` | Mockingboard Timbre | Complete | all | Running + card | Square / Soft Square / Warm Sine / Organ / Sawtooth | manual | Settings → Mockingboard → Timbre |
+| `workflow.settings.pause-minimized` | Pause when Minimized | Complete | macOS, win, linux | — | Guest frozen while window minimized | manual | Off by default |
 | `workflow.settings.rmb-accel` | Right Mouse Button Accelerate | Complete | all | — | Faster CPU while RMB held | manual | Settings menu; [Mouse.md](Mouse.md) |
 
 ### Keyboard shortcuts (emulator)
@@ -140,13 +142,13 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `input.shortcut.f1-release-mouse` | F1 release captured mouse | Complete | all | Capture on | Cursor free | manual | [KeyboardShortcuts.md](KeyboardShortcuts.md) |
-| `input.shortcut.f2-display-cycle` | F2 cycle display engine | Complete | all | — | Composite/RGB/mono | manual | |
+| `input.shortcut.f2-display-cycle` | F2 cycle display engine | Complete | all | — | Composite/RGB/mono/GS Composite | manual | GS Composite skipped on II / IIe |
 | `input.shortcut.f3-fullscreen` | F3 fullscreen toggle | Complete | all | — | Window borderless | manual | |
 | `input.shortcut.f4-osd` | F4 Control Panel | Complete | all | — | Panel opens | manual | |
-| `input.shortcut.f5-ntsc-mode` | F5 pixel-blur vs rectangular | Complete | all | — | Picture changes | manual | Scaling, not NTSC vs legacy; [Displays.md](Displays.md) |
+| `input.shortcut.f5-ntsc-mode` | F5 Smooth vs Sharp scaling | Complete | all | — | Picture changes | manual | Scaling, not NTSC vs legacy; [Displays.md](Displays.md) |
 | `input.shortcut.ctrl-f5-filter` | Ctrl+F5 linear vs nearest | Planned | all | — | — | — | Not implemented; F5 is the scale-mode toggle |
 | `input.shortcut.f6-joyport-cycle` | F6 joystick mode cycle | Complete | all | — | Joyport/gamepad/mouse | manual | |
-| `input.shortcut.f7-crt` | F7 CRT shader | Complete | all | — | Shader toggles | manual | |
+| `input.shortcut.f7-crt` | F7 Shadow Mask | Complete | all | GPU shader | Shader toggles | manual | Display → Shadow Mask; `-g` at boot |
 | `input.shortcut.f9-speed` | F9 / Shift+F9 speed | Complete | all | — | Speed changes | manual | |
 | `input.shortcut.f10-debugger` | F10 debugger | Complete | all | — | Debugger window | manual | |
 | `input.shortcut.gs-french-layout` | IIgs French AZERTY via guest CP | Complete | all | Guest set to French | French characters | manual | Host menu does not pick layout |
@@ -158,11 +160,14 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 | `display.engine.composite` | Composite (NTSC) monitor | Complete | all | — | Color artifacting | manual | Cycle-accurate path |
 | `display.engine.rgb` | GS RGB monitor | Complete | all | IIgs default RGB | Exact GS palette mapping | manual | [Displays.md](Displays.md) |
 | `display.engine.mono` | Monochrome green/amber/white | Complete | all | — | HUD + menu switch | manual | |
+| `display.engine.gs-composite` | GS Composite monitor | Complete | all | IIgs | Menu / F2 | manual | RGB through composite encoder; [Displays.md](Displays.md) |
+| `display.scaling` | Smooth / Sharp scaling | Complete | all | — | F5 / Display → Scaling | manual | |
+| `display.phosphor` | Phosphor persistence | Complete | all | GPU decoder | Display → Phosphor Persistence | manual | Mono green/amber/white; on by default |
 | `display.hud.stats` | HUD → Stats overlay | Complete | all | — | FPS/stats visible | manual | Off by default |
 | `display.hud.drives` | HUD → Drives strip | Complete | all | — | Activity strip | manual | On by default |
 | `display.fullscreen` | Full Screen | Complete | all | — | Borderless window | manual | |
 | `display.second-sight-text` | Second Sight Text mode | Complete | all | IIgs + Second Sight | Menu enabled | manual | [Cards_SecondSight.md](Cards_SecondSight.md) |
-| `display.crt-shader` | CRT GPU shader | Complete | all | Native GL/D3D12 | F7 toggles | cli | `-g` at boot; [Displays.md](Displays.md) |
+| `display.crt-shader` | Shadow Mask (CRT GPU) | Complete | all | Native GPU | F7 toggles | cli | `-g` at boot; Display → Shadow Mask; [Displays.md](Displays.md) |
 | `display.hover-controls` | Hover speed/display widgets | Complete | all | Mouse not captured | Face buttons + pickers | manual | Automatic left strip; [OSD.md](OSD.md) |
 | `display.pal-timing` | PAL video timing | Complete | all | PAL `.gs2` / clock | 50 Hz behavior | manual | [Displays.md](Displays.md), [ConfigFiles.md](ConfigFiles.md) |
 | `display.floating-bus` | Floating-bus reads | Complete | all | — | Demoscene titles | debug-socket | [Displays.md](Displays.md) |
@@ -174,7 +179,7 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `audio.menu.fx-toggle` | Drive seek sound effects | Complete | all | — | Drive seek sounds | manual | Always on; stereo pan by drive; no Sound menu |
 | `audio.menu.volume` | Master volume | By choice (omitted) | all | — | — | — | Use host OS volume; no in-app slider |
-| `audio.menu.mb-decorrelate` | Mockingboard decorrelation | Complete | all | Mockingboard | Wider stereo image | manual | Settings → Mono Helper |
+| `audio.menu.mb-decorrelate` | Mockingboard decorrelation | Complete | all | Mockingboard | Wider stereo image | manual | Settings → Mockingboard → Mono Helper |
 
 ### Debug menu and OSD
 
@@ -191,8 +196,8 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 | `workflow.osd.open` | Open Control Panel | Complete | all | — | F4 or tab button | manual | |
 | `workflow.osd.mount-drive` | Mount/unmount via drive icons | Complete | all | — | Picker; dirty save prompt | both | `MOUNT` / `UNMOUNT` |
 | `workflow.osd.drag-drop-disk` | Drag disk image onto window | Complete | all | — | Panel opens; drop on drive | manual | |
-| `workflow.osd.serial-buttons` | Serial/parallel attachment UI | Complete | all | Ports present | File/modem/clipboard/serial | manual | [SerialConnections.md](SerialConnections.md) |
-| `workflow.osd.host-folder` | Host Folder… (Host FST) | Complete | macOS, win, linux | IIgs running | `:Host` path changes | manual | Not on web |
+| `workflow.osd.serial-buttons` | Serial/parallel attachment UI | Complete | all | Ports present | File/Printer/modem/clipboard/serial/netprinter | manual | [SerialConnections.md](SerialConnections.md) |
+| `workflow.osd.host-folder` | Host Folder card (Host FST) | Complete | macOS, win, linux | IIgs running | `:Host` path changes | manual | Pencil on connections row; not on web |
 | `workflow.osd.slot-view` | Slot card display | Complete | all | — | Cards listed | manual | Editable when configuring |
 
 ### Docs menu
@@ -201,7 +206,8 @@ Native menus: [Menus.md](Menus.md). Control Panel / hover strip / drives: [OSD.m
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `workflow.docs.online` | Online Documentation | Complete | all | Network | Browser opens docs | manual | [Menus.md](Menus.md) |
 | `workflow.docs.donate` | Donate link | Complete | all | Network | Browser opens | manual | |
-| `workflow.docs.check-updates` | Check For Updates | Complete | all | Network | Releases page | manual | Docs menu |
+| `workflow.docs.check-updates` | Check For Updates | Complete | all | Network | Updates page | manual | Docs menu |
+| `workflow.docs.notify-update` | New-version button on System Select | Complete | macOS, win, linux | Network; behind latest release | Button under + New / Launch / Edit...; click opens HTML updates page | manual | Fail-closed; not on web. [NotifyUpdate.md](NotifyUpdate.md) |
 
 ---
 
@@ -254,12 +260,14 @@ WOZ-focused floppy emulation speeds with host CPU throttle (disk “runs faster�
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `conn.file-capture` | Serial/parallel → file | Complete | macOS, win, linux | Port | Bytes in file | manual | |
 | `conn.clipboard` | Serial/parallel → clipboard | Complete | macOS, win, linux | Port | Text on host clipboard | manual | Strip bit 7; CR→LF |
+| `conn.printer` | Serial → Printer (file + gs2print ticket) | Complete | macOS, win, linux | SSC or IIgs SCC | Dump file; sidecar if installed | manual | Parallel has no Printer; no in-app ImageWriter |
+| `conn.netprinter` | Serial → raw TCP printer | Complete | macOS, win, linux | SSC or IIgs SCC | Host:port under button | manual | [SerialConnections.md](SerialConnections.md); not on web |
 | `conn.modem` | Hayes modem (SCC / SSC) | Complete | macOS, win, linux | Not web | TCP via SDL_net | manual | [Documentation.md](Documentation.md); web: `web.no-modem` |
 | `conn.host-serial` | Attach host UART | Complete | macOS, win, linux | `device=serial` | Data to real port | manual | [SerialPortSpec.md](SerialPortSpec.md) |
 | `conn.gs-scc-ab` | IIgs built-in SCC ports A/B | Complete | all | IIgs | OSD buttons slot 1/2 | manual | |
 | `net.uthernet2-slirp` | Uthernet II via SLIRP | Complete | macOS, win, linux | Card + driver | TCP/IP in guest | manual | [Cards_UthernetII.md](Cards_UthernetII.md) |
 
-`.gs2` `[[connections]]`: `file`, `modem`, `echo`, `clipboard`, `serial`, `none` — [SystemConfigTOML.md](SystemConfigTOML.md).
+`.gs2` `[[connections]]`: `file`, `modem`, `echo`, `clipboard`, `serial`, `printer`, `netprinter`, `none` — [SystemConfigTOML.md](SystemConfigTOML.md).
 
 ---
 
@@ -269,7 +277,7 @@ WOZ-focused floppy emulation speeds with host CPU throttle (disk “runs faster�
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `audio.speaker.fx` | Drive/speaker sound effects | Complete | all | FX on | Seek clicks | manual | Filtered speaker path |
 | `audio.ensoniq` | IIgs Ensoniq DOC | Complete | all | IIgs | Sound in GS titles | manual | [Documentation.md](Documentation.md) |
-| `audio.mockingboard` | Mockingboard AY/6522 | Complete | all | Card(s) | mb-audit; games | manual | [Cards_Mockingboard.md](Cards_Mockingboard.md) |
+| `audio.mockingboard` | Mockingboard AY/6522 | Complete | all | Card(s) | mb-audit; games | manual | [Cards_Mockingboard.md](Cards_Mockingboard.md); SSI-263 speech on Mockingboard C |
 | `audio.ensoniq-stereo` | Stereo when guest uses stereo | Complete | all | IIgs | Pan in headphones | manual | Mono → both channels |
 
 ---
@@ -295,7 +303,7 @@ WOZ-focused floppy emulation speeds with host CPU throttle (disk “runs faster�
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `debug.protocol.hello` | Debug protocol handshake | Complete | macOS, linux, win | `--debug PATH` | `HELLO` reply | debug-socket | [DebugProtocol.md](DebugProtocol.md) |
 | `debug.protocol.run-control` | Pause / step / continue | Complete | macOS, linux, win | Socket | `EVT_STOPPED` | debug-socket | |
-| `debug.protocol.mem-regs` | READMEM / WRITEMEM / GET_REGS | Complete | macOS, linux, win | Socket | Bytes match | debug-socket | |
+| `debug.protocol.mem-regs` | READMEM / WRITEMEM / GET_REGS / LOADMEM | Complete | macOS, linux, win | Socket | Bytes match | debug-socket | `load_mem` loads a host file |
 | `debug.protocol.breakpoints` | Breakpoints | Complete | macOS, linux, win | Socket | Stop at PC | debug-socket | |
 | `debug.protocol.keys` | KEYEVENT / PASTE_TEXT | Complete | macOS, linux, win | Socket | Guest sees input | debug-socket | |
 | `debug.protocol.video-text` | VIDEO_TEXT snapshot | Complete | macOS, linux, win | Socket | 40-col text bytes | debug-socket | Not bitmap |
@@ -317,7 +325,8 @@ Use `c.quit()` / protocol `QUIT` in harnesses — avoid SIGKILL without `--no-qu
 | `web.mount-picker` | File picker instead of native dialog | Complete | web | — | Mount from picker | manual | |
 | `web.no-persist-mounts` | Mounts lost on reload | Complete | web | — | Refresh clears | manual | MEMFS |
 | `web.no-modem` | No SCC modem / SDL_net | Complete | web | — | Modem option absent | manual | Compiled out |
-| `web.no-host-fst-picker` | No Host Folder… | Complete | web | — | Control absent | manual | |
+| `web.no-netprinter` | No Net Printer / gs2print | Complete | web | — | Attachments absent | manual | File capture still works |
+| `web.no-host-fst-picker` | No Host Folder card | Complete | web | — | Control absent | manual | |
 | `web.audio-gesture` | Audio after user gesture | Complete | web | — | Click to start overlay | manual | Browser policy |
 | `web.deploy-live` | gssquared.net/live deploy | Complete | web | Server | `/live` loads | manual | `scripts/deploy-web.sh` |
 
@@ -381,6 +390,14 @@ Generic ProDOS block devices (older/smaller interfaces).
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `device.memexpansion.bank` | Up to 1MB expansion | Complete | all | Card | RAM tests / programs | manual | |
 
+### RamWorks (`ramworks`)
+
+8MB auxiliary RAM on the IIe family. Slot 0 is labeled **Aux** in the editor. Not the Slinky card.
+
+| `id` | feature | status | hosts | preconditions | verify | automation | notes |
+|------|---------|--------|-------|---------------|--------|------------|-------|
+| `device.ramworks.8mb` | 8MB aux banks (128 × 64K) | Complete | all | IIe family, slot 0 | `$C073` bank; video stays AUX 0 | manual | [Cards_RamWorks.md](Cards_RamWorks.md) |
+
 ### Thunderclock Plus (`thunder_clock`)
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
@@ -406,7 +423,9 @@ Generic ProDOS block devices (older/smaller interfaces).
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `device.mockingboard.dual` | Two cards / four voices | Complete | all | Slots | Ultima V etc. | manual | [Cards_Mockingboard.md](Cards_Mockingboard.md) |
-| `device.mockingboard.decorrelate` | Menu decorrelation | Complete | all | Card | Wider stereo | manual | Settings → Mono Helper |
+| `device.mockingboard.decorrelate` | Menu decorrelation | Complete | all | Card | Wider stereo | manual | Settings → Mockingboard → Mono Helper |
+| `device.mockingboard.timbre` | AY timbre | Complete | all | Card | Settings → Mockingboard → Timbre | manual | Square is hardware; others are host flavors |
+| `device.mockingboard.speech` | Mockingboard C SSI-263 speech | Complete | all | Card | Speech titles talk | manual | No extra setting |
 
 ### Apple Mouse III (`mouse`, `applemouseiii`)
 
@@ -427,7 +446,8 @@ See [Cards_Parallel.md](Cards_Parallel.md).
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
-| `device.ssc.connections` | Same virtual devices as SCC | Complete | all | Card + `[[connections]]` | Modem/file/serial | manual | [Cards_SuperSerial.md](Cards_SuperSerial.md) |
+| `device.ssc.connections` | Same virtual devices as SCC | Complete | all | Card + `[[connections]]` | Modem/file/serial/netprinter | manual | [Cards_SuperSerial.md](Cards_SuperSerial.md) |
+| `device.ssc.net-printer` | Raw TCP printer client | Complete | macOS, win, linux | Card + `device = "netprinter"` | Host:port under button; bytes on TCP | manual | [NetPrinter.md](NetPrinter.md); absent on web |
 
 ### Uthernet II (`uthernet2`)
 
@@ -463,14 +483,14 @@ Share host folder as GS/OS `:Host`.
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
 | `device.hostfst.install` | Install FST from `/GS2.DRIVERS` | Complete | macOS, win, linux | GS/OS + BazFast | Installer | manual | One-time per boot volume |
-| `device.hostfst.pick-folder` | Host Folder… | Complete | macOS, win, linux | IIgs running | Finder shows `:Host` | manual | Default: Documents |
+| `device.hostfst.pick-folder` | Host Folder card | Complete | macOS, win, linux | IIgs running | Finder shows `:Host` | manual | Pencil on Control Panel connections row; default: Documents |
 | `device.hostfst.windows-ads` | NTFS ADS metadata on Windows | Complete | win | NTFS folder | Forks preserved | manual | [HostFST.md](HostFST.md) |
 
 ### Motherboard: display (`display`)
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
-| `device.display.engines` | NTSC / RGB / mono engines | Complete | all | — | Menu switch | manual | Not a slot card |
+| `device.display.engines` | NTSC / RGB / GS Composite / mono engines | Complete | all | — | Menu switch | manual | GS Composite is IIgs-only; not a slot card |
 | `device.display.scanner-pal` | PAL scanner variant | Complete | all | PAL config | 50 Hz | manual | |
 
 ### Motherboard: speaker (`speaker`)
@@ -515,7 +535,8 @@ Main versus auxiliary mapping for the IIe family lives on `MMU_IIe2`. It is not 
 
 | `id` | feature | status | hosts | preconditions | verify | automation | notes |
 |------|---------|--------|-------|---------------|--------|------------|-------|
-| `device.scc.printer-port` | GS printer on serial | Partial | all | IIgs | Print to file | manual | Not full printer |
+| `device.scc.printer-port` | GS printer on serial | Partial | all | IIgs | `device = "printer"` | manual | Capture + gs2print ticket; not ImageWriter |
+| `device.scc.net-printer` | Raw TCP printer client | Complete | macOS, win, linux | IIgs | `device = "netprinter"` | Host:port under button; bytes on TCP | manual | [NetPrinter.md](NetPrinter.md); absent on web |
 | `device.scc.modem-b` | Modem on port B | Complete | macOS, win, linux | IIgs | Hayes TCP | manual | Absent on web |
 
 ### Motherboard: RTC / PRAM (`rtc_pram`)

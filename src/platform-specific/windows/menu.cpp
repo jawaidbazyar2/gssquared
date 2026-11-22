@@ -22,6 +22,8 @@
 #define IDM_SETTINGS_RMB_ACCEL    804
 #define IDM_FILE_OPEN_CONFIG      805
 #define IDM_SETTINGS_PAUSE_MINIMIZED 806
+#define IDM_SETTINGS_CPU_TRACE       807
+#define IDM_SETTINGS_SAVE_TRACE_EXIT 808
 #define IDM_HELP_OPEN_DOCS        900
 #define IDM_HELP_DONATE           901
 #define IDM_HELP_CHECK_UPDATES    902
@@ -39,6 +41,9 @@ static HMENU g_speedMenu      = NULL;
 static HMENU g_controllerMenu = NULL;
 static HMENU g_joyportSelectMenu = NULL;
 static HMENU g_appleKeysMenu = NULL;
+static HMENU g_debugMenu     = NULL;
+static HMENU g_mockingboardMenu = NULL;
+static HMENU g_ayWaveformMenu = NULL;
 static HMENU g_monitorMenu    = NULL;
 static HMENU g_hudMenu        = NULL;
 static HMENU g_scalingMenu    = NULL;
@@ -228,6 +233,51 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
+    if (popup == g_debugMenu) {
+        int n = GetMenuItemCount(g_debugMenu);
+        for (int i = 0; i < n; ++i) {
+            UINT id = getItemId(g_debugMenu, i);
+            if (id == IDM_SETTINGS_CPU_TRACE) {
+                setItemCheck(g_debugMenu, i, mi->getCpuTrace());
+                setItemEnable(g_debugMenu, i, true);
+            } else if (id == IDM_SETTINGS_SAVE_TRACE_EXIT) {
+                setItemCheck(g_debugMenu, i, mi->getSaveTraceOnExit());
+                setItemEnable(g_debugMenu, i, true);
+            }
+        }
+        return;
+    }
+
+    if (popup == g_mockingboardMenu) {
+        bool decorr_on = mi->getAudioDecorrelation();
+        int n = GetMenuItemCount(g_mockingboardMenu);
+        for (int i = 0; i < n; ++i) {
+            MENUITEMINFOW mii = {};
+            mii.cbSize = sizeof(mii);
+            mii.fMask  = MIIM_ID | MIIM_SUBMENU;
+            GetMenuItemInfoW(g_mockingboardMenu, static_cast<UINT>(i), TRUE, &mii);
+            if (mii.hSubMenu) {
+                setItemEnable(g_mockingboardMenu, i, running);
+            } else if (mii.wID == IDM_SETTINGS_AUDIO_DECORR) {
+                setItemCheck(g_mockingboardMenu,  i, decorr_on);
+                setItemEnable(g_mockingboardMenu, i, running);
+            }
+        }
+        return;
+    }
+
+    if (popup == g_ayWaveformMenu) {
+        int current = mi->getAyWaveform();
+        int n = GetMenuItemCount(g_ayWaveformMenu);
+        for (int i = 0; i < n; ++i) {
+            int id = static_cast<int>(getItemId(g_ayWaveformMenu, i));
+            int wf = id - static_cast<int>(MENU_AY_WAVEFORM_SQUARE);
+            setItemCheck(g_ayWaveformMenu, i, wf == current);
+            setItemEnable(g_ayWaveformMenu, i, running);
+        }
+        return;
+    }
+
     if (popup == g_joyportSelectMenu) {
         int current = mi->getJoyportSelect(); // 0=left, 1=center, 2=right
         bool joyport_on = (mi->getCurrentControllerMode() == 2);
@@ -275,7 +325,6 @@ static void updatePopupState(HMENU popup)
     // ── Settings (top-level popup; contains Speed+Controller submenus + Sleep) ─
     if (popup == g_settingsPopup) {
         bool sleeping   = mi->getSleepMode();
-        bool decorr_on  = mi->getAudioDecorrelation();
         bool rmb_accel  = mi->getRightMouseAccel();
         int n = GetMenuItemCount(g_settingsPopup);
         for (int i = 0; i < n; ++i) {
@@ -286,9 +335,6 @@ static void updatePopupState(HMENU popup)
             } else if (id == IDM_SETTINGS_PAUSE_MINIMIZED) {
                 setItemCheck(g_settingsPopup, i, mi->getPauseWhenMinimized());
                 setItemEnable(g_settingsPopup, i, true);
-            } else if (id == IDM_SETTINGS_AUDIO_DECORR) {
-                setItemCheck(g_settingsPopup,  i, decorr_on);
-                setItemEnable(g_settingsPopup, i, running);
             } else if (id == IDM_SETTINGS_RMB_ACCEL) {
                 setItemCheck(g_settingsPopup,  i, rmb_accel);
                 setItemEnable(g_settingsPopup, i, running);
@@ -297,8 +343,8 @@ static void updatePopupState(HMENU popup)
                 mii.cbSize = sizeof(mii);
                 mii.fMask  = MIIM_SUBMENU;
                 GetMenuItemInfoW(g_settingsPopup, static_cast<UINT>(i), TRUE, &mii);
-                // Apple Keys is a host preference; Speed and Game Controller need a machine.
-                bool enable = running || (mii.hSubMenu == g_appleKeysMenu);
+                // Apple Keys and Debug are host preferences; Speed, Game Controller, and Mockingboard need a machine.
+                bool enable = running || (mii.hSubMenu == g_appleKeysMenu) || (mii.hSubMenu == g_debugMenu);
                 setItemEnable(g_settingsPopup, i, enable);
             }
         }
@@ -427,6 +473,8 @@ static void dispatchCommand(UINT id)
     // Settings
     case IDM_SETTINGS_SLEEP:        mi->toggleSleepMode();         return;
     case IDM_SETTINGS_PAUSE_MINIMIZED: mi->togglePauseWhenMinimized(); return;
+    case IDM_SETTINGS_CPU_TRACE:    mi->toggleCpuTrace();          return;
+    case IDM_SETTINGS_SAVE_TRACE_EXIT: mi->toggleSaveTraceOnExit(); return;
     case IDM_SETTINGS_AUDIO_DECORR: mi->toggleAudioDecorrelation(); return;
     case IDM_SETTINGS_RMB_ACCEL:    mi->toggleRightMouseAccel();    return;
 
@@ -453,6 +501,12 @@ static void dispatchCommand(UINT id)
     case MENU_APPLE_KEYS_COMMAND:     mi->setAppleKeyLayout(0); return;
     case MENU_APPLE_KEYS_ALT:         mi->setAppleKeyLayout(1); return;
     case MENU_APPLE_KEYS_LEFT_OPTION: mi->setAppleKeyLayout(2); return;
+
+    case MENU_AY_WAVEFORM_SQUARE:      mi->setAyWaveform(0); return;
+    case MENU_AY_WAVEFORM_SOFT_SQUARE: mi->setAyWaveform(1); return;
+    case MENU_AY_WAVEFORM_WARM_SINE:   mi->setAyWaveform(2); return;
+    case MENU_AY_WAVEFORM_ORGAN:       mi->setAyWaveform(3); return;
+    case MENU_AY_WAVEFORM_SAWTOOTH:    mi->setAyWaveform(4); return;
 
     default:
         // Drive toggle: IDs [MENU_DISK_TOGGLE, MENU_DISK_TOGGLE + N)
@@ -603,6 +657,21 @@ static void setupMenus()
     AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_controllerMenu), L"Game Controller");
 
+    g_mockingboardMenu = CreatePopupMenu();
+    AppendMenuW(g_mockingboardMenu, MF_STRING, IDM_SETTINGS_AUDIO_DECORR, L"Mono Helper");
+
+    g_ayWaveformMenu = CreatePopupMenu();
+    AppendMenuW(g_ayWaveformMenu, MF_STRING, MENU_AY_WAVEFORM_SQUARE,      L"Square");
+    AppendMenuW(g_ayWaveformMenu, MF_STRING, MENU_AY_WAVEFORM_SOFT_SQUARE, L"Soft Square");
+    AppendMenuW(g_ayWaveformMenu, MF_STRING, MENU_AY_WAVEFORM_WARM_SINE,   L"Warm Sine");
+    AppendMenuW(g_ayWaveformMenu, MF_STRING, MENU_AY_WAVEFORM_ORGAN,       L"Organ");
+    AppendMenuW(g_ayWaveformMenu, MF_STRING, MENU_AY_WAVEFORM_SAWTOOTH,    L"Sawtooth");
+    AppendMenuW(g_mockingboardMenu, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_ayWaveformMenu), L"Timbre");
+
+    AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_mockingboardMenu), L"Mockingboard");
+
     g_appleKeysMenu = CreatePopupMenu();
     AppendMenuW(g_appleKeysMenu, MF_STRING, MENU_APPLE_KEYS_COMMAND,     L"Command = Open Apple");
     AppendMenuW(g_appleKeysMenu, MF_STRING, MENU_APPLE_KEYS_ALT,         L"Alt = Open Apple");
@@ -610,9 +679,14 @@ static void setupMenus()
     AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_appleKeysMenu), L"Apple Keys");
 
+    g_debugMenu = CreatePopupMenu();
+    AppendMenuW(g_debugMenu, MF_STRING, IDM_SETTINGS_CPU_TRACE,       L"CPU Trace");
+    AppendMenuW(g_debugMenu, MF_STRING, IDM_SETTINGS_SAVE_TRACE_EXIT, L"Write Trace File on Exit");
+    AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_debugMenu), L"Debug");
+
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_SLEEP,        L"Sleep / Busy Wait");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_PAUSE_MINIMIZED, L"Pause when Minimized");
-    AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_AUDIO_DECORR, L"Mono Helper");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_RMB_ACCEL,    L"Right Mouse Button Accelerate");
 
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
@@ -686,6 +760,8 @@ void initMenu(SDL_Window *window)
     g_settingsPopup  = NULL;
     g_speedMenu      = NULL;
     g_controllerMenu = NULL;
+    g_appleKeysMenu  = NULL;
+    g_debugMenu      = NULL;
     g_monitorMenu    = NULL;
     g_helpPopup      = NULL;
     g_driveKeys.clear();

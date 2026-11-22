@@ -265,11 +265,11 @@ the phase 1 CPU decoders.
 - **Shader source and build.** `assets/shaders/ntsc.frag.hlsl` is SDL3-convention
   HLSL (same register spaces and PSInput as `crt.frag.hlsl`).
   `scripts/compile_shaders_macos.sh` compiles it HLSL → SPIR-V (glslang) → MSL
-  (spirv-cross) and writes the committed `ntsc.frag.metal`. That is the only
-  backend built today. DXIL and SPIR-V will also come from the HLSL (DXC or a
-  shader cross-compiler service), not from GLSL as the deliverables list below
-  says. Without `ntsc.frag.dxil` / `.spv`, Windows and Linux fall back to the
-  CPU decoders automatically.
+  (spirv-cross) and writes the committed `ntsc.frag.metal`. `scripts/compile_crt_shader.sh`
+  compiles the same HLSL to `ntsc.frag.dxil` and `ntsc.frag.spv` (and the same
+  for `gscomposite`). The HLSL already uses the post-shadercross interpolant
+  semantics, so the script calls DXC directly. Without those blobs, Windows and
+  Linux fall back to the CPU decoders automatically.
 - **YIQ weights plus matrix, not `Wrgb`.** The uniforms are the YIQ weights
   `w[phase][tap]` (60 `float4`) and the decoder matrix rows `m[3]`. The shader
   sums YIQ over the lit taps in the same order as the CPU, then applies `m`,

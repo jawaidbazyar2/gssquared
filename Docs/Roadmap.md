@@ -97,10 +97,17 @@
 [X] Implement file type and URL associations — [ProtocolHandlers](ProtocolHandlers.md)
 [X] Fix all known / pending bugs  
 
-## Post-1.0
+## Release 1.1
+
+[X] Refactor MB to use new fixed-point synth  
+[ ] Full international keyboard support for GS
+
+## Release 1.2
 
 [ ] Woz 2.1 Flux tracks
-[ ] Full international keyboard support for GS
-[ ] Refactor MB to use new fixed-point synth  
-[ ] Optimize / cache UI elements  
 [ ] AppleTalk-shaped Host folder / network file server support for ProDOS
+
+
+## Post-1.0
+
+[ ] Optimize / cache UI elements  

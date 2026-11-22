@@ -53,9 +53,9 @@ The debug-protocol `MOUNT` command uses **0-based** drives; the CLI does not. Se
 
 Same as **Settings → Sleep / Busy Wait**. The emulator sleeps between frames instead of spinning, which lowers host CPU when you are not chasing maximum speed.
 
-## `-g` — CRT shader at boot
+## `-g` — Shadow Mask at boot
 
-Enables the GPU CRT effect when guest emulation starts (same as pressing **F7** with the shader off). See [Displays](Displays.md).
+Enables the GPU CRT / shadow-mask effect when guest emulation starts (same as pressing **F7** with **Display → Shadow Mask** off). See [Displays](Displays.md).
 
 ## `--debug PATH` / `-D PATH`
 

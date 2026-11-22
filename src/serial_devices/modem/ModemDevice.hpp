@@ -51,6 +51,7 @@ class ModemDevice : public SerialDevice {
         char hud_last_cmd_[40]{};
         char hud_peer_[48]{};
         std::atomic<bool> hud_ringing_{false};
+        std::atomic<bool> hud_listening_{false};
         std::string command_buffer;
         NET_StreamSocket *socket;          /* answered / dialed session — CD follows this */
         NET_StreamSocket *pending_socket;  /* inbound, not yet ATA */
@@ -234,14 +235,17 @@ class ModemDevice : public SerialDevice {
         void start_listen() {
             server = NET_CreateServer(nullptr, LISTEN_PORT);
             if (!server) {
+                hud_listening_.store(false, std::memory_order_relaxed);
                 printf("ModemDevice: listen %u failed: %s (outbound only)\n",
                        static_cast<unsigned>(LISTEN_PORT), SDL_GetError());
             } else {
+                hud_listening_.store(true, std::memory_order_relaxed);
                 printf("ModemDevice: listening on %u\n", static_cast<unsigned>(LISTEN_PORT));
             }
         }
 
         void stop_listen() {
+            hud_listening_.store(false, std::memory_order_relaxed);
             if (server) {
                 NET_DestroyServer(server);
                 server = nullptr;
@@ -838,6 +842,17 @@ class ModemDevice : public SerialDevice {
         }
 
     public:
+        bool is_online() const {
+            const int st = hud_state_.load(std::memory_order_relaxed);
+            return st == STATE_ONLINE || st == STATE_ESCAPE;
+        }
+        bool is_ringing() const {
+            return hud_ringing_.load(std::memory_order_relaxed);
+        }
+        bool is_listening() const {
+            return hud_listening_.load(std::memory_order_relaxed);
+        }
+
         void format_hud_status(char *buf, size_t n) const override {
             char hs[24];
             format_handshake(hs, sizeof(hs));

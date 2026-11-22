@@ -233,6 +233,140 @@ bool https_get_to_file(const std::string& url, const std::string& dest_path, uin
     return out.ok;
 }
 
+bool https_get_to_string(const std::string& url, uint64_t max_bytes, int timeout_ms,
+                         const std::string& user_agent, const std::atomic<bool> *cancel,
+                         HttpsGetResult& out) {
+    out = HttpsGetResult{};
+    const int timeout = timeout_ms > 0 ? timeout_ms : 8000;
+    const std::string ua = user_agent.empty() ? std::string("GSSquared") : user_agent;
+    const std::wstring wide_url = widen(url);
+    if (wide_url.empty()) {
+        out.error = "URL must be https";
+        return false;
+    }
+
+    URL_COMPONENTS parts{};
+    parts.dwStructSize = sizeof(parts);
+    wchar_t host[512];
+    wchar_t path[4096];
+    wchar_t extra[4096];
+    parts.lpszHostName = host;
+    parts.dwHostNameLength = sizeof(host) / sizeof(host[0]);
+    parts.lpszUrlPath = path;
+    parts.dwUrlPathLength = sizeof(path) / sizeof(path[0]);
+    parts.lpszExtraInfo = extra;
+    parts.dwExtraInfoLength = sizeof(extra) / sizeof(extra[0]);
+    if (!WinHttpCrackUrl(wide_url.c_str(), 0, 0, &parts) || parts.nScheme != INTERNET_SCHEME_HTTPS) {
+        out.error = "URL must be https";
+        return false;
+    }
+
+    HINTERNET session = WinHttpOpen(widen(ua).c_str(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+                                    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    if (session == nullptr) {
+        out.error = "Failed to open HTTP session";
+        return false;
+    }
+    WinHttpSetTimeouts(session, timeout, timeout, timeout, timeout);
+
+    HINTERNET connection = WinHttpConnect(session, host, parts.nPort, 0);
+    if (connection == nullptr) {
+        WinHttpCloseHandle(session);
+        out.error = "Failed to connect";
+        return false;
+    }
+
+    const std::wstring object = std::wstring(path, parts.dwUrlPathLength) + std::wstring(extra, parts.dwExtraInfoLength);
+    HINTERNET request = WinHttpOpenRequest(connection, L"GET", object.c_str(), nullptr,
+                                           WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                           WINHTTP_FLAG_SECURE);
+    if (request == nullptr) {
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        out.error = "Failed to open HTTP request";
+        return false;
+    }
+
+    bool ok = false;
+    if (cancel != nullptr && cancel->load()) {
+        out.error = "Download canceled";
+    } else if (!WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0)
+               || !WinHttpReceiveResponse(request, nullptr)) {
+        out.error = (cancel != nullptr && cancel->load()) ? "Download canceled" : "Download failed";
+    } else {
+        std::string status_text;
+        if (!query_header(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, status_text)) {
+            out.error = "Download failed";
+        } else {
+            try {
+                out.status = std::stoi(status_text);
+            } catch (...) {
+                out.status = 0;
+            }
+            if (out.status != 200) {
+                out.error = "Server returned status " + std::to_string(out.status);
+            } else {
+                std::string length_text;
+                if (query_header(request, WINHTTP_QUERY_CONTENT_LENGTH, WINHTTP_HEADER_NAME_BY_INDEX, length_text)) {
+                    try {
+                        if (std::stoull(length_text) > max_bytes) {
+                            out.error = "Response too large";
+                        }
+                    } catch (...) {
+                    }
+                }
+                if (out.error.empty()) {
+                    for (;;) {
+                        if (cancel != nullptr && cancel->load()) {
+                            out.error = "Download canceled";
+                            out.body.clear();
+                            break;
+                        }
+                        DWORD available = 0;
+                        if (!WinHttpQueryDataAvailable(request, &available)) {
+                            out.error = "Download failed";
+                            out.body.clear();
+                            break;
+                        }
+                        if (available == 0) {
+                            break;
+                        }
+                        std::vector<char> buf(available);
+                        DWORD read = 0;
+                        if (!WinHttpReadData(request, buf.data(), available, &read)) {
+                            out.error = "Download failed";
+                            out.body.clear();
+                            break;
+                        }
+                        if (read == 0) {
+                            break;
+                        }
+                        if (out.body.size() + read > max_bytes) {
+                            out.error = "Response too large";
+                            out.body.clear();
+                            break;
+                        }
+                        out.body.append(buf.data(), read);
+                    }
+                    ok = out.error.empty();
+                }
+            }
+        }
+    }
+
+    WinHttpCloseHandle(request);
+    WinHttpCloseHandle(connection);
+    WinHttpCloseHandle(session);
+    out.ok = ok;
+    if (!out.ok && out.error.empty()) {
+        out.error = "Download failed";
+    }
+    if (!out.ok) {
+        out.body.clear();
+    }
+    return out.ok;
+}
+
 bool resolve_redirect(const std::wstring& current, const std::string& location, std::wstring& next,
                       std::string& error) {
     if (location.empty()) {

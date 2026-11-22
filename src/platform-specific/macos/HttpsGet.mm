@@ -247,6 +247,185 @@ bool https_get_to_file(const std::string& url, const std::string& dest_path, uin
     }
 }
 
+@interface Gs2HttpsStringDelegate : NSObject <NSURLSessionDataDelegate>
+@property (nonatomic, assign) const std::atomic<bool> *cancelFlag;
+@property (nonatomic, assign) uint64_t maxBytes;
+@property (nonatomic, assign) int statusCode;
+@property (nonatomic, assign) bool failed;
+@property (nonatomic, assign) std::string *errorText;
+@property (nonatomic, assign) std::string *bodyText;
+@property (nonatomic, assign) dispatch_semaphore_t done;
+@end
+
+@implementation Gs2HttpsStringDelegate
+
+- (void)URLSession:(NSURLSession *)session
+                  task:(NSURLSessionTask *)task
+    willPerformHTTPRedirection:(NSHTTPURLResponse *)response
+                    newRequest:(NSURLRequest *)request
+             completionHandler:(void (^)(NSURLRequest *))completionHandler {
+    (void)session;
+    (void)task;
+    (void)response;
+    if (!https_scheme(request.URL.scheme)) {
+        if (self.errorText != nullptr && self.errorText->empty()) {
+            *self.errorText = "Redirect left https";
+        }
+        self.failed = true;
+        completionHandler(nil);
+        return;
+    }
+    completionHandler(request);
+}
+
+- (void)URLSession:(NSURLSession *)session
+              dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveResponse:(NSURLResponse *)response
+     completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    (void)session;
+    (void)dataTask;
+    NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
+    self.statusCode = static_cast<int>(http.statusCode);
+    if (http.statusCode != 200) {
+        if (self.errorText != nullptr) {
+            *self.errorText = "Server returned status " + std::to_string(http.statusCode);
+        }
+        self.failed = true;
+        completionHandler(NSURLSessionResponseCancel);
+        return;
+    }
+    if (http.expectedContentLength > 0
+        && http.expectedContentLength > static_cast<long long>(self.maxBytes)) {
+        if (self.errorText != nullptr) {
+            *self.errorText = "Response too large";
+        }
+        self.failed = true;
+        completionHandler(NSURLSessionResponseCancel);
+        return;
+    }
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data {
+    (void)session;
+    if (self.failed) {
+        return;
+    }
+    if (self.cancelFlag != nullptr && self.cancelFlag->load()) {
+        if (self.errorText != nullptr && self.errorText->empty()) {
+            *self.errorText = "Download canceled";
+        }
+        self.failed = true;
+        [dataTask cancel];
+        return;
+    }
+    if (self.bodyText == nullptr) {
+        self.failed = true;
+        [dataTask cancel];
+        return;
+    }
+    const size_t n = static_cast<size_t>(data.length);
+    if (self.bodyText->size() + n > self.maxBytes) {
+        if (self.errorText != nullptr && self.errorText->empty()) {
+            *self.errorText = "Response too large";
+        }
+        self.failed = true;
+        [dataTask cancel];
+        return;
+    }
+    self.bodyText->append(static_cast<const char *>(data.bytes), n);
+}
+
+- (void)URLSession:(NSURLSession *)session
+                    task:(NSURLSessionTask *)task
+    didCompleteWithError:(NSError *)error {
+    (void)session;
+    (void)task;
+    if (error != nil && !self.failed && self.errorText != nullptr && self.errorText->empty()) {
+        NSString *message = error.localizedDescription;
+        *self.errorText = message != nil ? std::string(message.UTF8String) : "Download failed";
+        self.failed = true;
+    }
+    if (self.failed && self.errorText != nullptr && self.errorText->empty()) {
+        *self.errorText = "Download failed";
+    }
+    if (self.done != nullptr) {
+        dispatch_semaphore_signal(self.done);
+    }
+}
+
+@end
+
+bool https_get_to_string(const std::string& url, uint64_t max_bytes, int timeout_ms,
+                         const std::string& user_agent, const std::atomic<bool> *cancel,
+                         HttpsGetResult& out) {
+    out = HttpsGetResult{};
+    const int timeout = timeout_ms > 0 ? timeout_ms : 8000;
+    const std::string ua = user_agent.empty() ? std::string("GSSquared") : user_agent;
+    @autoreleasepool {
+        NSString *url_text = [NSString stringWithUTF8String:url.c_str()];
+        NSURL *nsurl = url_text != nil ? [NSURL URLWithString:url_text] : nil;
+        if (!https_scheme(nsurl.scheme) || nsurl.host.length == 0) {
+            out.error = "URL must be https";
+            return false;
+        }
+
+        std::string error;
+        std::string body;
+        Gs2HttpsStringDelegate *delegate = [[Gs2HttpsStringDelegate alloc] init];
+        delegate.cancelFlag = cancel;
+        delegate.maxBytes = max_bytes;
+        delegate.errorText = &error;
+        delegate.bodyText = &body;
+        delegate.done = dispatch_semaphore_create(0);
+
+        NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+        const NSTimeInterval seconds = static_cast<NSTimeInterval>(timeout) / 1000.0;
+        config.timeoutIntervalForRequest = seconds;
+        config.timeoutIntervalForResource = seconds;
+        config.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+        NSURLSession *session = [NSURLSession sessionWithConfiguration:config
+                                                              delegate:delegate
+                                                         delegateQueue:nil];
+        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:nsurl];
+        [request setValue:[NSString stringWithUTF8String:ua.c_str()] forHTTPHeaderField:@"User-Agent"];
+        NSURLSessionDataTask *task = [session dataTaskWithRequest:request];
+        [task retain];
+        [task resume];
+
+        for (;;) {
+            const long wait = dispatch_semaphore_wait(
+                delegate.done, dispatch_time(DISPATCH_TIME_NOW, 200 * NSEC_PER_MSEC));
+            if (wait == 0) {
+                break;
+            }
+            if (cancel != nullptr && cancel->load()) {
+                [task cancel];
+            }
+        }
+
+        out.status = delegate.statusCode;
+        out.error = error;
+        out.body = body;
+        out.ok = !delegate.failed && delegate.statusCode == 200 && error.empty();
+        if (!out.ok && out.error.empty()) {
+            out.error = "Download failed";
+        }
+        if (!out.ok) {
+            out.body.clear();
+        }
+
+        [task release];
+        [session finishTasksAndInvalidate];
+        dispatch_release(delegate.done);
+        delegate.done = nullptr;
+        [delegate release];
+        return out.ok;
+    }
+}
+
 @interface Gs2HttpsPutDelegate : NSObject <NSURLSessionDataDelegate>
 @property (nonatomic, assign) const std::atomic<bool> *cancelFlag;
 @property (nonatomic, copy) NSString *saveToken;

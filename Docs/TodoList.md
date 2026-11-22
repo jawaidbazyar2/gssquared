@@ -16,10 +16,10 @@ From [Roadmap.md](Roadmap.md):
 - [X] Provide flexible AI-drivable binary protocol debugger interface
 
 ### Release 1.0
-- [ ] Fix all known / pending bugs
+- [X] Fix all known / pending bugs
 
 ### Post-1.0
-- [ ] Refactor Mockingboard to use new fixed-point synth
+- [X] Refactor Mockingboard to use new fixed-point synth
 - [ ] Optimize / cache UI elements
 
 ---
@@ -119,7 +119,7 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [ ] Test RGB monitor colors
 - [X] Lower Planes: right border offset by 1–2 scanlines ([CompatibilityGS.md](CompatibilityGS.md))
 - [ ] FTA XMAS: slight cycle timing defect on lower-right border
-- [ ] Phosphor persistence effect (multi-texture fade)
+- [X] Phosphor persistence effect (multi-texture fade)
 - [-] VideoScanner asserts so bad state can't crash
 - [X] Clean up leftover `set_full_frame_redraw()` once LS full-frame path is settled
 
@@ -131,16 +131,16 @@ From [Documentation.md](Documentation.md), [MockingboardBugAnalysis.md](Mockingb
 
 - [X] Finish Ensoniq fidelity (SenseiPlay / some demos still imperfect; see also Ensoniq notes)
 - [-] Mockingboard mixer AND-gate (tone+noise) if still using addition ([MockingboardBugAnalysis.md](MockingboardBugAnalysis.md) Bug 5)
-- [ ] Verify other MockingboardBugAnalysis findings are fixed in tree (bipolar mix, silent when both disabled, tone period/duty)
-- [ ] Noise vs tone amplitude balance on Mockingboard
+- [X] Verify other MockingboardBugAnalysis findings are fixed in tree (bipolar mix, silent when both disabled, tone period/duty)
+- [X] Noise vs tone amplitude balance on Mockingboard
 - [X] Mad Effects #2 still wrong (MB interrupt / VBL timing specifics)
 - [X] Speaker output delay
 - [-] Configurable speaker output rate
 - [ ] Mute / drain disk sound-effect queues in Ludicrous Speed (or on ctrl-reset)
-- [ ] Pause / mute audio when emulator window minimized
+- [X] Pause / mute audio when emulator window minimized
 - [X] Chiptunes (Skull Island, Crazy Cycles 2): stop unending warning/spam streams
 - [X] Add Mockingboard cycle hook into `NClockIIgs`
-- [-] Rescue Raiders speech synth (or don't advertise speech chip) ([Compatibility.md](Compatibility.md)) (works on Total Replay, may just be a bad crack)
+- [X] Rescue Raiders speech synth (or don't advertise speech chip) ([Compatibility.md](Compatibility.md)) (works on Total Replay, may just be a bad crack)
  
 ---
 
@@ -211,10 +211,10 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 
 - [X] Incoming serial handshake (CD / CTS / DSR) — [SerialPortSpec.md](SerialPortSpec.md)
 - [ ] Outgoing DTR/RTS to the host UART (hang up a real modem by dropping DTR)
-- [ ] Clear SCC queues on reset
+- [X] Clear SCC queues on reset
 - [X] Implement "file" serial device (complete path)
 - [X] Print to clipboard serial/parallel device (#165)
-- [ ] ImageWriter II emulation
+- [X] ImageWriter II emulation
 - [X] OSD gizmo when a capture file finishes writing (path toast)
 - [X] Refactor parallel card onto threads; connect to file (ImageWriter later)
 - [X] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset (via FileDevice)
@@ -241,7 +241,7 @@ From [CPUs.md](CPUs.md), [DevelopLog.md](DevelopLog.md), [Documentation.md](Docu
 - [ ] Check 65c02 vs NMOS differences thoroughly
 - [ ] IIe reset conditions vs Understanding the Apple IIe tables 5.4 and 7.1
 - [X] Bank latch / direct bank `$E1` tests and analysis
-- [ ] MMU SoA + static aligned page table experiment (perf)
+- [X] MMU SoA + static aligned page table experiment (perf)
 - [ ] Address mask + debug OOB warnings on MMU
 - [X] Thunderclock: interrupts, writing clock, more testing
 - [X] Fast accesses for IIgs memory softswitches ([AppleIIgs-Memory.md](AppleIIgs-Memory.md))
@@ -335,15 +335,15 @@ Shaders Galore to move a lot of rendering into GPU:
 
 [ ] ProDOS 8 host "FST".
 
-[ ] Implement the new fixed-point mockingboard AY synths
+[X] Implement the new fixed-point mockingboard AY synths
 
-[ ] Auto Updating.
+[x] Auto Updating. Have a notifier that alerts users when there is a new version.
 
 [ ] Get added to AppImage directory with a "correct" ubuntu 22 build.
 
-[x] if debug build display that in title bar
+[X] if debug build display that in title bar
 
-[ ] Mockingboard Speech support
+[X] Mockingboard Speech support
 
 [ ] AppleTini card
 
@@ -363,15 +363,17 @@ Shaders Galore to move a lot of rendering into GPU:
 
 [ ] Eliminate some Code Smells (display could use some reorg)
 
-[ ] GS MMU performance improvement by using LUTs instead of tons of IFs.
+[X] GS MMU performance improvement by using LUTs instead of tons of IFs.
 
-[ ] correctly model colorburst change latency
+[X] correctly model colorburst change latency
 
 [ ] pass IWM test suite
 
+[ ] pass Ensoniq test suite
+
 [ ] pass SWITCHES test suite
 
-[ ] don't drop trace files all the time
+[X] don't drop trace files all the time
 
 ## V1.x Optimizations
 

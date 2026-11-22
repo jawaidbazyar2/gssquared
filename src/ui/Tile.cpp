@@ -82,19 +82,26 @@ void Tile_t::render() {
     /* uint32_t bcolor = (is_hovering) ? style.hover_color : style.border_color; */
 
     // Draw background (includes padding area)
-    ctx->fill_rect({tp.x, tp.y, tp.w, tp.h}, opaque(estyle.background_color));
+    if (estyle.corner_radius > 0.0f) {
+        ctx->fill_rounded_rect({tp.x, tp.y, tp.w, tp.h}, estyle.corner_radius, opaque(estyle.background_color));
+    } else {
+        ctx->fill_rect({tp.x, tp.y, tp.w, tp.h}, opaque(estyle.background_color));
+    }
 
     // Draw border if needed
     if (style.border_width > 0) {
-        //printf("tile_t:render:hover: %d, draw border: %08X width: %d\n", (int)is_hovering,  bcolor, style.border_width);
         uint32_t color = opaque(estyle.border_color);
-
-        for (uint32_t i = 0; i < estyle.border_width; i++) {
-            SDL_FRect border_rect = {
-                tp.x + i, tp.y + i,
-                tp.w - 2 * i, tp.h - 2 * i
-            };
-            ctx->draw_rect(border_rect, color);
+        if (estyle.corner_radius > 0.0f) {
+            ctx->draw_rounded_rect({tp.x, tp.y, tp.w, tp.h}, estyle.corner_radius, color,
+                                   static_cast<float>(estyle.border_width));
+        } else {
+            for (uint32_t i = 0; i < estyle.border_width; i++) {
+                SDL_FRect border_rect = {
+                    tp.x + i, tp.y + i,
+                    tp.w - 2 * i, tp.h - 2 * i
+                };
+                ctx->draw_rect(border_rect, color);
+            }
         }
     }
 }

@@ -28,6 +28,7 @@
 #include "util/EventQueue.hpp"
 #if !defined(__EMSCRIPTEN__)
 #include "serial_devices/modem/ModemDevice.hpp"
+#include "serial_devices/netprinter/NetPrinterDevice.hpp"
 #include "serial_devices/serial/SerialPortDevice.hpp"
 #endif
 
@@ -39,12 +40,19 @@ Connections::~Connections() {
 }
 
 SerialDevice *Connections::create_device(connection_device_type_t type, const std::string &port_id,
-                                         const std::string &path) {
+                                         const std::string &path, const std::string &host,
+                                         int tcp_port) {
     switch (type) {
         case connection_device_type_t::NONE:
             return nullptr;
         case connection_device_type_t::FILE:
-            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
+            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str(), false);
+        case connection_device_type_t::PRINTER:
+#if defined(__EMSCRIPTEN__)
+            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str(), false);
+#else
+            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str(), true);
+#endif
         case connection_device_type_t::CLIPBOARD:
             return new ClipboardDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
         case connection_device_type_t::MODEM:
@@ -61,6 +69,13 @@ SerialDevice *Connections::create_device(connection_device_type_t type, const st
             return new SerialPortDevice(event_queue_, device_frame_dispatcher_,
                                         port_id.c_str(), path);
 #endif
+        case connection_device_type_t::NET_PRINTER:
+#if defined(__EMSCRIPTEN__)
+            return nullptr;
+#else
+            return new NetPrinterDevice(event_queue_, device_frame_dispatcher_,
+                                        port_id.c_str(), host, tcp_port);
+#endif
     }
     return nullptr;
 }
@@ -70,13 +85,14 @@ int Connections::register_port(connection_key_t key,
                                connection_port_kind_t kind,
                                connection_device_type_t default_device,
                                ConnectionAttachFn attach_fn,
-                               const std::string &port_id) {
+                               const std::string &port_id,
+                               bool offers_printer) {
     if (ports_.count(key)) {
         std::cerr << "Connections: duplicate register for slot " << key.slot
                   << " port " << key.port << "\n";
         return -1;
     }
-    if (!connection_device_allowed(kind, default_device) &&
+    if (!connection_device_allowed(kind, default_device, offers_printer) &&
         default_device != connection_device_type_t::NONE) {
         default_device = connection_device_type_t::FILE;
     }
@@ -86,6 +102,7 @@ int Connections::register_port(connection_key_t key,
     reg.kind = kind;
     reg.default_device = default_device;
     reg.current_device = connection_device_type_t::NONE;
+    reg.offers_printer = offers_printer;
     reg.attach_fn = std::move(attach_fn);
     reg.port_id = port_id;
     reg.device = nullptr;
@@ -94,7 +111,7 @@ int Connections::register_port(connection_key_t key,
 }
 
 bool Connections::attach(connection_key_t key, connection_device_type_t type,
-                         const std::string &path) {
+                         const std::string &path, const std::string &host, int tcp_port) {
     auto it = ports_.find(key);
     if (it == ports_.end()) {
         std::cerr << "Connections: no port registered at slot " << key.slot
@@ -103,11 +120,12 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
     }
     port_registration_t &reg = it->second;
 #if defined(__EMSCRIPTEN__)
-    if (type == connection_device_type_t::SERIAL) {
+    if (type == connection_device_type_t::SERIAL ||
+        type == connection_device_type_t::NET_PRINTER) {
         type = connection_device_type_t::NONE;
     }
 #endif
-    if (!connection_device_allowed(reg.kind, type)) {
+    if (!connection_device_allowed(reg.kind, type, reg.offers_printer)) {
         std::cerr << "Connections: device " << connection_device_type_name(type)
                   << " not allowed on " << reg.display_name << "\n";
         return false;
@@ -115,20 +133,26 @@ bool Connections::attach(connection_key_t key, connection_device_type_t type,
 
     // Unwire and destroy previous device first.
     if (reg.attach_fn) {
-        reg.attach_fn(nullptr);
+        reg.attach_fn(nullptr, connection_device_type_t::NONE);
     }
     delete reg.device;
     reg.device = nullptr;
     reg.current_device = connection_device_type_t::NONE;
     reg.path.clear();
+    reg.host.clear();
+    reg.tcp_port = 0;
 
-    SerialDevice *dev = create_device(type, reg.port_id, path);
+    SerialDevice *dev = create_device(type, reg.port_id, path, host, tcp_port);
     reg.device = dev;
     reg.current_device = type;
     reg.path = (type == connection_device_type_t::SERIAL) ? path : std::string{};
+    if (type == connection_device_type_t::NET_PRINTER) {
+        reg.host = host;
+        reg.tcp_port = tcp_port;
+    }
     reg.attached_once = true;
     if (reg.attach_fn) {
-        reg.attach_fn(dev);
+        reg.attach_fn(dev, type);
     }
     return true;
 }
@@ -154,7 +178,7 @@ std::vector<connection_device_type_t> Connections::allowed_devices(connection_ke
     if (it == ports_.end()) {
         return {};
     }
-    return connection_allowed_devices(it->second.kind);
+    return connection_allowed_devices(it->second.kind, it->second.offers_printer);
 }
 
 const std::vector<connection_port_info_t> &Connections::get_all_ports() const {
@@ -166,6 +190,8 @@ const std::vector<connection_port_info_t> &Connections::get_all_ports() const {
         info.kind = kv.second.kind;
         info.device = kv.second.current_device;
         info.path = kv.second.path;
+        info.host = kv.second.host;
+        info.tcp_port = kv.second.tcp_port;
         cached_ports_.push_back(std::move(info));
     }
     std::sort(cached_ports_.begin(), cached_ports_.end(),
@@ -198,12 +224,14 @@ void Connections::clear() {
     for (auto &kv : ports_) {
         port_registration_t &reg = kv.second;
         if (reg.attach_fn) {
-            reg.attach_fn(nullptr);
+            reg.attach_fn(nullptr, connection_device_type_t::NONE);
         }
         delete reg.device;
         reg.device = nullptr;
         reg.current_device = connection_device_type_t::NONE;
         reg.path.clear();
+        reg.host.clear();
+        reg.tcp_port = 0;
     }
     ports_.clear();
     cached_ports_.clear();

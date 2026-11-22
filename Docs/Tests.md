@@ -6,7 +6,6 @@ Summary:
 At this time there are no known issues with 65C02 or 65816 emulation; N6502 lacks support for the "undocumented opcodes".
 
 IIgs needs support for PAL timing and 14/16MHz mode switching effects;
-NTSC/PAL colorburst handling needs improvement; 
 
 IIgs IWM needs work.
 
