@@ -50,9 +50,9 @@ The editor title is **Edit System Configuration**. You can set:
 
 * **Name** and **description** — shown on the badge / for your own reference.
 * **Platform** — Apple II, II+, //e, Enhanced //e, IIgs ROM 01, IIgs ROM 03, etc.
-* **Slots** — click a slot to pick which card goes there (or None). Card choices include Disk II, BazFast, [Mockingboard](Cards_Mockingboard.md), [Uthernet II](Cards_UthernetII.md), [Super Serial](Cards_SuperSerial.md), [Apple Mouse](Cards_AppleMouse.md), [Parallel](Cards_Parallel.md), [Videx](Cards_Videx.md) (II/II+ slot 3), [clock cards](Cards_Clock.md), [VIDHD](Cards_VIDHD.md) (65816 //e), [Second Sight](Cards_SecondSight.md) or [Video Overlay Card](Cards_VOC.md) (IIgs slot 3), language card (slot 0), and Slinky memory expansion.
+* **Slots** — click a slot to pick which card goes there (or None). On a //e the first slot is labeled **Aux** (not 0); that is where [RamWorks](Cards_RamWorks.md) goes. Other card choices include Disk II, BazFast, [Mockingboard](Cards_Mockingboard.md), [Uthernet II](Cards_UthernetII.md), [Super Serial](Cards_SuperSerial.md), [Apple Mouse](Cards_AppleMouse.md), [Parallel](Cards_Parallel.md), [Videx](Cards_Videx.md) (II/II+ slot 3), [clock cards](Cards_Clock.md), [VIDHD](Cards_VIDHD.md) (65816 //e), [Second Sight](Cards_SecondSight.md) or [Video Overlay Card](Cards_VOC.md) (IIgs slot 3), language card (slot 0 on II / II+), and Slinky memory expansion.
 * **Storage (pre-mount)** — click a drive to choose a disk image that will be mounted when you later launch this config. Click again to clear it. Any valid disk image including .pmap (BazFast multi-image) can be "pre-mounted" this way.
-* **Serial / Parallel** — click a port button and choose **None**, **File**, **Clipboard**, **Modem**, or a listed host serial port (serial jacks only). See [Serial & Parallel Connections](SerialConnections.md).
+* **Serial / Parallel** — click a port button and choose **None**, **File**, **Printer**, **Clipboard**, **Modem**, **Net Printer**, or a listed host serial port (serial jacks only). **Net Printer** asks for host and TCP port; the address is shown under the port button. See [Serial & Parallel Connections](SerialConnections.md).
 
 Speed and Display controls on this screen are for preview only; they are **not saved** into the config file.
 

@@ -44,7 +44,10 @@ public:
 	void setMonitor(int monitor_id);
 	void toggleSleepMode();
 	void togglePauseWhenMinimized();
+	void toggleCpuTrace();
+	void toggleSaveTraceOnExit();
 	void toggleAudioDecorrelation();
+	void setAyWaveform(int waveform);
 	void toggleRightMouseAccel();
 	void toggleCrtShader();
 	void toggleMonoPersistence();
@@ -73,7 +76,10 @@ public:
 	int  getCurrentMonitor();
 	bool getSleepMode();
 	bool getPauseWhenMinimized();
+	bool getCpuTrace();
+	bool getSaveTraceOnExit();
 	bool getAudioDecorrelation();
+	int  getAyWaveform();
 	bool getRightMouseAccel();
 	bool getCrtShader();
 	bool getCrtShaderAvailable();

@@ -48,6 +48,7 @@
 #ifndef __EMSCRIPTEN__
 #include "ui/PackFetchModal.hpp"
 #include "platform-specific/HttpsGet.hpp"
+#include "util/UpdateCheck.hpp"
 #endif
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -745,6 +746,7 @@ struct GS2AppState {
     modal_stack pack_fetch_stack;
     std::unique_ptr<PackFetchModal_t> pack_fetch;
     std::string pending_pack_url;
+    UpdateCheck update_check;
 #else
     /** Power-off of an auto-launched pack waits for the Collection PUT. */
     bool web_exit_after_save = false;
@@ -1117,11 +1119,6 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     //set_clock_mode(computer->cpu, platform->default_clock_mode);
 
     computer->cpu->set_processor(platform->cpu_type);
-#if defined(__EMSCRIPTEN__)
-    // The web build has no debugger. Without a debug protocol client,
-    // nothing reads the trace.
-    if (!computer->debug_protocol) computer->cpu->trace = false;
-#endif
     // important to do this before setting up the rest of the computer.
     clock_mode_t boot_speed = system_config->clock_mode;
     if (boot_speed == INVALID_CLOCK_MODE) {
@@ -1292,6 +1289,12 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     computer->cpu->cpun = createCPU(platform->cpu_type, (NClock *)nclock);
 
     computer->cpu->core = computer->cpu->cpun.get(); // set the core. Probably need a better set cpu for cpu_state.
+    computer->cpu->trace = SystemSettings::instance().cpu_trace();
+#if defined(__EMSCRIPTEN__)
+    // The web build has no debugger. Without a debug protocol client,
+    // nothing reads the trace.
+    if (!computer->debug_protocol) computer->cpu->trace = false;
+#endif
     //computer->cpu->core->set_clock(nclock);
 
     // Initialize the slot manager.
@@ -1347,7 +1350,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
         for (const auto& conn : state->loaded_config->connections()) {
             const connection_key_t key = normalize_connection_key(conn.slot, conn.port);
             const connection_device_type_t dtype = connection_device_type_from_string(conn.device);
-            if (!computer->connections->attach(key, dtype, conn.path)) {
+            if (!computer->connections->attach(key, dtype, conn.path, conn.host, conn.tcp_port)) {
                 printf("Warning: connection slot %d device=%s not applied (port not registered?)\n",
                        key.slot, conn.device.c_str());
             }
@@ -1814,11 +1817,13 @@ void transition_to_shutdown(GS2AppState *state) {
     finish_pack_session(state, state->computer);
     computer_t *computer = state->computer;
 
-    // save cpu trace buffer, then exit.
-    // TODO: move this to the trace buffer destructor.
-    std::string tracepath;
-    Paths::calc_docs(tracepath, "gssquared-trace.bin");
-    computer->cpu->trace_buffer->save_to_file(tracepath);
+    // save cpu trace buffer if enabled, then exit.
+    if (SystemSettings::instance().save_trace_on_exit()
+        && computer->cpu != nullptr && computer->cpu->trace_buffer != nullptr) {
+        std::string tracepath;
+        Paths::calc_docs(tracepath, "gssquared-trace.bin");
+        computer->cpu->trace_buffer->save_to_file(tracepath);
+    }
 
     // deallocate stuff.
     delete osd;
@@ -2475,7 +2480,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 #if defined(__EMSCRIPTEN__)
     poll_web_collection_put(state);
     if (state->web_exit_after_save && !web_collection_busy()) {
-        if (state->computer != nullptr && state->computer->cpu != nullptr
+        if (SystemSettings::instance().save_trace_on_exit()
+            && state->computer != nullptr && state->computer->cpu != nullptr
             && state->computer->cpu->trace_buffer != nullptr) {
             std::string tracepath;
             Paths::calc_docs(tracepath, "gssquared-trace.bin");
@@ -2522,6 +2528,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
                 finish_pack_fetch(state);
                 return SDL_APP_CONTINUE;
             }
+        }
+        state->update_check.start();
+        state->update_check.poll();
+        if (state->update_check.available()) {
+            state->select_system->set_update_visible(true);
         }
 #endif
         if (state->select_system->update()) {
@@ -2699,9 +2710,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
                     return SDL_APP_CONTINUE;
                 }
 #endif
-                std::string tracepath;
-                Paths::calc_docs(tracepath, "gssquared-trace.bin");
-                computer->cpu->trace_buffer->save_to_file(tracepath);
+                if (SystemSettings::instance().save_trace_on_exit()
+                    && computer->cpu != nullptr && computer->cpu->trace_buffer != nullptr) {
+                    std::string tracepath;
+                    Paths::calc_docs(tracepath, "gssquared-trace.bin");
+                    computer->cpu->trace_buffer->save_to_file(tracepath);
+                }
                 return SDL_APP_SUCCESS;
             }
             transition_to_shutdown(state);

@@ -123,7 +123,7 @@ BazFast also understands **Apple Partition Map** (APM) images — the on-disk pa
 
 ## Host FST
 
-Host FST shares a folder on your real computer with GS/OS as the **`:Host`** volume. Full setup (Mount Drivers, run the installer and choose **Host FST**, and **Host Folder…**) is in [Host FST](HostFST.md).
+Host FST shares a folder on your real computer with GS/OS as the **`:Host`** volume. Full setup (Mount Drivers, run the installer and choose **Host FST**, and the Control Panel Connections **Host Folder** section) is in [Host FST](HostFST.md).
 
 ## Write-protection
 

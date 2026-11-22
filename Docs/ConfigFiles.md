@@ -116,7 +116,7 @@ If `id` is missing when you load a writable `.gs2`, GSSquared assigns one and ma
 - **`clock = "pal"`** — European timing. Use with II, II+, and IIe family only.
 - **`scanner`** — Advanced. Values: `"apple2"`, `"apple2e"`, `"apple2e_pal"`, `"apple2gs"`. If you are building a PAL //e, set `clock = "pal"` and you can skip `scanner`; GS2 will use `"apple2e_pal"`.
 - **`speed`** — How fast the emulator runs the CPU (not the IIgs Control Panel `$C036` bit). Same choices as the config editor and F4 speed row.
-- **`display`** — Composite (NTSC), RGB, or a monochrome phosphor. Same choices as the config editor monitor row.
+- **`display`** — Composite (NTSC), RGB, or a monochrome phosphor (`green` / `amber` / `white`). Same choices as the config editor monitor row. **GS Composite** is a session Display-menu engine on the IIgs, not a `.gs2` `display` value.
 
 Motherboard devices (keyboard, built-in IIgs sound, built-in floppy controller on the GS, and so on) are added automatically from `platform`. You only list **expansion cards** in `[[cards]]`.
 
@@ -139,7 +139,7 @@ card = "bazfast3"
 Rules that bite people:
 
 - **One card per slot.** Do not list the same slot twice.
-- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight and the Video Overlay Card are IIgs-only and slot 3 only.
+- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight and the Video Overlay Card are IIgs-only and slot 3 only. [RamWorks](Cards_RamWorks.md) is //e-family **slot 0** only (the Aux slot).
 - **Most cards allow only one instance.** Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.
 
 ### Card types
@@ -155,7 +155,7 @@ Rules that bite people:
 | `"mouse"` | [Apple Mouse III](Cards_AppleMouse.md); `"applemouseiii"` is an alias |
 | `"videx"` | [Videx VideoTerm](Cards_Videx.md) 80-column (II / II+ only, slot 3) |
 | `"mem_expansion"` | Slinky-style RAM expansion (up to 1 MB) |
-| `"ramworks"` | RamWorks 8MB auxiliary RAM (IIe family only, slot 0) |
+| `"ramworks"` | [RamWorks](Cards_RamWorks.md) 8MB auxiliary RAM (IIe family only, slot 0 / Aux) |
 | `"prodos_block"` | Deprecated - do not use; prefer `"bazfast3"` |
 | `"prodos_block2"` | Deprecated - do not use; prefer `"bazfast3"` |
 | `"bazfast3"` | SmartPort / hard-disk controller (also accepts `"smartport"` or `"pdblock3"`) |
@@ -169,7 +169,7 @@ Empty slots are simply omitted — you do not need to say “empty.”
 
 ### Parallel and serial attachments
 
-Do **not** put paths on the card entry. Use `[[connections]]` (below) for parallel file/clipboard capture and serial modem/file/clipboard/host-UART attachments. See also [Parallel Interface](Cards_Parallel.md) and [Serial & Parallel Connections](SerialConnections.md).
+Do **not** put paths on the card entry. Use `[[connections]]` (below) for parallel file/clipboard capture and serial modem/file/clipboard/printer/Net Printer/host-UART attachments. See also [Parallel Interface](Cards_Parallel.md) and [Serial & Parallel Connections](SerialConnections.md).
 
 ---
 
@@ -231,7 +231,7 @@ image = "volumes/Games.po"
 
 ## Serial / parallel ports — `[[connections]]`
 
-Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, or a real host UART. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md).
+Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, a Net Printer, or a real host UART. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md). Net Printer: [NetPrinter.md](NetPrinter.md).
 
 **IIgs built-in ports** (no `slot` — these are on the motherboard):
 
@@ -263,8 +263,9 @@ path = "printouts/session.bin"
 |----------|---------|
 | `port` | IIgs SCC only: `"a"` or `"b"`. Defaults to `"a"` if omitted. |
 | `slot` | Expansion-slot card (SSC, parallel, …). Use instead of `port`. |
-| `device` | `"none"`, `"file"`, `"clipboard"`, `"echo"`, `"modem"`, or `"serial"`. Parallel allows `"none"` / `"file"` / `"clipboard"` only. **`echo` is TOML-only** — it is not offered in the Control Panel or config editor. |
+| `device` | `"none"`, `"file"`, `"clipboard"`, `"echo"`, `"modem"`, `"serial"`, `"printer"`, or `"netprinter"`. Parallel allows `"none"` / `"file"` / `"clipboard"` only. **`echo` is TOML-only** — it is not offered in the Control Panel or config editor. |
 | `path` | Host file when `device = "file"` (relative paths work like disk images). Host port name when `device = "serial"` (stored as-is, e.g. `cu.usbserial-…`, `/dev/cu.usbserial-…`, `COM3`, or `/dev/ttyUSB0`). |
+| `host` / `port` | For `device = "netprinter"`: DNS name or IP, and TCP port (often 9100). |
 
 If you omit `[[connections]]` entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).
 

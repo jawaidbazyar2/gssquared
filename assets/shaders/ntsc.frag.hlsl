@@ -9,8 +9,9 @@
 // its top-left pixel. Each fragment decodes one output dot with the same math
 // as g_hgr_LUT (see build_ntsc_gpu_weights in src/display/ntsc.cpp).
 //
-// Edit this file, then run scripts/compile_shaders_macos.sh to regenerate
-// ntsc.frag.metal.
+// Edit this file, then regenerate the blobs:
+//   scripts/compile_shaders_macos.sh ntsc          # ntsc.frag.metal
+//   scripts/compile_crt_shader.sh all ntsc         # ntsc.frag.dxil / .spv
 
 cbuffer Ntsc : register(b0, space3) {
     float4 w[60];          // [phase * 15 + tap] YIQ weight of a lit dot at tap - 7

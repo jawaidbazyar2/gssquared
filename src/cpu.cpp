@@ -21,7 +21,7 @@
 
 #include "cpu.hpp"
 
-cpu_state::cpu_state(processor_type cpu_type) {
+cpu_state::cpu_state(processor_type cpu_type, size_t trace_capacity) {
     full_db = 0;
     full_pc = 0; // was 0x400 from original tests, ha!
     //sp = rand() & 0xFF; // simulate a random stack pointer
@@ -34,7 +34,7 @@ cpu_state::cpu_state(processor_type cpu_type) {
     /* cycles = 0; */ // moved to clock.
     
     trace = true;
-    trace_buffer = new system_trace_buffer(100000, cpu_type);
+    trace_buffer = new system_trace_buffer(trace_capacity, cpu_type);
 }
 
 void cpu_state::set_processor(processor_type new_cpu_type) {

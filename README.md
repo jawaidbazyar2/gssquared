@@ -191,7 +191,7 @@ cmake --build build
 cmake --build build --target appimage
 ```
 
-Creates a .appimage package in the build/ directory that contains all the pieces you need.
+Creates `gssquared-<version>-Linux.AppImage` in the `build/` directory (same `gssquared-<version>-<platform>` pattern as the macOS DMG and Windows zip).
 
 ## Windows
 
@@ -249,6 +249,10 @@ I also shamelessly copied the Disk II sound files from OpenEmulator.
 
 The mouse tracking code is based in part on the technique used in KEGS, written by Geoff Weiss, though I use a different approach for causing updates to the emulated mouse position. GPL 2.0.
 
+## MAME
+
+The IIgs Ensoniq emulation is derived from the one found in MAME.
+
 ## ThunderClock Plus
 
 The ThunderClock Plus card is derived from the protocol and hardware work in:
@@ -263,6 +267,11 @@ Firmware image is the Thunderware 2716 (MAME CRC `1b99c4e3`).
 
 The Apple Mouse II Interface Card emulation (PIA + 6805 protocol) is adapted from the [A2Pico mouse-interface](https://github.com/oliverschmidt/mouse-interface) firmware by Thorsten Brehm and Oliver Schmidt (MIT License).
 
+## Mockingboard SSI-263 Speech
+
+These SSI-263 speech sources are vendored from the `ssi263-speech` project by
+Tamas Geczy (https://github.com/lprazdnik/ssi263-speech), **MIT License**.
+
 ## Mike Neil
 
 for the lookup table approach to the new DisplayNG code.
@@ -273,13 +282,13 @@ for cycle-accurate video framework.
 
 ## Kelvin Sherlock
 
-Kelvin wrote the Host FST and associated support code for the GSPlus emulator. GPL 2.0.
+Kelvin wrote the Host FST and associated support code for the GSPlus emulator. GPL 2.0, included with permission.
 
 https://github.com/digarok/gsplus
 
-## Wyatt Wong
+## John Kielkopf
 
-for helping test in different build environments, and providing MacOS-Intel builds.
+A number of contributions in video, Mockingboard, and Second Sight.
 
 
 ## SDL

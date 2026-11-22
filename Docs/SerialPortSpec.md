@@ -62,7 +62,7 @@ SCC RR0 has no DSR bit. DSR is carried for the 6551 only; it is not mashed onto 
 |--------|----|-----|-----|
 | **SerialPortDevice** | live host CD | live CTS | live DSR |
 | **ModemDevice** | 1 iff answered/dialed `socket` (not pending RING) | 1 | 1 |
-| **File / Clipboard / Echo** | 1 (default; device does not write) | 1 | 1 |
+| **File / Clipboard / Echo / Printer / Net Printer** | 1 (default; device does not write) | 1 | 1 |
 
 SerialPortDevice starts and stays at `0` while the host port is detached (unplugged / open failed). First sample after attach is published immediately so a WiModem that boots with CD off is not stuck at the chip default.
 

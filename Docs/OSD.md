@@ -17,7 +17,7 @@ Inside the Control Panel, you can select:
 
 ### Display mode
 
-NTSC, RGB, and three colors of monochrome
+NTSC, RGB, and three colors of monochrome. On an Apple IIgs, **Display → Monitor → GS Composite** (or **F2**) is the extra engine that encodes IIgs RGB as composite. The Control Panel color buttons do not include it.
 
 ### Speed
 
@@ -29,9 +29,11 @@ Displays what virtual cards are present in slots.
 
 If you are seeing the Control Panel from the System Select screen, it's because you asked to create or edit a System Config, and you will be able to change what is in the slots. Otherwise, it is display-only.
 
-### Serial / Parallel
+### Connections: Serial / Parallel / Host Folder
 
-Buttons for each serial or parallel port on the machine (IIgs built-in SCC, Super Serial, Parallel, etc.). Click a button to attach **None**, **File**, **Clipboard**, **Modem**, or a listed host serial port. See [Serial & Parallel Connections](SerialConnections.md).
+A row of cards for each serial or parallel port on the machine (IIgs built-in SCC, Super Serial, Parallel, etc.). Click a port card to attach **None**, **File**, **Printer**, **Clipboard**, **Modem**, **Net Printer**, or a listed host serial port. **Net Printer** shows the current host:port under the button. See [Serial & Parallel Connections](SerialConnections.md).
+
+On Apple IIgs systems, a **Host Folder** card sits in the same section. Click the pencil to choose which real-computer directory is shared through Host FST (volume `:Host`). If you never pick a folder, GSSquared shares your **Documents** folder. Not available in the [browser build](Web.md). See [Host FST](HostFST.md).
 
 ### Disk Drives / Storage
 
@@ -43,7 +45,6 @@ Drive icons show slot, drive, and the mounted filename (if any).
 
 See [Storage](Storage.md) for formats, write-back, BazFast, and errors.
 
-On Apple IIgs systems, **Host Folder…** chooses which real-computer directory is shared through Host FST (volume `:Host`). Not available in the [browser build](Web.md). See [Host FST](HostFST.md).
 
 ## Hover controls
 
@@ -55,7 +56,7 @@ When the mouse is over the main window and is **not** captured, a strip of face 
 | **Capture** | Capture the mouse for guest pointer software |
 | **Debug** | Open the debugger window (same as **F10**) |
 | **Speed** | Shows the current throttle (`1.0`, `2.8`, `7.1`, `14.3`, or an infinity glyph for Ludicrous). Click to open a picker. |
-| **Display** | Opens a picker for Composite / RGB / mono. The button accent follows the current monitor. |
+| **Display** | Opens a picker for Composite / RGB / mono. The button accent follows the current monitor. **GS Composite** is on the Display menu / **F2**, not this picker. |
 
 The strip hides automatically when **Capture Mouse** is on, so you do not click buttons while using mouse-aware software. There is no Display → Hover Enable menu; the strip appears whenever hover is possible.
 

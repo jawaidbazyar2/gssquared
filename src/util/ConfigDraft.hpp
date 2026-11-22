@@ -87,7 +87,8 @@ public:
     void clear_mount(uint16_t slot, uint16_t drive);
 
     void set_connection(connection_key_t key, connection_device_type_t device,
-                       const std::string &path = {});
+                       const std::string &path = {}, const std::string &host = {},
+                       int tcp_port = 0);
     void clear_connection(connection_key_t key);
 
     /** Drive specs with synthetic status from draft mounts. */

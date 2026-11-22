@@ -23,7 +23,7 @@ card = "videx"
 
 ## Using it
 
-Boot software that talks to the Videx card (or switch the guest into 80-column mode the way that title expects). Use **Display → Monitor → Monochrome** (green / amber / white) for a typical VideoTerm look. **F2** cycles display engines.
+Boot software that talks to the Videx card (or switch the guest into 80-column mode the way that title expects). Use **Display → Monitor → Monochrome** (green / amber / white) for a typical VideoTerm look. **F2** cycles display engines. **Display → Phosphor Persistence** keeps a short glow on those mono colors.
 
 ## Related
 

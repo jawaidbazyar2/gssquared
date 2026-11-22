@@ -56,7 +56,7 @@ void init_slot_parallel(computer_t *computer, SlotType_t slot) {
         display_name,
         connection_port_kind_t::PARALLEL,
         connection_device_type_t::FILE,
-        [parallel_d](SerialDevice *dev) {
+        [parallel_d](SerialDevice *dev, connection_device_type_t) {
             parallel_d->serial_device = dev;
         },
         parallel_d->port_id);

@@ -71,8 +71,28 @@ void MenuInterface::togglePauseWhenMinimized() {
 	SystemSettings::instance().toggle_pause_when_minimized();
 }
 
+void MenuInterface::toggleCpuTrace() {
+	const bool next = !getCpuTrace();
+	SystemSettings::instance().set_cpu_trace(next);
+	if (computer_ && computer_->cpu) {
+		computer_->cpu->trace = next;
+	}
+}
+
+void MenuInterface::toggleSaveTraceOnExit() {
+	SystemSettings::instance().toggle_save_trace_on_exit();
+}
+
 void MenuInterface::toggleAudioDecorrelation() {
 	if (computer_ && computer_->audio_system) computer_->audio_system->toggle_decorrelation();
+}
+
+void MenuInterface::setAyWaveform(int waveform) {
+	if (!computer_ || !computer_->audio_system) return;
+	if (waveform < 0 || waveform >= static_cast<int>(ay::Waveform::Count)) {
+		waveform = static_cast<int>(ay::Waveform::Square);
+	}
+	computer_->audio_system->set_ay_waveform(static_cast<ay::Waveform>(waveform));
 }
 
 void MenuInterface::toggleRightMouseAccel() {
@@ -140,8 +160,22 @@ bool MenuInterface::getPauseWhenMinimized() {
 	return SystemSettings::instance().pause_when_minimized();
 }
 
+bool MenuInterface::getCpuTrace() {
+	return (computer_ && computer_->cpu) ? computer_->cpu->trace
+	                                     : SystemSettings::instance().cpu_trace();
+}
+
+bool MenuInterface::getSaveTraceOnExit() {
+	return SystemSettings::instance().save_trace_on_exit();
+}
+
 bool MenuInterface::getAudioDecorrelation() {
 	return computer_ && computer_->audio_system ? computer_->audio_system->get_decorrelation() : false;
+}
+
+int MenuInterface::getAyWaveform() {
+	if (!computer_ || !computer_->audio_system) return static_cast<int>(ay::Waveform::Square);
+	return static_cast<int>(computer_->audio_system->get_ay_waveform());
 }
 
 bool MenuInterface::getRightMouseAccel() {

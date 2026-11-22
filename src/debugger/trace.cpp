@@ -187,12 +187,20 @@ void place_header_field(char *buf, size_t buflen, int col, const char *text) {
 
 } // namespace
 
+static size_t round_up_pow2(size_t n) {
+    if (n <= 1) return 1;
+    size_t p = 1;
+    while (p < n) {
+        p <<= 1;
+    }
+    return p;
+}
+
 system_trace_buffer::system_trace_buffer(size_t capacity, processor_type cpu_type) {
-    entries = new system_trace_entry_t[capacity];
-    size = capacity;
+    size = round_up_pow2(capacity);
+    mask = size - 1;
+    entries = new system_trace_entry_t[size];
     head = 0;
-    tail = 0;
-    count = 0;
     cpu_mask = 0;
     set_cpu_type(cpu_type);
 }
@@ -203,45 +211,37 @@ system_trace_buffer::~system_trace_buffer() {
     }
 }
 
-void system_trace_buffer::add_entry(const system_trace_entry_t &entry) {
-    memcpy(&entries[head], &entry, sizeof(system_trace_entry_t));
-    head++;
-    if (head >= size) {
-        head = 0;
-    }
-    if (head == tail) {
-        tail++;
-        count--;
-        if (tail >= size) {
-            tail = 0;
-        }
-    }
-    count++;
-}
-
-void system_trace_buffer::save_to_file(const std::string &filename) {
+bool system_trace_buffer::save_to_file(const std::string &filename) {
+    size_t n = count();
+    size_t start = tail_index();
     printf("Saving trace to file: %s\n", filename.c_str());
-    printf("Head: %zu, Tail: %zu, Size: %zu\n", head, tail, size);
-    std::ofstream file(filename);
-    size_t index = tail;
-    while (index != head) {
-        file.write(reinterpret_cast<const char *>(&entries[index]), sizeof(system_trace_entry_t));
-        index++;
-        if (index >= size) {
-            index = 0;
+    printf("Head: %zu, Tail: %zu, Count: %zu, Size: %zu\n", head_index(), start, n, size);
+    std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        fprintf(stderr, "Warning: Could not open trace file for writing: %s\n", filename.c_str());
+        return false;
+    }
+    if (n > 0) {
+        size_t first = n < (size - start) ? n : (size - start);
+        file.write(reinterpret_cast<const char *>(&entries[start]),
+                   static_cast<std::streamsize>(first * sizeof(system_trace_entry_t)));
+        size_t second = n - first;
+        if (second > 0) {
+            file.write(reinterpret_cast<const char *>(&entries[0]),
+                       static_cast<std::streamsize>(second * sizeof(system_trace_entry_t)));
         }
     }
     file.close();
+    return static_cast<bool>(file);
 }
 
 void system_trace_buffer::read_from_file(const std::string &filename) {
-    std::ifstream file(filename);
-    file.read(reinterpret_cast<char *>(entries), sizeof(system_trace_entry_t) * size);
+    std::ifstream file(filename, std::ios::binary);
+    file.read(reinterpret_cast<char *>(entries),
+              static_cast<std::streamsize>(sizeof(system_trace_entry_t) * size));
+    size_t read_entries = static_cast<size_t>(file.gcount()) / sizeof(system_trace_entry_t);
+    head = read_entries;
     file.close();
-}
-
-system_trace_entry_t *system_trace_buffer::get_entry(size_t index) {
-    return &entries[index];
 }
 
 bool system_trace_buffer::load_labels_from_file(const std::string &filename) {
