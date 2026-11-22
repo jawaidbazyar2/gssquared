@@ -309,10 +309,11 @@ All serial and parallel port attachments use `[[connections]]`, whether the port
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `device` | string | yes | Virtual peripheral: `file`, `modem`, `echo`, `clipboard`, `serial`, `none` |
+| `device` | string | yes | Virtual peripheral: `file`, `printer`, `modem`, `echo`, `clipboard`, `serial`, `netprinter`, `none` |
 | `slot` | integer | yes* | Firmware/expansion slot: IIgs SCC A=`1`, B=`2`; cards use their slot |
-| `port` | string | no | Channel `"a"` or `"b"` (defaults to `"a"`; legacy bare `port` without `slot` still loads) |
+| `port` | string or integer | no | Channel `"a"` or `"b"` when a string (defaults to `"a"`; legacy bare `port` without `slot` still loads). Integer 1–65535 is the TCP port when `device = "netprinter"` (required for that device). Preferred configs always use `slot` for the jack. |
 | `path` | string | no | Capture file when `device = "file"` (optional); host port name when `device = "serial"` (required; stored as-is, not relative to the config) |
+| `host` | string | no | DNS name or IP when `device = "netprinter"` (required for that device; stored as typed) |
 | `remote_url` | string | no | Remote URL when `device = "modem"` (future) e.g. telnet://1.2.3.4:5566 |
 
 \* Preferred form always includes `slot`. Legacy IIgs entries may omit `slot` and use `port = "a"|"b"`; the loader normalizes those to slots 1 and 2.
@@ -325,12 +326,16 @@ Aligned with `src/serial_devices/`:
 |-------|-------------|
 | `"none"` | No attachment |
 | `"file"` | Capture / file sink (`path` optional) |
+| `"printer"` | IIgs SCC and Super Serial. Same capture as `"file"` (`GS2.A.*` / `GS2.B.*` on SCC, `GS2.SSCn.*` on SSC; idle close, toast). On native builds the printer worker also opens a gs2print ticket and copies the same bytes to that socket; the OS open is spawned from the worker and not waited on. If the printer app is missing, a toast says so and the dump continues. On SSC, DIPSW1 mode bits are SIC P8 (`$ED` at the 9600 default) so firmware does not send ETX or wait for ACK. Not valid on parallel. The web build writes the dump only. |
 | `"clipboard"` | Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file) |
 | `"echo"` | Loopback for testing (schema only; not offered in UI) |
 | `"modem"` | Hayes-compatible virtual modem (native builds; serial ports only) |
 | `"serial"` | Real host UART; `path` is the OS port name (macOS `/dev/cu.*`, Windows `COMn`, Linux `/dev/ttyS*` `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`) |
+| `"netprinter"` | Raw TCP client. `host` and integer `port` required. Opens on the first guest byte and closes after 60 seconds idle. Native builds only; a web row is left unattached. On SSC, DIPSW1 mode bits are SIC P8. Spec: [NetPrinter.md](NetPrinter.md). Not valid on parallel. |
 
-**Allowed devices by port kind:** serial (SCC, SSC) → none / file / clipboard / modem / serial; parallel → none / file / clipboard.
+**Allowed devices by port kind:** SCC and SSC serial → none / file / printer / clipboard / modem / serial / netprinter; parallel → none / file / clipboard. A `printer` or `netprinter` row on parallel is refused when the machine starts (the port keeps its default); the config editor rewrites it to `file`.
+
+`gs2print` as its own `[[connections]]` device (parallel, and a serial port used as a printer) is not implemented. The `printer` attachment is what opens the ticket. The sidecar app is still a separate download. See [PrinterEmulation.md](PrinterEmulation.md).
 
 ### Port addressing
 
@@ -344,6 +349,14 @@ device = "file"
 [[connections]]
 slot = 2
 device = "modem"
+```
+
+Printer on either built-in port:
+
+```toml
+[[connections]]
+slot = 1
+device = "printer"
 ```
 
 Legacy form (still accepted; normalized on load):

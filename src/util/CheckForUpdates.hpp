@@ -17,5 +17,17 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+
+/** HTML updates page for this build (Docs → Check For Updates). */
+std::string checkForUpdatesUrl();
+
+/** Same path with ?format=toml for the background check. */
+std::string checkForUpdatesTomlUrl();
+
+/** True only when the body parses as TOML and status is the string "available". */
+bool updateTomlSaysAvailable(std::string_view body);
+
 /** Open the gssquared.net updates page for this build in the system browser. */
 void openCheckForUpdates();

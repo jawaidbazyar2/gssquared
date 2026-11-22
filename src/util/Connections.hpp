@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <cstdlib>
 #include <functional>
 #include <optional>
 #include <string>
@@ -58,9 +59,11 @@ enum class connection_device_type_t {
     CLIPBOARD,
     MODEM,
     SERIAL,
+    PRINTER,
+    NET_PRINTER,
 };
 
-using ConnectionAttachFn = std::function<void(SerialDevice *device)>;
+using ConnectionAttachFn = std::function<void(SerialDevice *device, connection_device_type_t type)>;
 
 struct connection_port_info_t {
     connection_key_t key;
@@ -68,6 +71,8 @@ struct connection_port_info_t {
     connection_port_kind_t kind = connection_port_kind_t::SERIAL;
     connection_device_type_t device = connection_device_type_t::NONE;
     std::string path;
+    std::string host;
+    int tcp_port = 0;
 };
 
 /** Spec for building a serial-port UI button (live OSD or config editor). */
@@ -77,6 +82,10 @@ struct connection_port_spec_t {
     connection_port_kind_t kind = connection_port_kind_t::SERIAL;
     connection_device_type_t device = connection_device_type_t::NONE;
     std::string path;
+    std::string host;
+    int tcp_port = 0;
+    /** SSC and IIgs SCC. Printer is a file capture plus gs2print; SSC also sets SIC P8. */
+    bool offers_printer = false;
 };
 
 /**
@@ -118,6 +127,8 @@ inline const char *connection_device_type_name(connection_device_type_t type) {
         case connection_device_type_t::CLIPBOARD: return "clipboard";
         case connection_device_type_t::MODEM:     return "modem";
         case connection_device_type_t::SERIAL:    return "serial";
+        case connection_device_type_t::PRINTER:     return "printer";
+        case connection_device_type_t::NET_PRINTER: return "netprinter";
     }
     return "none";
 }
@@ -127,10 +138,16 @@ inline connection_device_type_t connection_device_type_from_string(const std::st
     if (s == "clipboard") return connection_device_type_t::CLIPBOARD;
     if (s == "modem") return connection_device_type_t::MODEM;
     if (s == "serial") return connection_device_type_t::SERIAL;
+    if (s == "printer") return connection_device_type_t::PRINTER;
+    if (s == "netprinter") return connection_device_type_t::NET_PRINTER;
     return connection_device_type_t::NONE;
 }
 
-inline bool connection_device_allowed(connection_port_kind_t kind, connection_device_type_t type) {
+inline bool connection_device_allowed(connection_port_kind_t kind, connection_device_type_t type,
+                                      bool offers_printer = false) {
+    if (type == connection_device_type_t::PRINTER) {
+        return offers_printer;
+    }
     if (type == connection_device_type_t::NONE ||
         type == connection_device_type_t::FILE ||
         type == connection_device_type_t::CLIPBOARD) {
@@ -140,27 +157,31 @@ inline bool connection_device_allowed(connection_port_kind_t kind, connection_de
         return kind == connection_port_kind_t::SERIAL;
     }
 #if !defined(__EMSCRIPTEN__)
-    if (type == connection_device_type_t::SERIAL) {
+    if (type == connection_device_type_t::SERIAL ||
+        type == connection_device_type_t::NET_PRINTER) {
         return kind == connection_port_kind_t::SERIAL;
     }
 #endif
     return false;
 }
 
-inline std::vector<connection_device_type_t> connection_allowed_devices(connection_port_kind_t kind) {
-    if (kind == connection_port_kind_t::PARALLEL) {
-        return {
-            connection_device_type_t::NONE,
-            connection_device_type_t::FILE,
-            connection_device_type_t::CLIPBOARD,
-        };
-    }
-    return {
+inline std::vector<connection_device_type_t> connection_allowed_devices(connection_port_kind_t kind,
+                                                                        bool offers_printer = false) {
+    std::vector<connection_device_type_t> devices = {
         connection_device_type_t::NONE,
         connection_device_type_t::FILE,
-        connection_device_type_t::CLIPBOARD,
-        connection_device_type_t::MODEM,
     };
+    if (offers_printer) {
+        devices.push_back(connection_device_type_t::PRINTER);
+    }
+    devices.push_back(connection_device_type_t::CLIPBOARD);
+    if (kind != connection_port_kind_t::PARALLEL) {
+        devices.push_back(connection_device_type_t::MODEM);
+#if !defined(__EMSCRIPTEN__)
+        devices.push_back(connection_device_type_t::NET_PRINTER);
+#endif
+    }
+    return devices;
 }
 
 class Connections {
@@ -170,9 +191,12 @@ class Connections {
         connection_device_type_t default_device = connection_device_type_t::NONE;
         connection_device_type_t current_device = connection_device_type_t::NONE;
         bool attached_once = false; // true after any attach(), including explicit none
+        bool offers_printer = false;
         ConnectionAttachFn attach_fn;
         std::string port_id;
         std::string path;
+        std::string host;
+        int tcp_port = 0;
         SerialDevice *device = nullptr;
     };
 
@@ -182,7 +206,7 @@ class Connections {
     mutable std::vector<connection_port_info_t> cached_ports_;
 
     SerialDevice *create_device(connection_device_type_t type, const std::string &port_id,
-                                const std::string &path);
+                                const std::string &path, const std::string &host, int tcp_port);
 
 public:
     Connections(EventQueue *event_queue, DeviceFrameDispatcher *device_frame_dispatcher);
@@ -193,10 +217,11 @@ public:
                       connection_port_kind_t kind,
                       connection_device_type_t default_device,
                       ConnectionAttachFn attach_fn,
-                      const std::string &port_id);
+                      const std::string &port_id,
+                      bool offers_printer = false);
 
     bool attach(connection_key_t key, connection_device_type_t type,
-                const std::string &path = {});
+                const std::string &path = {}, const std::string &host = {}, int tcp_port = 0);
     connection_device_type_t current_device(connection_key_t key) const;
     SerialDevice *device(connection_key_t key) const;
     std::vector<connection_device_type_t> allowed_devices(connection_key_t key) const;
@@ -207,3 +232,43 @@ public:
 
     void clear();
 };
+
+inline constexpr int kNetPrinterDefaultPort = 9100;
+
+/** `host:port`, or `[host]:port` when host is an IPv6 literal. Empty if host is unset. */
+inline std::string format_net_printer_endpoint(const std::string &host, int tcp_port) {
+    if (host.empty() || tcp_port <= 0) {
+        return {};
+    }
+    if (host.find(':') != std::string::npos) {
+        return "[" + host + "]:" + std::to_string(tcp_port);
+    }
+    return host + ":" + std::to_string(tcp_port);
+}
+
+inline std::string trim_copy(std::string s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) {
+        s.pop_back();
+    }
+    return s;
+}
+
+inline bool parse_tcp_port(const std::string &text, int &out) {
+    const std::string s = trim_copy(text);
+    if (s.empty()) {
+        return false;
+    }
+    char *end = nullptr;
+    const long v = std::strtol(s.c_str(), &end, 10);
+    if (end == s.c_str() || (end && *end != '\0')) {
+        return false;
+    }
+    if (v < 1 || v > 65535) {
+        return false;
+    }
+    out = static_cast<int>(v);
+    return true;
+}

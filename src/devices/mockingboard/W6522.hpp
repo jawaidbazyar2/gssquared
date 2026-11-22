@@ -88,6 +88,11 @@ private:
     bool t1_skip_next_decrement = false;
     bool t2_skip_next_decrement = false;
 
+    // CA1 pin level. SSI-263 A/R is wired here on Mockingboard C: idle
+    // (not requesting) holds the pin high. PCR bit 0 selects the active
+    // edge (0 = falling, 1 = rising).
+    bool ca1_level = true;
+
     //uint64_t system_cycles;
     uint64_t t1_next_event;
     uint64_t t2_next_event;
@@ -173,12 +178,27 @@ public:
     // Mockingboard bridge when the paired AY drives the data bus on a read.
     inline void set_ira(uint8_t value) { ira = value; }
 
+    // Drive the CA1 input pin. A level change that matches PCR bit 0
+    // latches IFR.CA1 (edge-sensitive, like the real 6522).
+    void set_ca1(bool level) {
+        if (level == ca1_level) {
+            return;
+        }
+        ca1_level = level;
+        const bool want_rising = (pcr & 0x01) != 0;
+        if (level == want_rising) {
+            ifr.bits.ca1 = 1;
+            update_interrupt();
+        }
+    }
+
     // Accessors needed by the Mockingboard bridge to derive the AY bus
     // state (post-DDR) from this generic 6522 without leaking write access.
     inline uint8_t get_ora()  const { return ora;  }
     inline uint8_t get_orb()  const { return orb;  }
     inline uint8_t get_ddra() const { return ddra; }
     inline uint8_t get_ddrb() const { return ddrb; }
+    inline bool    get_ca1()  const { return ca1_level; }
 
     void update_interrupt() {
         // for each chip, calculate the IFR bit 7.
@@ -292,8 +312,12 @@ public:
             case MB_6522_DDRB:
                 ddrb = data;
                 break;
-            case MB_6522_ORA: case MB_6522_ORA_NH: // TODO: what the heck is NH here??
-                // TODO: need to mask with DDRA
+            case MB_6522_ORA:
+                ora = data;
+                ifr.bits.ca1 = 0;
+                update_interrupt();
+                break;
+            case MB_6522_ORA_NH: // no-handshake: does not clear CA1
                 ora = data;
                 break;
             case MB_6522_ORB:
@@ -397,14 +421,20 @@ public:
             case MB_6522_DDRB:
                 retval = ddrb;
                 break;
-            case MB_6522_ORA: case MB_6522_ORA_NH: { 
-                // TODO: what the heck is NH here??
+            case MB_6522_ORA: {
                 uint8_t a_in = ira & (~ddra);
                 uint8_t a_out = ora & ddra;
                 retval = a_out | a_in;
-                } 
-
+                ifr.bits.ca1 = 0;
+                update_interrupt();
                 break;
+            }
+            case MB_6522_ORA_NH: { // no-handshake: does not clear CA1
+                uint8_t a_in = ira & (~ddra);
+                uint8_t a_out = ora & ddra;
+                retval = a_out | a_in;
+                break;
+            }
             case MB_6522_ORB: {
                 // Input bits come from the external pins (captured in irb),
                 // not from ORB. On the Mockingboard, PB lines have pull-ups

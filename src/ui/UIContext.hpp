@@ -17,9 +17,12 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <SDL3/SDL.h>
 #include "util/TextRenderer.hpp"
 #include "AssetAtlas.hpp"
+#include "RoundedRect.hpp"
 
 /**
  * @brief Shared rendering context passed to all UI widgets.
@@ -60,6 +63,31 @@ struct UIContext {
     inline void line(int x1, int y1, int x2, int y2, uint32_t rgba) {
         color(rgba);
         SDL_RenderLine(renderer, x1, y1, x2, y2);
+    }
+
+    inline void line_f(float x1, float y1, float x2, float y2, uint32_t rgba) {
+        color(rgba);
+        SDL_RenderLine(renderer, x1, y1, x2, y2);
+    }
+
+    static inline SDL_FColor rgba_to_fcolor(uint32_t rgba) {
+        return SDL_FColor{
+            static_cast<float>((rgba >> 24) & 0xFF) / 255.0f,
+            static_cast<float>((rgba >> 16) & 0xFF) / 255.0f,
+            static_cast<float>((rgba >> 8)  & 0xFF) / 255.0f,
+            static_cast<float>(rgba & 0xFF) / 255.0f,
+        };
+    }
+
+    inline void fill_rounded_rect(SDL_FRect rect, float radius, uint32_t rgba,
+                                  bool round_top = true, bool round_bottom = true) {
+        ui_roundrect::fill(renderer, rect, radius, rgba, round_top, round_bottom);
+    }
+
+    inline void draw_rounded_rect(SDL_FRect rect, float radius, uint32_t rgba,
+                                  float thickness = 1.0f,
+                                  bool round_top = true, bool round_bottom = true) {
+        ui_roundrect::stroke(renderer, rect, radius, rgba, thickness, round_top, round_bottom);
     }
 
     inline void debug_text(const char *text, int x, int y, uint32_t rgba) {

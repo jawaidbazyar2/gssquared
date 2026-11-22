@@ -12,6 +12,7 @@
 #include "Button.hpp"
 #include "version.h"
 #include "platform-specific/menu.h"
+#include "util/CheckForUpdates.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -117,8 +118,12 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         container->add(button);
     }
 
-    // Recent custom configs: MRU + up to 4 by usage score.
+    // Recent custom configs: ranked list (MRU + by usage score). Keep loading
+    // until we have kMaxDisplay tiles or run out of candidates.
     for (const auto& entry : SystemSettings::instance().display_entries()) {
+        if (static_cast<int>(recent_loaded_.size()) >= SystemSettings::kMaxDisplay) {
+            break;
+        }
         auto loaded = std::make_unique<SystemConfig>();
         std::string error;
         std::filesystem::path pack_config;
@@ -227,20 +232,34 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     const float action_w = 420.0f;
     const float action_h = 52.0f;
+    const float update_h = 36.0f;
+    const float update_gap = 8.0f;
     SDL_FRect tile_bounds = container->get_effective_bounds();
     float action_x = (design_width - action_w) / 2.0f;
     float action_y = tile_bounds.y + tile_bounds.h + 16.0f;
-    if (action_y + action_h > ui_ctx.description_y - 12.0f) {
-        action_y = ui_ctx.description_y - 12.0f - action_h;
+    const float reserved_h = action_h + update_gap + update_h;
+    if (action_y + reserved_h > ui_ctx.description_y - 12.0f) {
+        action_y = ui_ctx.description_y - 12.0f - reserved_h;
     }
     action_con_->size(action_w, action_h);
     action_con_->set_position(action_x, action_y);
     action_con_->layout();
 
+    update_btn_ = new Button_t(&ui_ctx, "Click to get new version", ActionStyle);
+    update_btn_->size(action_w, update_h);
+    update_btn_->set_position(action_x, action_y + action_h + update_gap);
+    update_btn_->set_visible(false);
+    update_btn_->on_click([](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
+        openCheckForUpdates();
+        return true;
+    });
+
     updated = true;
 }
 
 SelectSystem::~SelectSystem() {
+    delete update_btn_;
     delete action_con_;
     delete container;
     delete text_renderer;
@@ -279,6 +298,9 @@ bool SelectSystem::event(const SDL_Event &event) {
     if (action_con_) {
         action_con_->handle_mouse_event(ev);
     }
+    if (update_btn_) {
+        update_btn_->handle_mouse_event(ev);
+    }
     container->handle_mouse_event(ev);
     if ((event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ||
         (event.type == SDL_EVENT_MOUSE_BUTTON_UP) || 
@@ -309,6 +331,14 @@ const std::string& SelectSystem::get_recent_path(int selection_id) const {
     return recent_paths_[static_cast<size_t>(index)];
 }
 
+void SelectSystem::set_update_visible(bool visible) {
+    if (update_btn_ == nullptr || update_btn_->is_visible() == visible) {
+        return;
+    }
+    update_btn_->set_visible(visible);
+    updated = true;
+}
+
 bool SelectSystem::update() {
     return updated;
 }
@@ -321,6 +351,9 @@ void SelectSystem::render() {
         container->render();
         if (action_con_) {
             action_con_->render();
+        }
+        if (update_btn_) {
+            update_btn_->render();
         }
 
         text_renderer->set_color(255,255,255,255);
@@ -335,6 +368,8 @@ void SelectSystem::render() {
             hint = "Open an existing config file to launch";
         } else if (edit_btn_ && edit_btn_->is_mouse_hovering()) {
             hint = "Open an existing config file to edit";
+        } else if (update_btn_ && update_btn_->is_visible() && update_btn_->is_mouse_hovering()) {
+            hint = "A newer GSSquared is available.";
         }
         if (hint) {
             text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);

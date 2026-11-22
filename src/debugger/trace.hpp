@@ -65,12 +65,13 @@ struct trace_column_layout {
     int label_w;
 };
 
+static constexpr size_t kDefaultTraceBufferCapacity = 128 * 1024; // 131,072 entries (power of 2)
+
 struct system_trace_buffer {
     system_trace_entry_t *entries;
-    size_t size;
-    size_t head;
-    size_t tail;
-    size_t count;
+    size_t size;    // Always a power of 2
+    size_t mask;    // size - 1
+    uint64_t head;  // Monotonic count of entries written; next write slot is (head & mask)
     processor_type cpu_type;
     int16_t cpu_mask;
     std::unordered_map<uint32_t, std::string> labels;
@@ -79,13 +80,30 @@ struct system_trace_buffer {
     system_trace_buffer(size_t capacity, processor_type cpu_type);
     ~system_trace_buffer();
 
-    void add_entry(const system_trace_entry_t &entry);
+    inline void add_entry(const system_trace_entry_t &entry) {
+        entries[head & mask] = entry;
+        head++;
+    }
 
-    void save_to_file(const std::string &filename);
+    inline size_t count() const {
+        return head < static_cast<uint64_t>(size) ? static_cast<size_t>(head) : size;
+    }
+
+    inline size_t head_index() const {
+        return static_cast<size_t>(head & mask);
+    }
+
+    inline size_t tail_index() const {
+        return head < static_cast<uint64_t>(size) ? 0 : static_cast<size_t>(head & mask);
+    }
+
+    inline system_trace_entry_t *get_entry(size_t index) {
+        return &entries[index & mask];
+    }
+
+    bool save_to_file(const std::string &filename);
 
     void read_from_file(const std::string &filename);
-
-    system_trace_entry_t *get_entry(size_t index);
 
     char *decode_trace_entry(system_trace_entry_t *entry);
 

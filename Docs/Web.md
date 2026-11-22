@@ -2,12 +2,12 @@
 
 GSSquared can run in a modern browser (WebAssembly). The hosted build is at [https://gssquared.net/live](https://gssquared.net/live).
 
-The page must be served with cross-origin isolation headers (`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`). Opening a local `GSSquared.html` via `file://` will not work. For a local build, use `python3 assets/web/serve.py` as described in [Emscripten.md](Emscripten.md).
+The page must be served with cross-origin isolation headers (`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`). Opening a local `GSSquared.html` via `file://` will not work. For a local build, use `python3 assets/web/serve.py` as described in [Emscripten.md](Emscripten.md). Static HTTPS hosts that cannot send those headers (for example GitHub Pages) can still run the build: a small service worker adds them.
 
 ## What works
 
 - Built-in machines from System Select (same tiles as native).
-- Keyboard, mouse, gamepad, display engines, CRT shader (when the browser GPU path is available).
+- Keyboard, mouse, gamepad, display engines, Shadow Mask (when the browser GPU path is available).
 - Mounting disks with **File → Drives**, clicking a Control Panel drive icon (browser file picker), or **drag-and-drop** onto a drive.
 - Playing an arQyv pack from a `gssquared.net/live/#pack=` link, and **File → Save to Collection** when that download included a save token. The pack lives in the tab’s memory. See [Arqyv Integration](Arqyv.md).
 
@@ -18,7 +18,8 @@ The page must be served with cross-origin isolation headers (`Cross-Origin-Opene
 | **Mounts are in-memory** | Reload or close the tab and disks are gone. Writes are not saved back to your computer’s files. |
 | **File protections** | .pmap files don't work |
 | **No modem / SDL_net** | The Modem attachment is compiled out. Use a native build for TCP Hayes modem. |
-| **No Host Folder…** | Host FST’s folder picker is native-only. |
+| **No Net Printer / printer sidecar** | Raw TCP Net Printer and the gs2print ticket are native-only. File capture still works. |
+| **No Host Folder** | Host FST’s folder picker is native-only. |
 | **No Uthernet II path** | Slirp networking is not available in the browser. |
 | **No debugger window** | F10 / hover Debug does not open a second window. |
 

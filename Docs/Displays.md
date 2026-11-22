@@ -9,19 +9,20 @@ Typically any mode / control can be used with any computer.
 
 ## Display Engines
 
-GS2 supports three different Apple II Display Engines:
+GS2 supports four Apple II Display Engines:
 
 * Composite / NTSC
 * IIgs RGB
-* Monochrome
+* **GS Composite** (Apple IIgs only)
+* Monochrome (green, amber, or white)
 
-You can use any rendering mode (for the most part) with any computer type.
+You can use Composite, RGB, and Monochrome with any computer type. **GS Composite** is IIgs-only: it takes the IIgs RGB picture and encodes it as composite, the way a real GS looks on an AppleColor composite monitor. **F2** skips it on II / //e.
 
-In the Control Panel, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).
+In the Control Panel, there are buttons to change the display engine — NTSC, RGB, and Monochrome — and buttons to change the Monochrome color (green, amber, white). **GS Composite** is on **Display → Monitor** (and **F2** on a IIgs). The hover color buttons do not include it yet.
 
-Display engine can be selected by menu, from the Control Panel, from the hover Display picker, or by pressing **F2** to cycle through the display engines.
+Display engine can be selected by menu, from the Control Panel, from the hover Display picker (Composite / RGB / mono), or by pressing **F2** to cycle through the engines.
 
-NTSC mode has additional controls for Hue (Color) and Saturation, just like real composite monitors.
+NTSC and GS Composite have additional controls for Hue (Color) and Saturation, just like real composite monitors.
 
 Hue is adjusted with the keypad Plus and Minus Keys, while holding SHIFT.
 Saturation is adjusted with the keypad Plus and Minus Keys, while holding OPTION / WINDOWS.
@@ -29,27 +30,33 @@ Saturation is adjusted with the keypad Plus and Minus Keys, while holding OPTION
 Reducing Saturation to 0.5 results in colors that are a little more subdued, similar to some other emulators and certain CRT monitors.
 Reducing Saturation to 0 results in a grayscale (not monochrome) display.
 
+Composite and monochrome decoding run on the GPU when one is available (macOS Metal, Windows D3D12, Linux Vulkan). The browser build and machines without that GPU path use the CPU decoder.
+
 ## Display Configuration
 
 In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).
 
-* F2 cycles through the display engines.  
-* F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
+* F2 cycles through the display engines (including GS Composite on a IIgs).  
+* F5 toggles **Display → Scaling**: Smooth (a little more analog upscaling) and Sharp (square pixels).
 * F3 toggles between Full-Screen and Windowed modes.
 
 These are matters of personal preference, so you get to pick the one you like best.
 
-## CRT Effect / Shader
+## Shadow Mask (CRT effect)
 
-GS2 has a "CRT Shader" option under the Display menu, that turns on a "CRT Emulation" effect.
+**Display → Shadow Mask** turns on a CRT-style shadow-mask effect over the current picture.
 
-The effect modifies the normal display output, applying a "shadow mask" and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.
+The effect modifies the normal display output, applying a shadow mask and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.
 
 Available on macOS (Metal), Windows (D3D12), and Linux (Vulkan / SPIR-V). Works best on Retina / high-DPI displays but works pretty well on other monitors such as 27" e.g. 1440p (2560 x 1440).
 
-The shader mode can be activated with Display > CRT Shader, or by pressing F7. The [`-g`](CommandLine.md) command-line flag enables it at boot.
+Activate it with **Display → Shadow Mask**, or by pressing **F7**. The [`-g`](CommandLine.md) command-line flag enables it at boot.
 
 With **Second Sight (with Z180)**, the same option adds scanlines to the card's picture, also in the web build. See [Second Sight with Z180](#second-sight-with-z180).
+
+## Phosphor Persistence
+
+**Display → Phosphor Persistence** (on by default when the GPU decoder is available) keeps a short glow from the previous frame on green, amber, and white monitors, like a real phosphor. Uncheck it for a perfectly sharp mono picture.
 
 ## Second Sight Text
 
@@ -75,18 +82,14 @@ The VGA CRT shows each mode as a user sets its size and position controls for it
 
 The card effect is the same in native and web builds and reuses unchanged rows. It changes only the displayed picture; it does not change the card's pixels, timing, or monitor sense. The Apple's display keeps its existing native GPU effect.
 
-## Pixel Modes
+## Scaling
 
-GS2 has two Pixel Modes:
+**Display → Scaling** has two modes:
 
-* Pixel blur ("Analog")
-* Rectangular
+* **Smooth** — a little more analog upscaling of Apple II dots to modern displays
+* **Sharp** — exact square upscaling/downscaling, common in other emulators
 
-Pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays, that gives it more of that old CRT feel.
-
-Rectangular performs an exact square upscaling/downscaling, which is common in other emulators, and may be more to some people's liking.
-
-Pixel Mode can be selected from the hover Display picker or by pressing **F5** to toggle between pixel-blur and rectangular. F5 is **not** a switch between “accurate NTSC” and a legacy renderer — that path is always the Composite engine (**F2**).
+**F5** toggles Smooth and Sharp. F5 is **not** a switch between “accurate NTSC” and a legacy renderer — that path is always the Composite (or GS Composite) engine (**F2**).
 
 ## HUD overlays
 

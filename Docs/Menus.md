@@ -76,12 +76,23 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
       * Center
       * Right
     * Disconnected When No Gamepad
+  * Mockingboard
+    * Mono Helper
+    * Timbre
+      * Square
+      * Soft Square
+      * Warm Sine
+      * Organ
+      * Sawtooth
   * Apple Keys
     * Command = Open Apple
     * Alt = Open Apple
     * Left Option = Open Apple
+  * Debug
+    * CPU Trace
+    * Write Trace File on Exit
   * Sleep / Busy Wait
-  * Mono Helper
+  * Pause when Minimized
   * Right Mouse Button Accelerate
   * Second Sight (with the card in the machine)
     * Firmware: 1.4-BEEF (original) / 1.5-CBFC / 2.0-3277
@@ -94,13 +105,19 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
 
 **Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
 
+**Mockingboard** is available while a machine is running. **Mono Helper** decorrelates the right channel so certain Mockingboard sounds don't interfere with each other. **Timbre** chooses the "voice": **Square** is the default; the others (Soft Square, Warm Sine, Organ, Sawtooth) are "reimaginings" of Mockingboard sound. See [Mockingboard](Cards_Mockingboard.md).
+
 **Apple Keys** chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See [Using a Keyboard](KeyboardShortcuts.md).
 
 **Second Sight** selects the firmware and Lattice chip for **Second Sight (with Z180)**. The menu shows only when the machine has that card. The choices are remembered in app settings and applied at power-on or **Machine → Restart**. Every firmware/chip pairing is selectable. Changing firmware leaves the chip choice intact. Defaults are 1.4-BEEF (original) and Original (BE8C). **INT0 pull-up** adds a card modification that lets the VGA retrace interrupt reach the Z180; the default is the stock card. See [Second Sight](Cards_SecondSight.md).
 
-**Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag.
+**Debug → CPU Trace** enables or disables CPU instruction trace recording into the ring buffer (on by default). Toggling it here updates the live machine (if running) and saves the default in `system_settings.toml` (`debug.cpu_trace`). You can still toggle tracing temporarily inside the debugger window with **T**.
 
-**Mono Helper** widens Mockingboard stereo (decorrelates the right channel) so it is easier to hear on a mono speaker or mixed-down recording. Available whether or not a machine is running. See [Mockingboard](Cards_Mockingboard.md).
+**Debug → Write Trace File on Exit** controls whether `gssquared-trace.bin` is written to your documents folder when closing emulation or exiting (off by default, stored in `system_settings.toml` as `debug.save_trace_on_exit`).
+
+**Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag. When the emulator and debugger windows are both unfocused, GSSquared sleeps between frames anyway, so an idle window does not spin the host CPU.
+
+**Pause when Minimized** — when checked, the guest pauses while the main window is minimized (dock / taskbar). A focused debugger window still counts as being in the app. Off by default; stored in `system_settings.toml`.
 
 **Right Mouse Button Accelerate** — hold the right mouse button to run at a faster CPU speed (same idea as the INS accelerate path). See [Using a Mouse](Mouse.md).
 
@@ -110,15 +127,20 @@ Drive seek/activity sounds play in stereo (drive 1 toward the left, drive 2 towa
   * Monitor
     * Composite
     * GS RGB
+    * GS Composite
     * Monochrome - Green
     * Monochrome - Amber
     * Monochrome - White
+  * Scaling
+    * Smooth
+    * Sharp
   * HUD
     * Stats
     * Drives
   * Full Screen
   * Second Sight Text
-  * CRT Shader
+  * Shadow Mask
+  * Phosphor Persistence
   * Second Sight (with the card in the machine)
     * Monitor
       * VGA CRT
@@ -133,8 +155,13 @@ Drive seek/activity sounds play in stereo (drive 1 toward the left, drive 2 towa
 **HUD → Drives** toggles the drive-activity strip at the bottom of the screen (on by default).  
 Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.
 
+**GS Composite** (IIgs only) shows IIgs RGB through a composite encoder, like a real GS on an AppleColor composite monitor. **F2** skips it on II / //e. See [Displays](Displays.md).
+
+**Scaling → Smooth / Sharp** is how Apple II dots are upscaled to the window (**F5** toggles). Smooth is a little more analog; Sharp is square pixels.
+
 **Second Sight Text** (IIgs with the simulated Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).  
-**CRT Shader** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. With **Second Sight (with Z180)** it also adds scanlines to the card's picture, in the web build too. See [Displays](Displays.md).
+**Shadow Mask** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. Same as the [`-g`](CommandLine.md) flag at boot. With **Second Sight (with Z180)** it also adds scanlines to the card's picture, in the web build too.  
+**Phosphor Persistence** keeps a short glow on green / amber / white monitors. On by default when the GPU decoder is available. See [Displays](Displays.md).
 
 **Second Sight → Monitor → VGA CRT / VGA LCD / AppleColor RGB** selects the monitor attached to **Second Sight (with Z180)**. AppleColor RGB is the default. VGA LCD is a current LCD monitor on the VGA cable; the web build shows it only with a hardware GPU. The ROM reads the monitor sense at each card mode change. A change of cable takes effect at the next card mode change; **Machine → Restart** shows it at once.
 
@@ -149,13 +176,14 @@ There is no Debug menu on the native menu bar. Open the debugger with **F10** or
 See [Using the Debugger](UsingTheDebugger.md) for the full guide (panes, monitor commands, breakpoints, video views, and workflows).
 
   * **F10** or the hover **Debug** button — show/hide the debugger window
-  * On exit, the instruction trace is saved automatically as `gssquared-trace.bin` in your documents folder
+  * **Settings → Debug → CPU Trace** — enable/disable instruction trace recording (on by default)
+  * **Settings → Debug → Write Trace File on Exit** — save `gssquared-trace.bin` in your documents folder on exit (off by default)
 
-Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor commands (`sload`, `sclear`, `slookup`) and the automatic trace save on quit for now.
+Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor commands (`trsave`, `sload`, `sclear`, `slookup`) and the automatic trace save on quit for now.
 
 ### Docs
   * Check For Updates
   * Online Documentation
   * Donate
 
-**Check For Updates** opens the GitHub Releases page so you can download a newer package. **Online Documentation** opens the GSSquared user docs in your browser. **Donate** opens the project donation page.
+**Check For Updates** opens the gssquared.net updates page for this version, build, and platform so you can download a newer package. **Online Documentation** opens the GSSquared user docs in your browser. **Donate** opens the project donation page. If a newer desktop release is available, System Select may also show **Click to get new version** under + New / Launch / Edit... — same HTML page.

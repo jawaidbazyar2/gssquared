@@ -65,6 +65,7 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `wait_event()` / `wait_stopped()` | Block for unsolicited EVENT / parse `EVT_STOPPED` |
 | `read_mem(domain, address, length)` → `bytes` | Peek (`MEM_MAIN` / `MEM_MAIN_RAW`; `MEM_MEGAII` / `MEM_MEGAII_RAW` on IIgs) |
 | `write_mem(domain, address, data)` | Poke (same domains); `data` non-empty |
+| `load_mem(domain, address, path, *, file_offset=0, max_length=0)` → `int` | Load host binary file into memory (`LOADMEM`); returns bytes loaded |
 | `find_mem(...)` | See above; same domains as `read_mem` |
 | `key_event(down, scancode, mod=0)` | One SDL key down/up |
 | `key_down` / `key_up` | Same, for modifiers |
@@ -242,6 +243,7 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 | `examples/type_to_emu.py` | Generic typer tool for agents (`--paste` for PASTE_TEXT) |
 | `examples/test_breakpoints.py` | PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced `-p 3` and IIgs `-p 5`) |
 | `examples/test_regs_findmem.py` | `GET_REGS` / `SET_REGS` / `FINDMEM` smoke (IIe Enhanced `-p 3`) |
+| `examples/test_load_mem.py` | `LOADMEM` binary file load (whole file, slice, raw domain, error paths) |
 | `examples/test_video_text.py` | `VIDEO_TEXT` CURRENT + TEXT40/TEXT80 (IIe Enhanced `-p 3`) |
 | `examples/test_media_mount.py` | `MOUNT` / `UNMOUNT` Disk II slot 6 unit 0 (IIe Enhanced `-p 3`) |
 

@@ -109,6 +109,8 @@ class MMU {
         /** Contiguous RAM allocation, if any. Linear offsets for MAIN_RAW / MEGAII_RAW. */
         virtual uint8_t *get_memory_base() { return nullptr; }
         virtual uint32_t get_memory_size() { return 0; }
+        /** Total addressable bus space covered by this MMU's page table. */
+        uint32_t get_address_space_size() const { return static_cast<uint32_t>(num_pages) * page_size; }
 
         // Raw. Do not trigger cycles or do the IO bus stuff
         uint8_t read_raw(uint32_t address) {

@@ -57,6 +57,7 @@ mon_cmd_type_t Monitor::lookup_cmd(const std::string &cmd) {
     if (cmd == "sload") return MON_CMD_SLOAD;
     if (cmd == "sclear") return MON_CMD_SCLEAR;
     if (cmd == "slookup") return MON_CMD_SLOOKUP;
+    if (cmd == "trsave") return MON_CMD_TRSAVE;
     if (cmd == "m") return MON_CMD_M;
     if (cmd == "x") return MON_CMD_X;
     if (cmd == "video") return MON_CMD_VIDEO;
@@ -233,7 +234,7 @@ void Monitor::parse(const std::string &line) {
             node.val_cmd = lookup_cmd(lower_t);
         };
 
-        if (t.front() == '"' && t.back() == '"') {
+        if (t.length() >= 2 && t.front() == '"' && t.back() == '"') {
             node.type = MON_NODE_TYPE_STRING;
             node.val_string = t.substr(1, t.length() - 2);
         } else if (t.back() == ':') {
@@ -378,6 +379,9 @@ void Monitor::dispatch() {
             break;
         case MON_CMD_SCLEAR:
             cmd_sclear();
+            break;
+        case MON_CMD_TRSAVE:
+            cmd_trsave();
             break;
         case MON_CMD_MAP:
             cmd_map();
@@ -719,6 +723,7 @@ void Monitor::cmd_help() {
     addOutput("m / x                        - show assumed M / X width");
     addOutput("load \"filename\" address      - load memory from file");
     addOutput("save \"filename\" lo.hi        - save memory range to file");
+    addOutput("trsave \"filename\"            - save trace buffer to file");
     addOutput("move lo.hi address           - move memory from lo to hi to address");
     addOutput("debug \"displayname\"        - add debug display");
     addOutput("nodebug \"displayname\"      - remove debug display");
@@ -834,6 +839,28 @@ void Monitor::cmd_slookup() {
 void Monitor::cmd_sclear() {
     trace_->clear_labels();
     addFormattedOutput("Cleared symbol table");
+}
+
+void Monitor::cmd_trsave() {
+    if (trace_ == nullptr) {
+        addOutput("Error: trace buffer not set");
+        return;
+    }
+    if (nodes_.size() < 2) {
+        addOutput("Usage: trsave \"filename\"");
+        return;
+    }
+    const auto &node1 = nodes_[1];
+    if (node1.type != MON_NODE_TYPE_STRING || node1.val_string.empty()) {
+        addOutput("Error: expected string 'filename' as first argument");
+        return;
+    }
+    const std::string &filename = node1.val_string;
+    if (!trace_->save_to_file(filename)) {
+        addFormattedOutput("Error: could not save trace to file: %s", filename.c_str());
+        return;
+    }
+    addFormattedOutput("Saved %zu trace entries to %s", trace_->count(), filename.c_str());
 }
 
 void Monitor::cmd_map() {

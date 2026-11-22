@@ -29,7 +29,7 @@ project(gssquared)
 
 # Define base version (major.minor)
 set(VERSION_MAJOR "1")
-set(VERSION_MINOR "0")
+set(VERSION_MINOR "1")
 
 # Get git commit count for patch version (auto-incrementing)
 find_package(Git QUIET)
@@ -372,7 +372,21 @@ target_link_libraries(gs2_devices_parallel PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/videx_80x24.cpp )
 
-add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb2.cpp )
+add_library(gs2_devices_mockingboard
+    src/devices/mockingboard/mb2.cpp
+    src/devices/mockingboard/ssi263/ssi263.c
+    src/devices/mockingboard/ssi263/ssi263dsp.c
+)
+set_source_files_properties(
+    src/devices/mockingboard/ssi263/ssi263.c
+    src/devices/mockingboard/ssi263/ssi263dsp.c
+    PROPERTIES LANGUAGE C
+)
+target_include_directories(gs2_devices_mockingboard PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/devices/mockingboard
+)
+# Static link: don't dllexport/visibility-default the engine symbols.
+target_compile_definitions(gs2_devices_mockingboard PRIVATE SSI263_API=)
 
 # Apple Mouse III (PIA+6805 / Apple ROM). Former BazMouse sources remain under
 # src/devices/applemouseii/ but are not built.
@@ -534,8 +548,13 @@ else()
 endif()
 add_library(gs2_serial_devices
     src/serial_devices/SerialDevice.cpp
+    src/serial_devices/print/Gs2PrintSession.cpp
+    src/serial_devices/netprinter/NetPrinterDevice.cpp
     ${GS2_HOST_SERIAL_SRC}
 )
+if(WIN32)
+    target_link_libraries(gs2_serial_devices PUBLIC ws2_32 shell32)
+endif()
 add_library(gs2_util src/util/media.cpp src/util/apm.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp
     src/util/Connections.cpp
     #src/util/soundeffects.cpp 
@@ -676,7 +695,7 @@ if(WIN32)
     target_link_libraries(gs2_debugger ws2_32)
 endif()
 # Connections.cpp constructs SerialDevice subclasses; link after gs2_util for GNU ld.
-target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3} ${GS2_SDL3_TTF})
+target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3} ${GS2_SDL3_TTF} gs2_toml)
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
@@ -948,7 +967,7 @@ endif()
 
 if(NOT EMSCRIPTEN)
     cmake_policy(SET CMP0079 NEW)
-    target_sources(GSSquared PRIVATE src/ui/PackFetchModal.cpp)
+    target_sources(GSSquared PRIVATE src/ui/PackFetchModal.cpp src/util/UpdateCheck.cpp)
     target_link_libraries(gs2packtest PRIVATE platform_specific)
     if(APPLE)
         target_link_libraries(gs2packtest PRIVATE "-framework Foundation" "-framework Cocoa")
@@ -1480,6 +1499,9 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             list(APPEND APPIMAGE_DEPENDS ${LINUXDEPLOY_APPIMAGE})
         endif()
 
+        # Match CPack names on the other platforms: gssquared-<version>-<system>.<ext>
+        set(GS2_APPIMAGE_FILENAME "gssquared-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}.AppImage")
+
         # Create AppImage target
         add_custom_target(appimage
             # Clean and create AppDir
@@ -1499,17 +1521,22 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             # Use PNG icon (256x256) for better file manager support
             # LD_LIBRARY_PATH must include build lib dir and AppDir lib dir so linuxdeploy
             # can resolve vendored SDL3 dependencies (libSDL3_ttf -> libSDL3) when running ldd
+            # LDAI_OUTPUT / LINUXDEPLOY_OUTPUT_* set the package filename (not GSSquared-x86_64.AppImage)
             COMMAND ${CMAKE_COMMAND} -E env
                     LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:${APPIMAGE_APPDIR}/usr/${CMAKE_INSTALL_LIBDIR}:$ENV{LD_LIBRARY_PATH}
+                    LINUXDEPLOY_OUTPUT_APP_NAME=gssquared
+                    LINUXDEPLOY_OUTPUT_VERSION=${PROJECT_VERSION}
+                    LDAI_OUTPUT=${GS2_APPIMAGE_FILENAME}
                     ${LINUXDEPLOY_EXECUTABLE}
                     --appdir ${APPIMAGE_APPDIR}
                     --executable ${APPIMAGE_APPDIR}/usr/bin/GSSquared
                     --desktop-file ${APPIMAGE_APPDIR}/usr/share/applications/GSSquared.desktop
                     --icon-file ${APPIMAGE_APPDIR}/usr/share/icons/hicolor/256x256/apps/GSSquared.png
                     --output appimage
+            COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_BINARY_DIR}/GSSquared-x86_64.AppImage
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             DEPENDS ${APPIMAGE_DEPENDS}
-            COMMENT "Creating AppImage with linuxdeploy"
+            COMMENT "Creating AppImage ${GS2_APPIMAGE_FILENAME}"
         )
 
         message(STATUS "AppImage target available: cmake --build build --target appimage")

@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     
     trace_filename = argv[argc - 1];
 
-    system_trace_buffer trace_buffer(100000, cputype);
+    system_trace_buffer trace_buffer(kDefaultTraceBufferCapacity, cputype);
     
     // Load labels if specified
     if (label_filename != nullptr) {
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     
     trace_buffer.read_from_file(trace_filename);
     
-    for (size_t i = 0; i < trace_buffer.size; i++) {
+    for (size_t i = 0; i < trace_buffer.count(); i++) {
         system_trace_entry_t *entry = trace_buffer.get_entry(i);
         tmsg = trace_buffer.decode_trace_entry(entry);
         printf("%s\n", tmsg);

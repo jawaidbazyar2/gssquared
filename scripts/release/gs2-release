@@ -46,6 +46,10 @@ ARTIFACT_PATTERNS: dict[str, tuple[str, ...]] = {
         "build/gssquared-*.zip",
     ),
     "linux": (
+        "build/gssquared-*-Linux.AppImage",
+        "build/gssquared-*.AppImage",
+        "gssquared-*-Linux.AppImage",
+        "gssquared-*.AppImage",
         "build/GSSquared-x86_64.AppImage",
         "build/GSSquared-*.AppImage",
         "GSSquared-x86_64.AppImage",

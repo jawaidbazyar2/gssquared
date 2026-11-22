@@ -21,6 +21,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "util/toml.hpp"
 #include "version.h"
 
 static const char *updates_platform_token()
@@ -42,10 +43,36 @@ static const char *updates_platform_token()
     return "other";
 }
 
-void openCheckForUpdates()
+static std::string updates_base_url()
 {
     char url[256];
     snprintf(url, sizeof(url), "https://gssquared.net/updates/%s/%s/%s",
              VERSION_STRING, GIT_HASH, updates_platform_token());
-    SDL_OpenURL(url);
+    return url;
+}
+
+std::string checkForUpdatesUrl()
+{
+    return updates_base_url();
+}
+
+std::string checkForUpdatesTomlUrl()
+{
+    return updates_base_url() + "?format=toml";
+}
+
+bool updateTomlSaysAvailable(std::string_view body)
+{
+    try {
+        const toml::table table = toml::parse(body);
+        const auto status = table["status"].value<std::string>();
+        return status && *status == "available";
+    } catch (const toml::parse_error&) {
+        return false;
+    }
+}
+
+void openCheckForUpdates()
+{
+    SDL_OpenURL(checkForUpdatesUrl().c_str());
 }
