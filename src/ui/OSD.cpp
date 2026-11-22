@@ -66,7 +66,9 @@
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/host/HostSerial.hpp"
 #include "serial_devices/host/SerialPortManager.hpp"
+#if !defined(__EMSCRIPTEN__)
 #include "serial_devices/modem/ModemDevice.hpp"
+#endif
 #include "serial_devices/netprinter/NetPrinterDevice.hpp"
 #include "StorageButtonFactory.hpp"
 #include "version.h"
@@ -385,7 +387,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                         return np->is_socket_open() ? std::make_pair(std::string("Up"), true)
                                                     : std::make_pair(std::string("Idle"), false);
                     }
-                } else if (device == connection_device_type_t::MODEM) {
+                }
+#if !defined(__EMSCRIPTEN__)
+                else if (device == connection_device_type_t::MODEM) {
                     if (auto *md = dynamic_cast<ModemDevice *>(this->computer->connections->device(key))) {
                         if (md->is_online()) return {"Online", true};
                         if (md->is_ringing()) return {"Ringing", true};
@@ -393,6 +397,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                         return {"Outbound", false};
                     }
                 }
+#endif
             }
             return {"", false};
         });
