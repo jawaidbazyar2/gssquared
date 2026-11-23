@@ -246,8 +246,8 @@ function(configure_sdl_builds)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_image)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_ttf)
     # SDL_net has no Emscripten backend (its interface-enumeration code is a hard
-    # #error for unknown platforms). It is only used by the modem device, which
-    # we exclude from the web build, so skip building it entirely there.
+    # #error for unknown platforms). In the web build the modem dials over the
+    # browser's WebSocket instead, so skip building SDL_net there.
     if(NOT EMSCRIPTEN)
         add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_net)
     endif()
@@ -527,10 +527,17 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 else()
     set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_stub.cpp)
 endif()
+# The modem's connections: TCP (SDL_net) natively, WebSocket in the browser.
+if(EMSCRIPTEN)
+    set(GS2_MODEM_LINE_SRC src/serial_devices/modem/ModemLine_web.cpp)
+else()
+    set(GS2_MODEM_LINE_SRC src/serial_devices/modem/ModemLine_net.cpp)
+endif()
 add_library(gs2_serial_devices
     src/serial_devices/SerialDevice.cpp
     src/serial_devices/print/Gs2PrintSession.cpp
     src/serial_devices/netprinter/NetPrinterDevice.cpp
+    ${GS2_MODEM_LINE_SRC}
     ${GS2_HOST_SERIAL_SRC}
 )
 if(WIN32)
@@ -1531,6 +1538,7 @@ if(EMSCRIPTEN)
         -sINITIAL_MEMORY=268435456          # 256 MB headroom for IIgs RAM + textures
         -sSTACK_SIZE=4mb
         -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS,stringToNewUTF8,UTF8ToString
+        -lwebsocket.js                      # modem dial-out (ModemLine_web.cpp)
         -sFORCE_FILESYSTEM=1
         --preload-file ${GS2_WEB_PRELOAD}
         --shell-file ${CMAKE_SOURCE_DIR}/assets/web/shell.html

@@ -17,7 +17,7 @@ The page must be served with cross-origin isolation headers (`Cross-Origin-Opene
 |-------|----------------|
 | **Mounts are in-memory** | Reload or close the tab and disks are gone. Writes are not saved back to your computer’s files. |
 | **File protections** | .pmap files don't work |
-| **No modem / SDL_net** | The Modem attachment is compiled out. Use a native build for TCP Hayes modem. |
+| **Modem dials WebSocket only** | The modem dials `wss://` and `ws://` BBS addresses (see [Serial / Modem](Serial_Modem.md)). It cannot dial TCP or answer calls; use a native build for those. |
 | **No Net Printer / printer sidecar** | Raw TCP Net Printer and the gs2print ticket are native-only. File capture still works. |
 | **No Host Folder** | Host FST’s folder picker is native-only. |
 | **No Uthernet II path** | Slirp networking is not available in the browser. |
@@ -26,6 +26,6 @@ The page must be served with cross-origin isolation headers (`Cross-Origin-Opene
 ## Related
 
 - [Storage](Storage.md) — formats and native write-back (not used on web)
-- [Serial / Modem](Serial_Modem.md) — native-only modem
+- [Serial / Modem](Serial_Modem.md) — WebSocket dial-out only on the web
 - [Host FST](HostFST.md) — native-only folder share
 - [Emscripten.md](Emscripten.md) — how to build and deploy `/live`
