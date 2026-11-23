@@ -213,6 +213,10 @@ function(configure_sdl_builds)
         set(SDL_SHARED OFF)
         set(SDL_STATIC ON)
         set(SDL_TEST OFF)
+        # SDL leaves threads off on Emscripten by default. The serial devices
+        # run their device_loop() on an SDL thread, and the page already runs
+        # with pthreads (-pthread, cross-origin isolated).
+        set(SDL_PTHREADS ON)
         set(SDLIMAGE_VENDORED ON)
         set(SDLTTF_VENDORED ON)
         # We only need PNG (atlas / IBM_VGA font). Disable the heavy optional
