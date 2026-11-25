@@ -45,7 +45,7 @@ In `65816MMUInstructions.md` (lines 14–37, 50), `PRIV` resets to `00000001`, s
   - Superpage ↔ L2 size change without a flush: **software contract** (invalidate/flush before changing the type).
   - Mid-instruction page count: **hardware problem**. TLB is expected to be at least 32 entries.
   - Per-VA `TLBI`: **Decision:** add supervisor-only `TLBI` (2-byte `WDM`, implied; VA payload in `C`/`X` like the other MMU ops). Opcode/signature deferred with the rest of the `WDM` map. `L1SW`/`L1UW` still drop all rows for that table. Exact match rule (4 KB vs also the enclosing superpage; user-tagged vs current `PRIV`) TBD with the mnemonic sheet.
-- **1.5.3 `U` and `G`:** **Decision: drop `U`.** Privilege is which L1 is walked (user never walks `L1_Sup`). Walk checks are `V` then `W` only. PTE bit 28 is reserved, write `0` (safe polarity for a later cache-inhibit or execute bit). No privilege fault type. `G` is not a PTE bit; `L1UW` drops user-tagged TLB rows, kernel-private rows survive by table tag. Kernel contract: do not leave process-A aliases in `L1_Sup` across `L1UW` (flush or unmap the copy window, or do not map user pages into `L1_Sup`). Spec updates needed in `TwoLevelPageTables.md` (flag table, walk, TLB fill) and `65816MMUInstructions.md` (privilege-fault mentions).
+- **1.5.3 `U` and `G`:** **Decision: drop `U`.** Privilege is which L1 is walked (user never walks `L1_Sup`). Walk checks are `V` then `W` only. PTE bit 28 is **NC** (2.4): `0` = cacheable, `1` = uncached. No privilege fault type. `G` is not a PTE bit; `L1UW` drops user-tagged TLB rows, kernel-private rows survive by table tag. Kernel contract: do not leave process-A aliases in `L1_Sup` across `L1UW` (flush or unmap the copy window, or do not map user pages into `L1_Sup`). Spec updates needed in `TwoLevelPageTables.md` (flag table, walk, TLB fill) and `65816MMUInstructions.md` (privilege-fault mentions).
 - **1.5.4 PTE endianness & torn writes:** **Decision:** Little-endian (everything on the 65816 is). Kernel contract: set `V` last, clear `V` first, so a walker never observes a torn 32-bit PTE. Hardware does not special-case this.
 - **1.5.5 Serialization:** **Decision:** `MMUE`, `MMUD`, `L1SW`, `L1UW`, `STPV` drain prefetch; the next fetch uses the new mode/table. `L1SW` while already translating has the same “standing on a mapped identity/valid page” requirement as `MMUE`.
 - **Fault CSRs:** See 1.2.5 (`PC` on stack; VA/cause in a register).
@@ -56,37 +56,47 @@ In `65816MMUInstructions.md` (lines 14–37, 50), `PRIV` resets to `00000001`, s
 
 An accelerator card sits in the IIgs 40-pin 65C816 socket in front of the motherboard **FPI/CYA**, **Mega II**, **ROM**, and **expansion slots**.
 
-### 2.1 Requires a custom soft-core / ASIC 65816 (cannot use a physical W65C816S)
-Unlike the earlier [MemoryProtection.md](MemoryProtection.md) concept, `65816MMUInstructions.md` requires custom `WDM` register transfers (`C`/`X`/`A`), `SSP` swapping, user-mode `I`-flag bypass, and user `WAI`/`STP`/`XCE` trapping. A real W65C816S chip cannot do any of these externally; the accelerator **must** implement the CPU core itself (e.g., in an FPGA).
+### 2.1 Requires a custom soft-core / ASIC 65816 (cannot use a physical W65C816S) — **DECIDED**
+**Decision:** Accepted. This ISA cannot wrap a W65C816S; the accelerator is a soft 65816 (FPGA/ASIC) driving the 40-pin socket as bus master. Standard mode remains cycle-accurate 65816 toward the motherboard. Several FPGA 65816 IIgs accelerators already exist; this is the same class of product.
 
-### 2.2 No physical address map partitioning (32-bit PA vs 24-bit IIgs socket)
-The IIgs CPU socket only has 24 address bits (`$00:0000–$FF:FFFF`), of which FPI decodes `$00–$7F` (up to 8 MB motherboard/slot RAM), `$E0–$E1` (Mega II), and `$FC–$FF` (ROM).
+### 2.2 No physical address map partitioning (32-bit PA vs 24-bit IIgs socket) — **DECIDED**
+**Decision:** Out of ISA scope. Same as 2.1: an FPGA-core accelerator owns PA decode (onboard RAM vs socket vs MMIO), reset aliases, and RAM discovery. The CPU/MMU spec only produces 32-bit PAs; the card fabric maps them. Not an ISA gap.
 
-- **Missing routing specification:** How does `PA[31:0]` decide whether an access targets **onboard accelerator RAM/peripherals** vs the **IIgs motherboard bus**?
-- **Bootstrapping & RAM discovery:** At reset (`MMU_EN = 0`), only `PA[31:24] = $00` is reachable, so initial `L1_Sup`/`L2` tables must be built in the low 16 MB. There is no register/table for the OS to discover how much onboard accelerator RAM exists above 16 MB or where motherboard vs onboard regions sit in the 4 GB PA space.
+### 2.3 Collision with motherboard FPI/CYA & Mega II — **PARTIAL** (scope: CPU ISA only, not full accelerator)
+Section 2 describes FPGA accelerators that already have local fast RAM and optional own video. This work defines **65816 enhancements only**, not socket interface / shadow / display card behavior.
 
-### 2.3 Collision with motherboard FPI/CYA & Mega II
-Every bus cycle that leaves the CPU socket is re-interpreted by the motherboard FPI/CYA according to `$C035` (Shadow/IOLC), `$C036` (Speed/all-bank shadow), `$C068` (State/LC/ALTZP/RAMRD/RAMWRT), `$C029` (NewVideo), and `VPB`:
+- **2.3.1 Vector pull / VBR:** **Decision:** When `MMU_EN = 1`, native `COP`/`BRK`/`ABORT`/`NMI`/`IRQ` fetch from a **32-bit physical** vector base (`VBR`), not VA `$00FFE4`. Untranslated, so a trap cannot page-fault on the vector table itself (interrupt-then-fault). Table is the stock native **12 bytes**, `VBR+0` = `COP`:
 
-- **Vector pull (`VPB`) hijacking:** When `MMU_EN = 1` traps to `$00FFE4–$00FFEE`, if that translated `PA` exits onto the motherboard with `VPB=0` (and `$C035` bit 6 = 0), the FPI will override it and return **Apple IIgs ROM's vectors (`$FF/FFE4–$FF/FFEE`)** instead of the OS's vectors. The accelerator must suppress `VPB` (or serve kernel vector pages from onboard RAM).
-- **I/O & Shadowing interference:** Mapping a virtual page to motherboard bank `$00` or `$01` subjects it to FPI `$C035`/`$C068` rules; mapping I/O to `$E0/C000` avoids `$C035` bit 6, but `$E0/$E1` accesses are forced to 1 MHz.
-- **4 KB page size vs IIgs bank `$00` layout:** In Apple IIgs compatibility, Zero Page (`$0000–$00FF`), Stack (`$0100–$01FF`), and Text Page 1 (`$0400–$07FF`) all share the **same 4 KB page** (`$0000–$0FFF`), and I/O (`$C000–$C0FF`) shares a 4 KB page with Slot/Expansion ROMs (`$C100–$CFFF`). Fast onboard RAM vs video-shadowed writes inside `$0000–$0FFF` cannot be distinguished using 4 KB PTE flags alone — legacy shadowing still requires sub-page accelerator shadowing logic (just like TransWarp GS / ZipGSX).
+  | Offset | Vector |
+  |---|---|
+  | `+0` | `COP` |
+  | `+2` | `BRK` |
+  | `+4` | `ABORT` |
+  | `+6` | `NMI` |
+  | `+8` | reserved (`$FFEC`) |
+  | `+$A` | `IRQ` |
 
-### 2.4 Missing cache-inhibit / device-memory attribute in PTEs
-An accelerator running at 14–100+ MHz with onboard RAM/cache **cannot** function without strict uncached/device handling for motherboard I/O:
+  16-bit little-endian PCs as usual; `PBR ← 0` after the pull; handler fetch is then a normal translated VA. `RESET` still `$00FFFC` (MMU off on reset). 2-byte `WDM` `VBRW`/`VBRR`, payload `{X,C}` like `L1SW`. 16-byte aligned (`PA[3:0]=0`, RAZ/WI). Kernel sets `VBR` before `MMUE`. Standard mode / `MMU_EN = 0`: stock `$00FFE4`. FPI does not use `VPB` for ROM vectors.
+- **2.3.2 Motherboard `$00`/`$01`/`$E0`/`$E1`:** **Decision:** Out of ISA. FPGA cards have full local fast RAM. Writes through to those banks are for display (slow) and optional; many cards have their own buffers/scanners. Interface logic, not the 65816 enhancement.
+- **2.3.3 4 KB page vs legacy I/O / slot layout:** **Unresolved — later.** PTE 4 KB (and 64 KB superpage) cannot split `$C000–$C0FF` I/O from `$C100–$CFFF` slot ROM, or other sub-page legacy holes. Extra masking/decode for those regions is needed and is **not** specified yet. Note: in native mode direct page (`D`) and stack (`S`) can sit anywhere in bank 0, so ZP-at-`$0000` / stack-at-`$0100` sharing a page with text is not a native-kernel constraint.
 
-- Reading Apple II soft switches (`$C000`, `$C010`, `$C030` speaker, `$C081`/`$C083` LC double-read, IWM `$C0E0–$C0EF`, SCC, Ensoniq) has hardware side effects.
-- Caching, speculative reads, write buffering, or multi-byte burst line fills touching `$C0xx` will break IIgs hardware. Without a PTE cache-inhibit/device bit (or strict PA-range uncacheable decoding), the OS cannot safely map I/O or video buffers.
+### 2.4 Missing cache-inhibit / device-memory attribute in PTEs — **DECIDED**
+**Decision:** Both fabric and PTE.
 
-### 2.5 Motherboard DMA, bus arbitration, and page-table placement
-- **Slot DMA cannot see onboard accelerator RAM:** IIgs DMA cards (e.g., Apple II High-Speed SCSI, RamFAST) assert `/DMA` and access motherboard RAM (`$00–$7F`, `$E0/$E1`) directly. The OS must know which PA range is DMA-reachable (motherboard RAM) for bounce buffers, and the accelerator must snoop or invalidate cached motherboard lines during `/DMA` (`BE=0`).
-- **Page tables in motherboard RAM:** If software places `L1` or `L2` in motherboard RAM, a 32-bit PTE read takes 4 slow 8-bit socket cycles (and must stall/arbitrate properly with `PHI2`, `RDY`, DRAM refresh, and `BE`). Document whether page tables are restricted to onboard RAM or allowed anywhere.
+- **Fabric:** accesses to physical `$E0C000` and `$E1C000` (Mega II I/O pages) are **always uncached**, regardless of PTE. Side-effecting `$C0xx` must not depend on the OS setting a bit.
+- **PTE:** non-cache bit (use freed bit 28). Polarity **`0` = cacheable RAM, `1` = uncached/device** (matches “write unused bits 0”). Covers framebuffers, DMA bounce, `mmap` of MMIO, mailboxes — same PA as ordinary RAM, or devices mapped at arbitrary VAs. Superpage and 4 KB leaf both carry it; on an L2 walk, uncached if **either** level is `1` (a whole bank can be forced device from L1). Walker copies the effective bit into the TLB attribute field.
 
-### 2.6 Timing, Warm Reset, External `/ABORT`, and Preemption Timer
-- **1 MHz sync & IWM motor-on slowdown:** When executing fast code from onboard RAM, accessing IWM floppy registers (`$C0E0–$C0EF`) still requires snooping `$C036` bits 0–3 / `$C0x8`–`$C0x9` (or an explicit speed switch) so floppy timing loops don't run too fast.
-- **Warm Reset (`/RES` / Ctrl-OpenApple-Reset):** Must guarantee clearing `MMU_EN = 0`, resetting `PRIV`, flushing the TLB, and routing `$00FFFC` back to motherboard ROM so the machine recovers cleanly.
-- **External `/ABORT` pin vs MMU `ABORT`:** Need a fault-status bit to distinguish a motherboard `/ABORT` assertion from an internal MMU fault.
-- **Preemption timer:** A stock IIgs only has VBL (60 Hz) and 1-sec IRQs, both tightly coupled to Mega II/ROM. A multitasking OS on an accelerator wants an independent onboard timer IRQ (card-level requirement).
+ISA rule is the PTE bit + the `$E0C000`/`$E1C000` hardwire. Extra fabric ranges are card-specific.
+
+### 2.5 Motherboard DMA, bus arbitration, and page-table placement — **DECIDED**
+- **2.5.1 Slot DMA:** **Decision:** Product is **legacy slot-DMA incompatible** (same class as AppleSqueezer). No bounce-buffer ISA, no requirement to snoop `/DMA` into onboard RAM. Slot DMA cards that master motherboard RAM will not see accelerator memory.
+- **2.5.2 Page tables / working RAM:** **Decision:** Accelerator uses **onboard card RAM for everything**. Motherboard RAM is ignored (except whatever interface logic still does for optional display writes — 2.3.2). Walker and kernel treat local RAM as the physical store; not an ISA constraint beyond “PAs the CPU uses are on the card.”
+
+### 2.6 Timing, Warm Reset, External `/ABORT`, and Preemption Timer — **DECIDED**
+- **2.6.1 1 MHz / IWM:** **Decision:** Interface logic, not ISA.
+- **2.6.2 Warm reset (`/RES`):** **Decision:** `MMU_EN = 0`, enhanced mode off, `PRIV` reset, TLB flush, identity fetch of `$00FFFC`. `VBR` is unused until the next `MMUE`.
+- **2.6.3 External `/ABORT`:** **Decision:** There will never be an external `/ABORT`. Fault cause need not distinguish pin vs walk.
+- **2.6.4 Preemption timer:** **Decision:** Not ISA. Initially IIgs motherboard VBL; later an FPGA timer on the card.
 
 ---
 
@@ -94,36 +104,33 @@ An accelerator running at 14–100+ MHz with onboard RAM/cache **cannot** functi
 
 In a standalone FPGA/ASIC GS-compatible machine built around this CPU+MMU, you control the whole memory fabric — which exposes a different set of architectural gaps.
 
-### 3.1 Undefined 32-bit physical map & FPI/Mega II coexistence
-- **Bottom 16 MB collision:** At reset (`MMU_EN = 0`), `PA = $00_000000–$00_FFFFFF` must look like an Apple IIgs (FPI shadowing, Mega II `$E0/$E1`, `$C0xx` I/O, ROM `$FC–$FF`) to boot legacy software.
-- **Unspecified `MMU_EN = 1` physical bus semantics:** When `MMU_EN = 1`, does `PA` go to a **clean, flat 32-bit physical bus** (bypassing FPI shadowing/LC/vector-pull interception), with Mega II / legacy I/O living at dedicated physical addresses?
-  - If FPI stayed active on `PA = $00_000000–$00_01FFFF` with `MMU_EN = 1`, native processes allocated physical RAM in the bottom 128 KB would be corrupted by LC/shadowing/I/O rules.
-  - Conversely, if FPI is completely bypassed when `MMU_EN = 1`, running a legacy GS/OS or Apple IIe environment inside a protected process requires either a dedicated physical window for Mega II/legacy I/O or a clean mode/hypervisor boundary.
-- **Native peripheral & boot architecture:** No conventions yet for where native peripherals (GPU/SecondSight, storage, Ethernet, audio, timers, interrupt controller), extended DRAM, and native vs legacy boot ROMs live in the 4 GB PA space.
+### 3.1 Undefined 32-bit physical map & FPI/Mega II coexistence — **DECIDED**
+**Decision:** Fabric/platform, not ISA (same as 2.2). The CPU produces 32-bit PAs; the machine map (legacy window vs flat RAM vs MMIO) is not part of the 65816 enhancement.
 
-### 3.2 Legacy Apple IIe / ProDOS 8 virtualization (`E = 1`)
-Because `XCE` faults in **both** user and supervisor mode whenever `MMU_EN = 1`, a new GS-compatible computer cannot run ProDOS 8 or Apple IIe software (or IIgs ROM routines that use `SEC; XCE`) under the multitasking OS — forcing a hard reboot/mode switch to `MMU_EN = 0`.
+### 3.2 Legacy Apple IIe / ProDOS 8 virtualization (`E = 1`) — **DECIDED**
+**Decision:** Out of scope (1.3.2). `XCE` that would set `E = 1` under `MMU_EN = 1` faults. No sandboxed IIe/P8 under translation.
 
-- To run sandboxed Apple IIe / GS/OS VMs under a native OS on this machine, either allow `E = 1` in user mode (auto-switching to `E = 0` on traps and saving `E` in `PRIV` or a CSR) or explicitly document that `E = 1` is unsupported under `MMU_EN = 1`.
+### 3.3 Split `L1_Sup`/`L1_User` + 32-bit PA > 24-bit VA kernel ergonomics — **DECIDED**
+- **3.3.1 copyin / sharing:** **Decision:** No load-as-user `WDM`. Kernel maps a window in `L1_Sup` when it must touch user memory (`TLBI` to drop the window). Usual microkernel path: **shared pages between two user processes** (same PA in two `L1_User` tables); kernel is not on the copy path.
+- **3.3.2 `COP`/`BRK` signature:** **Decision:** Hardware **latches** the signature byte (`$nn`) into a supervisor-readable register on `COP`/`BRK`. Kernel does not fetch `(user PBR:PC-1)` from `L1_User`. Read via 2-byte `WDM` (opcode later).
+- **3.3.3 High physical memory:** **Decision:** 24-bit VA / 32-bit PA is the architecture. Kernel uses windows + `TLBI`; no extra ISA.
 
-### 3.3 Split `L1_Sup`/`L1_User` + 32-bit PA > 24-bit VA kernel ergonomics
-This combination creates three concrete bottlenecks for a native OS on a 32-bit PA machine:
+### 3.4 Missing PTE attributes & forward-compatibility polarity — **DECIDED**
+Cache-inhibit: **see 2.4** (PTE bit 28, `0` = cacheable, `1` = uncached; fabric also forces `$E0C000` / `$E1C000`). Write-through / write-combining deferred.
 
-1. **`copy_from_user` / `copy_to_user`:** With separate `L1_Sup` and `L1_User` tables, the kernel cannot directly dereference user pointers passed in syscalls. Walking `L1_User` in 65816 software, temporarily mapping a page into `L1_Sup`, and calling `L1SW` (flushing the entire supervisor TLB) for every syscall buffer will dominate syscall latency. A `WDM` load/store-as-user instruction (or a fast per-VA TLB invalidate + dedicated kernel copy window) is almost mandatory.
-2. **`COP #$nn` / `BRK #$nn` signature byte:** On a 65816 syscall via `COP #$nn`, the signature byte sits at `(user PBR:PC - 1)` in **`L1_User`**, not `L1_Sup`. Either the CPU should latch the `COP`/`BRK` signature byte into a supervisor CSR on trap, or the OS ABI must ignore the signature byte and pass syscall numbers in registers (`A`/`X`).
-3. **Managing >16 MB physical RAM from a 24-bit kernel:** Unlike 64-bit kernels, a 24-bit `L1_Sup` cannot permanently direct-map 64 MB–4 GB of physical RAM. The kernel must frequently create/teardown temporary 4 KB mappings in `L1_Sup` to zero pages, manage page tables above 16 MB, and copy I/O buffers — making **per-VA TLB invalidation (`INVLPG`/`TLBI`)** essential so kernel page management doesn't constantly nuke the entire supervisor TLB.
-
-### 3.4 Missing PTE attributes & forward-compatibility polarity
+- **3.4.1 Execute:** **Decision:** **`NX`** = PTE bit 27. `0` = fetch allowed, `1` = instruction fetch faults. User and supervisor. L2 walk: NX if either level is `1`. Fetch only (`VPA`); data ignores `NX`.
+- **3.4.2 Accessed / Dirty:** **Decision:** v1 is **RAM-resident only** (no swap / file pager). Hardware does **not** implement `A`/`D` (no PTE writeback). Bits reserved in the unused payload / TLB attr field, write `0`, not architecturally exposed. When a pager exists, **software** `A`/`D`: `W=0` and fault-on-first-write for dirty; `V=0` (or equivalent) faults for accessed. Kernel bookkeeping, then `W=1` / `V=1` + `TLBI`.
+- **3.4.3 Remainder:** **Decision:** other unused payload bits write-`0`, ignored.
 `TwoLevelPageTables.md` reserves 8 attribute bits in the TLB (`TLB[7:0]`) and leaves `PTE[27:20]` as `0` in leaf PTEs, deferring `X`, cacheable/device, `A`, and `D`:
 
 - **Cacheability / ordering is mandatory for hardware:** A fast new computer with SDRAM/DDR + L1 cache + MMIO peripherals + DMA needs per-page cache/device attributes (at least *Cacheable RAM* vs *Uncached Device/MMIO*, plus ideally *Write-Through / Write-Combining* for framebuffers) — and cache maintenance instructions (or hardware DMA coherency) if DMA isn't snooped.
 - **Set the `0`-polarity contract now:** Since current software writes `0` to `PTE[27:20]`, future leaf attributes placed there will only be backwards-compatible if `0` is the safe default (e.g., `0 = cacheable, 1 = uncacheable/device`; `0 = executable, 1 = NX`). Decide and freeze that convention early.
 - **Clarify `A`/`D` bit strategy:** `TwoLevelPageTables.md` (line 194) implies hardware writeback of `A`/`D` into PTEs on eviction, which adds significant FPGA complexity (read-modify-write page-table updates and race conditions with software PTE edits). Software-emulated `A`/`D` (via `V=0` / `W=0` faults) is far simpler in hardware and worth choosing explicitly.
 
-### 3.5 Missing system-level exceptions & boundaries
-- **Bus Error / Unmapped PA fault:** If a PTE points to unpopulated physical memory (e.g., `PA = $80_000000` on a 64 MB machine) — either on a normal access or during a page-table walk — the spec defines no Bus Error / Machine Check behavior.
-- **Trap-entry register state:** Standard 65816 traps leave `DP`, `DBR`, `M`, and `X` holding user-controlled values on kernel entry. Fine (standard 65816), just worth noting in the trap contract so kernel entry prologues don't touch `DP`/`DBR` before resetting them.
-- **SMP / multicore boundary:** There is no atomic CAS/LL-SC, memory barrier, or cross-core TLB shootdown. Assuming single-core is sensible for a 65816 machine, just worth stating explicitly as a design boundary.
+### 3.5 Missing system-level exceptions & boundaries — **DECIDED**
+- **3.5.1 Unmapped PA:** **Decision:** `ABORT` (same path as not-present/protection), including during a page-table walk. Cause register distinguishes empty PA vs PTE permission as needed (layout TBD with other fault bits).
+- **3.5.2 Trap-entry registers:** **Decision:** Stock 65816. `D`, `DBR`, `M`, `X` (and the rest) stay as the interrupted context. Handler stores them into the process control block and restores them before `RTI` to user. Not special-cased in hardware.
+- **3.5.3 SMP:** **Decision:** **Single-core.** No CAS/LL-SC, no barriers, no TLB shootdown in this ISA.
 
 ---
 
@@ -133,9 +140,33 @@ This combination creates three concrete bottlenecks for a native OS on a 32-bit 
 |---|---|---|---|
 | **P0** | **1.1** `PRIV` inert until enhanced mode (distinct from `MMU_EN`); nesting & `STPV` are kernel contract | Both | Decided |
 | **P0** | **1.2** Stock `/ABORT` restart; `MVN`/`MVP` whole-instruction retry; double-fault halt; fault `PC` on stack + cause/VA in a register. User `WAI` not page-fault (`PC`/vector deferred). Exception priority still open. | Both | Decided (WAI deferred) |
-| **P0** | **1.5** Enhanced mode: no phantom cycles. TLB flush on `RESET`/enhanced/`MMUD`/`MMUE`. Size-change = software contract. TLB ≥ 32 entries. Drop `U`; bit 28 reserved 0. `TLBI` added (opcode deferred). PTE little-endian, `V` last/first kernel contract. Prefetch drain. Cache-inhibit is 2.4 / 3.4. | Both | Decided |
-| **P0** | **2.2 / 2.3 / 3.1** Define 32-bit PA map partitioning and `MMU_EN=1` interaction with FPI/Mega II (`$C035`, `$C068`, `VPB`, `$E0/$E1`, DMA) | Accel + New Computer | Open |
+| **P0** | **1.5** Enhanced mode: no phantom cycles. TLB flush on `RESET`/enhanced/`MMUD`/`MMUE`. Size-change = software contract. TLB ≥ 32 entries. Drop `U`. `TLBI` added (opcode deferred). PTE little-endian, `V` last/first kernel contract. Prefetch drain. | Both | Decided |
+| **P0** | **2.4** Fabric uncached `PA $E0C000` and `$E1C000`. PTE bit 28: `0`=cacheable, `1`=uncached; OR of L1 and L2. | Both | Decided |
+| **P1** | **2.5** Slot DMA incompatible (AppleSqueezer-class). All RAM/page tables onboard; motherboard RAM ignored. | Accel | Decided |
+| **P1** | **2.6** Reset: `MMU_EN=0`, enhanced off, `PRIV` reset, TLB flush, `$00FFFC`. No external `/ABORT`. Timer is motherboard VBL then FPGA, not ISA. 1 MHz is interface. | Accel | Decided |
+| **P0** | **2.1** Soft 65816 FPGA/ASIC in the IIgs CPU socket; not a W65C816S wrap. | Accel | Decided |
+| **P0** | **2.2** PA decode, socket vs onboard RAM, discovery: FPGA/card fabric, not ISA. | Accel | Decided (out of ISA) |
+| **P0** | **2.3** `VBR` = 32-bit PA, 12-byte native table, untranslated when `MMU_EN=1`. FPI does not use `VPB`. Shadow/display is interface logic. Legacy sub-page I/O/slot masking later. Native `D`/`S` anywhere in bank 0. | Accel | Partial |
 | **P1** | **1.4** No 5-byte `WDM` (`$80–$FF` = 4 bytes). Standard = stock 65816; enhanced ≠ `MMU_EN`. Pre-`MMUE` ops are 2-byte. Wrong `M`/`X` is programmer error. `CPUID` is 2-byte (`LDA #0` / `CPUID` / `A` changed). Enter-enhanced mnemonic TBD. | Both | Decided |
-| **P1** | **3.3** Solve kernel ↔ user data access (load/store-as-user `WDM` or fast `TLBI` + window) and `COP` signature-byte access | Both | Open |
+| **P1** | **3.1** PA map / FPI coexistence: fabric, not ISA. | New computer | Decided (out of ISA) |
+| **P1** | **3.2** `E=1` under MMU out of scope (1.3.2). | New computer | Decided |
+| **P1** | **3.3** Window in `L1_Sup` + `TLBI`; usual IPC is user–user shared pages. Latch `COP`/`BRK` `$nn` in a register. 24-bit VA / 32-bit PA is the model. | Both | Decided |
 | **P2** | **1.3** `MMUE` NOP if `E=1`; `XCE` that would set `E=1` under MMU faults. IIe/P8 under MMU out of scope. | Both | Decided |
-| **P2** | **3.2 / 3.4 / 3.5** `A`/`D` strategy, Bus Error, feature-ID payload. (`3.2` E=1 VMs: out of scope per 1.3.2. `U`/`G` dropped per 1.5.3. PTE endianness per 1.5.4.) | Both | Open |
+| **P2** | **3.4** `NX` = bit 27. `A`/`D` reserved, not implemented; software fault-on-first-write later. Unused bits write-0. | Both | Decided |
+| **P2** | **3.5** Empty PA → `ABORT`. Trap saves `D`/`DBR`/`M`/`X` in process context (stock 65816). Single-core. | Both | Decided |
+
+---
+
+## 5. Parked / TBD (not blocking the ISA sketch)
+
+| Item | Notes |
+|---|---|
+| Enter-enhanced mnemonic | Named `ENHN` in the spec (signature still later) |
+| `WDM` signatures | All mnemonics including `CPUID`, `TLBI`, `VBRW`/`VBRR`, `COPSIG` |
+| `CPUID` payload in `A` | Discovery is `LDA #0` / `CPUID` / `A` changed (1.4.3) |
+| `TLBI` match rule | 4 KB vs superpage; which table's tag (1.5.2) |
+| User `WAI` vector / `PC` | Not page-fault `ABORT`; yield path deferred (1.2.4) |
+| Exception priority | `RESET` vs MMU `ABORT` vs `NMI` vs `IRQ` (1.2.4) |
+| Fault register layout | VA + cause (1.2.5); empty-PA vs `V`/`W`/`NX` (3.5.1) |
+| 2.3.3 Legacy sub-page mask | `$C000` I/O vs slot ROM etc.; later |
+| Spec file edits | Applied in `65816MMUInstructions.md` and `TwoLevelPageTables.md` |
