@@ -8,6 +8,8 @@ This is to document users of WDM $XX opcodes / signature bytes.
 | FF | GSPlus / GSSquared | Interface with Host FST logic |
 | ?? | Michael Guidero | debugging |
 
+Enhanced-mode length classes (see [65816MMUInstructions.md](65816MMUInstructions.md)): `$C0–$FF` 2-byte, `$80–$BF` 3-byte, `$00–$7F` 4-byte. `$FF` stays 2-byte; MMU mnemonics do not use it.
+
 
 ## Proposed
 

@@ -1,9 +1,10 @@
 # 65816 Two-Level MMU Design Gap Analysis
 
-Gap analysis of [65816MMUInstructions.md](65816MMUInstructions.md) and [TwoLevelPageTables.md](TwoLevelPageTables.md) for two implementation contexts:
+Gap analysis of [65816MMUInstructions.md](65816MMUInstructions.md) and [TwoLevelPageTables.md](TwoLevelPageTables.md) for two hardware contexts, plus a GSSquared software model:
 
 1. **CPU-socket accelerator card** for a physical Apple IIgs
 2. **New GS-compatible computer** built around this CPU + MMU architecture
+3. **GSSquared emulator:** same ISA. No TLB, no cache, no prefetch. Walk every translated access. `NC`, TLB flush, and `TLBI` are no-ops. Recorded in `65816MMUInstructions.md`.
 
 ---
 
@@ -30,7 +31,7 @@ In `65816MMUInstructions.md` (lines 14–37, 50), `PRIV` resets to `00000001`, s
 - **1.3.2 `XCE` while `MMU_EN = 1`:** **Decision:** An attempt to set `E = 1` under translation faults (`ABORT`). Native-only while the MMU is on, in both user and supervisor. `CLC; XCE` while already native (`E` stays 0) is not an attempt to set `E = 1`. IIe / ProDOS 8 under the MMU is out of scope; that needs `MMUD` (or never entering enhanced mode).
 
 ### 1.4 `WDM` encoding conflicts and edge cases — **DECIDED**
-- **1.4.1 Length class and when it is live:** **Decision:** No 5-byte `WDM`. Length classes are 2, 3, and 4 bytes. `$00–$3F` implied (2 bytes), `$40–$7F` one extra (3 bytes), `$80–$FF` two extra (4 bytes). Other emulators' `WDM` uses are irrelevant.
+- **1.4.1 Length class and when it is live:** **Decision:** No 5-byte `WDM`. Length classes are 2, 3, and 4 bytes. `$C0–$FF` implied (2 bytes), `$80–$BF` one extra (3 bytes), `$00–$7F` two extra (4 bytes). Two-byte at the high end so `$FF` (Host FST) is still 2 bytes in enhanced mode; do not assign `$FF` to an MMU mnemonic. Other emulators' `WDM` uses remain irrelevant.
   - **Standard mode:** cycle-accurate 65816, `WDM` always 2 bytes, as today. `PRIV` inert (1.1.1).
   - **Enhanced mode:** enhanced 65816 (length-class `WDM`, `PRIV`, MMU ops). Distinct from `MMU_EN`.
   - Ops needed **before** `MMU_EN = 1` (`MMUE`, `L1SW`/`L1UW`, `TXUS`, `CPUID`, enter-enhanced) are 2-byte `WDM`s so they decode correctly in standard mode and with translation still off.
@@ -147,7 +148,7 @@ Cache-inhibit: **see 2.4** (PTE bit 28, `0` = cacheable, `1` = uncached; fabric 
 | **P0** | **2.1** Soft 65816 FPGA/ASIC in the IIgs CPU socket; not a W65C816S wrap. | Accel | Decided |
 | **P0** | **2.2** PA decode, socket vs onboard RAM, discovery: FPGA/card fabric, not ISA. | Accel | Decided (out of ISA) |
 | **P0** | **2.3** `VBR` = 32-bit PA, 12-byte native table, untranslated when `MMU_EN=1`. FPI does not use `VPB`. Shadow/display is interface logic. Legacy sub-page I/O/slot masking later. Native `D`/`S` anywhere in bank 0. | Accel | Partial |
-| **P1** | **1.4** No 5-byte `WDM` (`$80–$FF` = 4 bytes). Standard = stock 65816; enhanced ≠ `MMU_EN`. Pre-`MMUE` ops are 2-byte. Wrong `M`/`X` is programmer error. `CPUID` is 2-byte (`LDA #0` / `CPUID` / `A` changed). Enter-enhanced mnemonic TBD. | Both | Decided |
+| **P1** | **1.4** No 5-byte `WDM` (`$C0–$FF` = 2 bytes, `$80–$BF` = 3, `$00–$7F` = 4). `$FF` stays 2-byte (Host FST). Standard = stock 65816; enhanced ≠ `MMU_EN`. Pre-`MMUE` ops are 2-byte. Wrong `M`/`X` is programmer error. `CPUID` is 2-byte (`LDA #0` / `CPUID` / `A` changed). Enter-enhanced mnemonic TBD. | Both | Decided |
 | **P1** | **3.1** PA map / FPI coexistence: fabric, not ISA. | New computer | Decided (out of ISA) |
 | **P1** | **3.2** `E=1` under MMU out of scope (1.3.2). | New computer | Decided |
 | **P1** | **3.3** Window in `L1_Sup` + `TLBI`; usual IPC is user–user shared pages. Latch `COP`/`BRK` `$nn` in a register. 24-bit VA / 32-bit PA is the model. | Both | Decided |

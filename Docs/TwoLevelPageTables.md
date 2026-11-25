@@ -187,6 +187,8 @@ A walk that finishes installs one TLB entry. A level-2 pointer is not installed.
 
 ## TLB
 
+The GSSquared emulator does not implement this section. It walks every access; `NC` is ignored; flush and `TLBI` are no-ops. See [65816MMUInstructions.md](65816MMUInstructions.md) (GSSquared emulator). The layout below is for hardware.
+
 The TLB is a cache of leaves: a 64 KB superpage or a 4 KB page. The CPU does not read or write it. The walker fills it after the checks above. At least **32** entries. Entries are 32 bits, the same width as a memory PTE, with a different packing. `PA[31]` sits in bit 31 for both page sizes, so a hit is a concatenation and a 4-bit select. The shift from the right-aligned memory frame happens once, at fill.
 
 The tag is not part of this word. It holds a valid bit, `VA[23:12]`, and which base filled the entry (`L1_User` vs `L1_Sup`). A 64 KB entry matches `VA[23:16]` only. A 4 KB entry matches `VA[23:12]`. A hit also matches `PRIV[0]`.

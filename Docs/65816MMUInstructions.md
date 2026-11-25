@@ -165,26 +165,30 @@ User `WAI` is **not** this `ABORT` (yield path TBD).
 
 **Standard mode:** always 2 bytes (stock), even if the signature would be a longer class in enhanced mode.
 
-**Enhanced mode:** bits 7:6 of the signature are the length class of the *extension*, including that signature byte. There is no 5-byte class.
+**Enhanced mode:** bits 7:6 of the signature are the length class of the *extension*, including that signature byte. There is no 5-byte class. Two-byte ops sit at the high end so `$FF` (Host FST) stays the same length as stock.
 
 | Signature | Extra operand bytes | Total size | 65816 analogue |
 |---|---|---|---|
-| `$00–$3F` | 0 | 2 | implied |
-| `$40–$7F` | 1 | 3 | zp / imm8 |
-| `$80–$FF` | 2 | 4 | abs / imm16 |
+| `$C0–$FF` | 0 | 2 | implied |
+| `$80–$BF` | 1 | 3 | zp / imm8 |
+| `$00–$7F` | 2 | 4 | abs / imm16 |
 
 ```text
-operand_bytes = signature[7] ? 2 : signature[6]     ; 0, 1, or 2
+; bit7 bit6 | extra | total
+;  1    1   | 0     | 2   ($C0–$FF)
+;  1    0   | 1     | 3   ($80–$BF)
+;  0    x   | 2     | 4   ($00–$7F)
+operand_bytes = signature[7] ? (signature[6] ? 0 : 1) : 2
 total_bytes   = 2 + operand_bytes                   ; includes $42
 ```
 
-Those extra bytes are a format, not a promise of immediates. Implied MMU ops live in `$00–$3F`. Unknown signatures still fetch that many bytes.
+Those extra bytes are a format, not a promise of immediates. Implied MMU ops live in `$C0–$FF`. Do not assign `$FF` (Host FST). Unknown signatures still fetch that many bytes.
 
 Privilege is per mnemonic, not per length class. MMU mnemonics are supervisor-only except `CPUID` (runs in standard mode for discovery) and `ENHN` (standard mode). In user, MMU `WDM`s are NOPs of their length class.
 
 ## Mnemonics
 
-Implied (`$00–$3F` once assigned). No operand bytes. Register payload is in `C` and/or `X`. Software uses 16-bit `M`/`X` where noted; hardware does not NOP or fault on 8-bit width.
+Implied (`$C0–$FF` once assigned; skip `$FF`). No operand bytes. Register payload is in `C` and/or `X`. Software uses 16-bit `M`/`X` where noted; hardware does not NOP or fault on 8-bit width.
 
 | Mnemonic | Transfer | Requires | Effect |
 |---|---|---|---|
@@ -276,6 +280,16 @@ Supervisor running: skip the swap; another four bytes on the same kernel stack.
 **Single-core.** No CAS, no barriers, no TLB shootdown.
 
 **Cache:** PTE `NC` and fabric uncached `$E0C000` / `$E1C000` are in [TwoLevelPageTables.md](TwoLevelPageTables.md). PA decode, motherboard RAM, slot DMA, 1 MHz, and timers are not this ISA.
+
+## GSSquared emulator
+
+The hardware ISA still has a TLB, `NC`, and prefetch. The emulator does not: it has no cache hierarchy and no need to memoize walks.
+
+With `MMU_EN = 1`, every real access (fetch, load, store, including the walk’s own table loads) runs the walk in [TwoLevelPageTables.md](TwoLevelPageTables.md) against the live PTE. There is no TLB, so a PTE store is visible on the next access. `NC` is ignored. Prefetch drain is a no-op.
+
+`ENHN` / `MMUE` / `MMUD` / `L1UW` / `L1SW` / `TLBI` / `/RES` still execute; their TLB-flush and `TLBI` effects are no-ops. Software should still issue them so the same code runs on hardware later.
+
+Standard-mode phantom cycles stay. Enhanced mode still issues none.
 
 ## Open
 
