@@ -8,7 +8,7 @@ Translation is two levels. A 64 KB superpage may end at level 1, one superpage p
 
 Every entry is the same 32-bit word. Bits 31:28 are the flags, in the same positions at both levels, so one permission check serves a superpage and a 4 KB page. Bits 27:0 are the payload. Each use stores a right-aligned frame number there, and the frame is shifted left by the granule: 6 for a level-2 table, 16 for a superpage, 12 for a 4 KB page.
 
-An earlier single-level layout (one 16 KB flat table, flags in the low bits) is [MemoryProtection.md](MemoryProtection.md). This document does not change that one.
+Privilege, `WDM` mnemonics, `L1_User` / `L1_Sup`, and `SSP` are [65816MMUInstructions.md](65816MMUInstructions.md). An earlier single-level layout (one 16 KB flat table, flags in the low bits) is [MemoryProtection.md](MemoryProtection.md). This document does not change that one.
 
 ## Address spaces
 
@@ -19,7 +19,7 @@ An earlier single-level layout (one 16 KB flat table, flags in the low bits) is 
 | Level-1 superpage | 64 KB | one 65816 bank, `VA[15:0]` |
 | Level-2 page | 4 KB | `VA[11:0]` |
 
-`VA[23:16]` is the bank. It indexes level 1. There is no address-space id. The MMU holds one level-1 base; the OS writes that base on a context switch. The TLB caches finished translations only. Changing the base drops every entry whose global bit is clear.
+`VA[23:16]` is the bank. It indexes level 1. There is no address-space id. Two level-1 bases: `L1_Sup` while supervisor, `L1_User` while user ([65816MMUInstructions.md](65816MMUInstructions.md)). A context switch writes `L1_User`. The TLB caches finished translations only and tags which table filled them. Changing a base drops every entry from that table.
 
 ## The PTE word
 
@@ -126,20 +126,21 @@ PA_4k    = (PTE[19:0] << 12) | VA[11:0]
 
 | Table | Entries | Index | Bytes | Placement |
 |---|---|---|---|---|
-| Level 1 | 256 | `VA[23:16]` | 1024 | `L1_Base`, a 32-bit physical address of entry 0. Place it on a 1024-byte boundary. |
+| Level 1 | 256 | `VA[23:16]` | 1024 | `L1_User` or `L1_Sup`, a 32-bit physical address of entry 0. Place it on a 1024-byte boundary. |
 | Level 2 | 16 | `VA[15:12]` | 64 | `PTE[25:0] << 6`. Anywhere in the 4 GB, 64-byte aligned by the shift. |
 
 ```text
+L1_Base     = PRIV[0] ? L1_Sup : L1_User
 L1_entry_pa = L1_Base + (VA[23:16] << 2)
 ```
 
-On a 1024-byte boundary the index occupies `PA[9:2]` and `PA[1:0]` is 0, with no carry into `PA[10]`. `L1_Base` is a register, not a PTE field, so it keeps a full 32-bit byte address. The level-1 table may sit anywhere in the 4 GB.
+On a 1024-byte boundary the index occupies `PA[9:2]` and `PA[1:0]` is 0, with no carry into `PA[10]`. The base is a register, not a PTE field, so it keeps a full 32-bit byte address. The level-1 table may sit anywhere in the 4 GB. With the MMU off, there is no walk; see [65816MMUInstructions.md](65816MMUInstructions.md).
 
 One address space, if every bank is a superpage, costs the 1024-byte level-1 table. If every bank is split into 4 KB pages, it costs 1024 + 256 × 64 = 17408 bytes (17 KB).
 
 ## Walk
 
-The same three tests run on a level-1 entry and, when the walk continues, on the level-2 entry. `write` is the cycle's access type. `user` is the CPU mode.
+The same three tests run on a level-1 entry and, when the walk continues, on the level-2 entry. `write` is the cycle's access type. `user` is `PRIV[0] == 0`. `L1_Base` is `L1_Sup` or `L1_User` as above.
 
 ```text
 L1 = load32(L1_Base + (VA[23:16] << 2))
@@ -171,7 +172,7 @@ A walk that finishes installs one TLB entry. A level-2 pointer is not installed.
 
 The TLB is a cache of leaves: a 64 KB superpage or a 4 KB page. The CPU does not read or write it. The walker fills it after the checks above. Entries are 32 bits, the same width as a memory PTE, with a different packing. `PA[31]` sits in bit 31 for both page sizes, so a hit is a concatenation and a 4-bit select. The shift from the right-aligned memory frame happens once, at fill.
 
-The tag is not part of this word. It holds a valid bit and `VA[23:12]`. A 64 KB entry matches `VA[23:16]` only. A 4 KB entry matches `VA[23:12]`.
+The tag is not part of this word. It holds a valid bit, `VA[23:12]`, and which base filled the entry (`L1_User` vs `L1_Sup`). A 64 KB entry matches `VA[23:16]` only. A 4 KB entry matches `VA[23:12]`. A hit also matches `PRIV[0]`.
 
 ```text
                31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
@@ -187,7 +188,7 @@ PA[15:12] = SZ ? VA[15:12] : TLB[15:12]
 PA[11:0]  = VA[11:0]
 ```
 
-`SZ` is 1 for 64 KB and 0 for 4 KB. `W` and `U` are the effective permissions. For a superpage they are the level-1 bits. For a 4 KB page they are the level-1 bits AND the level-2 bits, so a pointer still gates the whole bank. `G` is set when the effective `U` is 0. Supervisor entries survive an `L1_Base` change. User entries are dropped.
+`SZ` is 1 for 64 KB and 0 for 4 KB. `W` and `U` are the effective permissions. For a superpage they are the level-1 bits. For a 4 KB page they are the level-1 bits AND the level-2 bits, so a pointer still gates the whole bank. `G` is set when the effective `U` is 0. A write of `L1_User` drops user-tagged rows; a write of `L1_Sup` drops supervisor-tagged rows. `G` is spare for sharing a user leaf across `L1_User` changes; kernel leaves survive a user switch because they are tagged supervisor, not because of `G`.
 
 Bits 7:0 are eight attribute flags. The walker writes 0 today. They are the room a leaf has and a level-2 pointer does not. Execute, cacheable, accessed, and dirty land here once a leaf PTE defines them. Accessed and dirty have to be written back into that PTE, or they vanish when the entry is evicted.
 
@@ -208,6 +209,7 @@ else:                                    // pointer, then level-2 leaf
 
 TLB.G    = ~TLB.U
 TLB[7:0] = 0
+tag.T    = PRIV[0]               // 1 = filled from L1_Sup
 ```
 
 `TLB[31:12] = L2[19:0]` is the left shift: memory bits 19:0 move to TLB bits 31:12. `TLB[31:16] = L1[15:0]` moves memory bits 15:0 to TLB bits 31:16.
