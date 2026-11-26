@@ -12852,3 +12852,5 @@ It's slow, really slow. the Walks are probably really complex. And I was not abl
 So, failure #1! There is rarely success before you've failed a few times.
 
 This is in branch 1.2/debugmemory
+
+I also did a lot of work on the proper paging/vm mmu.
