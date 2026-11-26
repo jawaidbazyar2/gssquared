@@ -1,12 +1,12 @@
 # Serial / Modem
 
-GSSquared includes a virtual Hayes-compatible modem you can attach to a serial port. From Apple II terminal software it behaves like a phone-line modem — except outbound “numbers” are TCP hosts, and inbound telnet on port **6502** rings the guest.
+GSSquared includes a virtual Hayes-compatible modem you can attach to a serial port. From Apple II terminal software it behaves like a phone-line modem — except outbound “numbers” are TCP hosts or WebSocket addresses, and inbound telnet on port **6502** rings the guest.
 
 ## What you need
 
 1. A serial port: IIgs built-in SCC, or a [Super Serial Card](Cards_SuperSerial.md) in a slot.
 2. That port’s attachment set to **Modem** — see [Serial & Parallel Connections](SerialConnections.md).
-3. A **native** build. The [browser build](Web.md) does not include the modem (no SDL_net).
+3. A **native** build for TCP dial-out and for answering. The [browser build](Web.md) dials WebSocket addresses only (see below).
 
 ## How to dial
 
@@ -17,6 +17,14 @@ ATDTcqbbs.ddns.net:6800
 ```
 
 That connects to host `cqbbs.ddns.net`, TCP port `6800`.
+
+### WebSocket (browser build)
+
+```
+ATDTwss://vert.synchro.net:11235
+```
+
+That connects to the telnet service a BBS offers over WebSocket (Synchronet uses port 11235 for `wss://` and 1123 for `ws://`). The session is telnet, as over TCP. From an `https` page the browser allows only `wss://`, and only with a certificate it trusts. The native build dials TCP only; use the BBS's telnet port there.
 
 Result codes default to words (`OK`, `CONNECT 9600`, `RING`, `NO CARRIER`, `ERROR`). `ATV0` switches to Hayes numeric codes; `ATV1` restores words. `AT&F` also restores `V1`.
 
@@ -71,4 +79,4 @@ Set the port attachment to **File** to save serial output to a host file (a toas
 - [Serial & Parallel Connections](SerialConnections.md)
 - [Serial port spec](SerialPortSpec.md)
 - [Uthernet II](Cards_UthernetII.md) — full TCP/IP without a serial modem
-- [Play in the browser](Web.md) — modem is native-only
+- [Play in the browser](Web.md) — WebSocket dial-out only on the web

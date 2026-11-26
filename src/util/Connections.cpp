@@ -26,8 +26,8 @@
 #include "serial_devices/file/FileDevice.hpp"
 #include "util/DeviceFrameDispatcher.hpp"
 #include "util/EventQueue.hpp"
-#if !defined(__EMSCRIPTEN__)
 #include "serial_devices/modem/ModemDevice.hpp"
+#if !defined(__EMSCRIPTEN__)
 #include "serial_devices/netprinter/NetPrinterDevice.hpp"
 #include "serial_devices/serial/SerialPortDevice.hpp"
 #endif
@@ -56,12 +56,7 @@ SerialDevice *Connections::create_device(connection_device_type_t type, const st
         case connection_device_type_t::CLIPBOARD:
             return new ClipboardDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
         case connection_device_type_t::MODEM:
-#if defined(__EMSCRIPTEN__)
-            // No SDL_net/modem on the web; fall back to file capture.
-            return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
-#else
             return new ModemDevice(nullptr, port_id.c_str());
-#endif
         case connection_device_type_t::SERIAL:
 #if defined(__EMSCRIPTEN__)
             return nullptr;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <SDL3_net/SDL_net.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -9,8 +8,10 @@
 #include <algorithm> // Required for remove_if
 #include <cctype>
 #include <atomic>
+#include <memory>
 
 #include "serial_devices/SerialDevice.hpp"
+#include "serial_devices/modem/ModemLine.hpp"
 #include "serial_devices/host/HostSerial.hpp"
 #include "util/printf_helper.hpp"
 
@@ -53,11 +54,9 @@ class ModemDevice : public SerialDevice {
         std::atomic<bool> hud_ringing_{false};
         std::atomic<bool> hud_listening_{false};
         std::string command_buffer;
-        NET_StreamSocket *socket;          /* answered / dialed session — CD follows this */
-        NET_StreamSocket *pending_socket;  /* inbound, not yet ATA */
-        NET_Server *server;
-        std::string remote_host;
-        int remote_port;
+        std::unique_ptr<ModemLine> socket;          /* answered / dialed session — CD follows this */
+        std::unique_ptr<ModemLine> pending_socket;  /* inbound, not yet ATA */
+        std::unique_ptr<ModemListener> server;
         bool command_echo = true;
         bool verbose_ = true; /* ATV1 words; ATV0 numeric */
         uint8_t result_x_ = 0; /* ATXn: 0 = CONNECT only; 1+ = CONNECT <baud> */
@@ -189,39 +188,21 @@ class ModemDevice : public SerialDevice {
         }
 
         void note_hud_peer() {
-            if (socket || pending_socket) {
-                std::snprintf(hud_peer_, sizeof(hud_peer_), "%s:%d", remote_host.c_str(),
-                              remote_port);
+            if (ModemLine *line = active_stream()) {
+                std::snprintf(hud_peer_, sizeof(hud_peer_), "%s", line->peer().c_str());
             } else {
                 hud_peer_[0] = '\0';
             }
         }
 
-        void capture_peer_from_stream(NET_StreamSocket *s) {
-            remote_host = "inbound";
-            remote_port = LISTEN_PORT;
-            if (!s) {
-                return;
-            }
-            NET_Address *addr = NET_GetStreamSocketAddress(s);
-            if (addr) {
-                const char *str = NET_GetAddressString(addr);
-                if (str && str[0] != '\0') {
-                    remote_host = str;
-                }
-                NET_UnrefAddress(addr);
-            }
-        }
-
-        NET_StreamSocket *active_stream() {
-            return socket ? socket : pending_socket;
+        ModemLine *active_stream() {
+            return socket ? socket.get() : pending_socket.get();
         }
 
         void drop_pending() {
             if (pending_socket) {
                 printf("ModemDevice: dropping pending inbound\n");
-                NET_DestroyStreamSocket(pending_socket);
-                pending_socket = nullptr;
+                pending_socket.reset();
             }
             hud_ringing_.store(false, std::memory_order_relaxed);
             ring_count_ = 0;
@@ -233,23 +214,13 @@ class ModemDevice : public SerialDevice {
         }
 
         void start_listen() {
-            server = NET_CreateServer(nullptr, LISTEN_PORT);
-            if (!server) {
-                hud_listening_.store(false, std::memory_order_relaxed);
-                printf("ModemDevice: listen %u failed: %s (outbound only)\n",
-                       static_cast<unsigned>(LISTEN_PORT), SDL_GetError());
-            } else {
-                hud_listening_.store(true, std::memory_order_relaxed);
-                printf("ModemDevice: listening on %u\n", static_cast<unsigned>(LISTEN_PORT));
-            }
+            server = modem_listen_tcp(LISTEN_PORT);
+            hud_listening_.store(server != nullptr, std::memory_order_relaxed);
         }
 
         void stop_listen() {
             hud_listening_.store(false, std::memory_order_relaxed);
-            if (server) {
-                NET_DestroyServer(server);
-                server = nullptr;
-            }
+            server.reset();
         }
 
         void send_ring() {
@@ -269,24 +240,18 @@ class ModemDevice : public SerialDevice {
             if (!server) {
                 return;
             }
-            NET_StreamSocket *incoming = nullptr;
-            if (!NET_AcceptClient(server, &incoming)) {
-                printf("ModemDevice: AcceptClient failed: %s\n", SDL_GetError());
-                return;
-            }
+            std::unique_ptr<ModemLine> incoming = server->accept();
             if (!incoming) {
                 return;
             }
             if (socket || pending_socket || state != STATE_COMMAND) {
                 printf("ModemDevice: rejecting inbound (busy)\n");
-                NET_DestroyStreamSocket(incoming);
                 return;
             }
-            pending_socket = incoming;
+            pending_socket = std::move(incoming);
             hud_ringing_.store(true, std::memory_order_relaxed);
             reset_telnet(true);
             tcp_buffer.clear();
-            capture_peer_from_stream(pending_socket);
             note_hud_peer();
             ring_count_ = 0;
             send_ring();
@@ -307,7 +272,7 @@ class ModemDevice : public SerialDevice {
 
             uint8_t buffer[256];
             const int to_read = (tcp_buffer.size() >= 4096) ? 1 : static_cast<int>(sizeof(buffer));
-            int bytes_read = NET_ReadFromStreamSocket(pending_socket, buffer, to_read);
+            int bytes_read = pending_socket->read(buffer, to_read);
             if (bytes_read > 0) {
                 for (int i = 0; i < bytes_read; i++) {
                     process_telnet_byte(buffer[i]);
@@ -360,8 +325,10 @@ class ModemDevice : public SerialDevice {
                         return;
                     }
                     case 'D': {
-                        std::string address = cmd.substr(i);
-                        if (!address.empty() && (address[0] == 'T' || address[0] == 'P')) {
+                        /* From command_buffer, not the upper-case copy: a URL path is case sensitive. */
+                        std::string address = command_buffer.substr(command_buffer.size() - cmd.size() + i);
+                        if (!address.empty() && (toupper(static_cast<unsigned char>(address[0])) == 'T' ||
+                                                 toupper(static_cast<unsigned char>(address[0])) == 'P')) {
                             address = address.substr(1);
                         }
                         address.erase(remove_if(address.begin(), address.end(), ::isspace),
@@ -522,57 +489,28 @@ class ModemDevice : public SerialDevice {
                 hangup();
             }
 
-            // Parse address - expecting IP address, port defaults to 23 (telnet)
-            remote_host = address;
-            remote_port = 23;
+            if (address.find("://") != std::string::npos) {
+                // ws:// or wss:// URL: telnet over WebSocket
+                socket = modem_dial_websocket(address);
+            } else {
+                // Parse address - expecting IP address, port defaults to 23 (telnet)
+                std::string remote_host = address;
+                int remote_port = 23;
 
-            // Check if there's a port specified (after a colon)
-            size_t colon_pos = address.find(':');
-            if (colon_pos != std::string::npos) {
-                remote_host = address.substr(0, colon_pos);
-                try {
-                    remote_port = std::stoi(address.substr(colon_pos + 1));
-                } catch (...) {
-                    send_error_response();
-                    return;
+                // Check if there's a port specified (after a colon)
+                size_t colon_pos = address.find(':');
+                if (colon_pos != std::string::npos) {
+                    remote_host = address.substr(0, colon_pos);
+                    try {
+                        remote_port = std::stoi(address.substr(colon_pos + 1));
+                    } catch (...) {
+                        send_error_response();
+                        return;
+                    }
                 }
+                socket = modem_dial_tcp(remote_host, remote_port);
             }
-
-            printf("ModemDevice: Connecting to %s:%d\n", remote_host.c_str(), remote_port);
-
-            // Resolve hostname (asynchronous)
-            NET_Address *addr = NET_ResolveHostname(remote_host.c_str());
-            if (!addr) {
-                printf("ModemDevice: Failed to start hostname resolution: %s\n", SDL_GetError());
-                send_no_carrier_response();
-                return;
-            }
-
-            // Wait for resolution to complete (10 second timeout)
-            NET_Status resolve_status = NET_WaitUntilResolved(addr, 10000);
-            if (resolve_status != NET_SUCCESS) {
-                printf("ModemDevice: Failed to resolve hostname: %s\n", SDL_GetError());
-                NET_UnrefAddress(addr);
-                send_no_carrier_response();
-                return;
-            }
-
-            // Create client socket (starts connection asynchronously)
-            socket = NET_CreateClient(addr, remote_port);
-            NET_UnrefAddress(addr);
-
             if (!socket) {
-                printf("ModemDevice: Failed to create client: %s\n", SDL_GetError());
-                send_no_carrier_response();
-                return;
-            }
-
-            // Wait for connection to complete (30 second timeout)
-            NET_Status connect_status = NET_WaitUntilConnected(socket, 30000);
-            if (connect_status != NET_SUCCESS) {
-                printf("ModemDevice: Failed to connect: %s\n", SDL_GetError());
-                NET_DestroyStreamSocket(socket);
-                socket = nullptr;
                 send_no_carrier_response();
                 return;
             }
@@ -627,8 +565,7 @@ class ModemDevice : public SerialDevice {
                 return;
             }
             printf("ModemDevice: ATA — answering inbound\n");
-            socket = pending_socket;
-            pending_socket = nullptr;
+            socket = std::move(pending_socket);
             hud_ringing_.store(false, std::memory_order_relaxed);
             ring_count_ = 0;
             set_state(STATE_ONLINE);
@@ -655,8 +592,7 @@ class ModemDevice : public SerialDevice {
         void hangup() {
             if (socket) {
                 printf("ModemDevice: Hanging up\n");
-                NET_DestroyStreamSocket(socket);
-                socket = nullptr;
+                socket.reset();
             }
             drop_pending();
             push_modem_inputs();
@@ -674,12 +610,12 @@ class ModemDevice : public SerialDevice {
         }
 
         void send_telnet_response(uint8_t command, uint8_t option) {
-            NET_StreamSocket *s = active_stream();
+            ModemLine *s = active_stream();
             if (!s) {
                 return;
             }
             uint8_t response[3] = { IAC, command, option };
-            NET_WriteToStreamSocket(s, response, 3);
+            s->write(response, 3);
         }
 
         void push_remote_byte(uint8_t byte) {
@@ -788,7 +724,7 @@ class ModemDevice : public SerialDevice {
 
             // Try to receive data from TCP connection
             uint8_t buffer[256];
-            int bytes_read = NET_ReadFromStreamSocket(socket, buffer, sizeof(buffer));
+            int bytes_read = socket->read(buffer, sizeof(buffer));
             
             if (bytes_read > 0) {
                 // Process received data through telnet protocol handler
@@ -807,8 +743,7 @@ class ModemDevice : public SerialDevice {
         }
 
         void write_stream(const uint8_t *data, int len) {
-            if (!NET_WriteToStreamSocket(socket, data, len)) {
-                printf("ModemDevice: Failed to send data: %s\n", SDL_GetError());
+            if (!socket->write(data, len)) {
                 send_no_carrier_response();
                 hangup();
             }
@@ -879,21 +814,12 @@ class ModemDevice : public SerialDevice {
 
         ModemDevice(const char *name, const char *port_id) : SerialDevice("ModemDevice", port_id), 
                        state(STATE_COMMAND),
-                       socket(nullptr),
-                       pending_socket(nullptr),
-                       server(nullptr),
-                       remote_port(23),
                        last_char_time(0),
                        last_ring_time(0),
                        escape_count(0),
                        telnet_state(TELNET_DATA),
                        telnet_command(0) {
             set_modem_inputs(MODEM_CTS | MODEM_DSR);
-            if (!NET_Init()) {
-                printf("ModemDevice: Failed to initialize SDL_net: %s\n", SDL_GetError());
-            } else {
-                printf("ModemDevice: Initialized\n");
-            }
             start_worker();
         }
 
@@ -906,20 +832,6 @@ class ModemDevice : public SerialDevice {
                 SDL_WaitThread(thread, NULL);
                 thread = nullptr;
             }
-            
-            if (socket) {
-                NET_DestroyStreamSocket(socket);
-                socket = nullptr;
-            }
-            if (pending_socket) {
-                NET_DestroyStreamSocket(pending_socket);
-                pending_socket = nullptr;
-            }
-            if (server) {
-                NET_DestroyServer(server);
-                server = nullptr;
-            }
-            NET_Quit();
         }
 
         void device_loop() override {

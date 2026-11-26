@@ -10,7 +10,7 @@ GSSquared treats each serial or parallel port as a jack you can plug a virtual d
 | **File** | Capture TX data to a host file | Capture printer bytes to a host file |
 | **Printer** | Works with [GS2Print](https://github.com/jawaidbazyar2/gs2print) Color ImageWriter II emulator. IIgs SCC and Super Serial. | — |
 | **Clipboard** | Capture TX to the host clipboard | Capture printer bytes to the host clipboard |
-| **Modem** | Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502). Native builds only; absent in the [browser](Web.md). | — |
+| **Modem** | Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502). In the [browser](Web.md) it dials WebSocket (`wss://`) addresses only. | — |
 | **Net Printer** | Raw TCP client to a host:port (often 9100). Opens on the first guest byte, closes after 60 seconds idle. Native builds only; absent in the [browser](Web.md). Spec: [NetPrinter.md](NetPrinter.md). | — |
 | **Serial** | Real host UART (macOS `/dev/cu.*`; Windows `COMn`; Linux `/dev/ttyS*` `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`) | — |
 
@@ -87,7 +87,7 @@ If you omit `[[connections]]`, GSSquared applies sensible defaults (IIgs: file o
 - [Super Serial Card](Cards_SuperSerial.md)
 - [Parallel Interface](Cards_Parallel.md)
 - [Serial / Modem](Serial_Modem.md)
-- [Play in the browser](Web.md) — no modem on web
+- [Play in the browser](Web.md) — WebSocket dial-out only on web
 - [Serial port spec](SerialPortSpec.md)
 - [Net Printer](NetPrinter.md)
 - [Writing Config Files Manually](ConfigFiles.md)
