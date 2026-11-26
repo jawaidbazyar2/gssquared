@@ -12843,3 +12843,12 @@ ok, double checked and we already work that way.
 well wow a lot has happened. the mmu refactors were done, test cleanly. There are outstanding IWM and Ensoniq tests failing, that need fixin. I guess I can do that last bit before the 1.1 release.
 
 I don't know if I want to bundle gs2print in the main package. it's easy enough to grab and install if someone's using KEGS etc. Link to it? Unsure! Stew on this.
+
+## Nov 25, 2026
+
+I took a stab at attempting to walk memory management data structures as a way of finding out when programs write outside their own memory.
+It's slow, really slow. the Walks are probably really complex. And I was not able to see ssview write over GS/OS (viewing JPG seems fine, but GIF is broken and tends to break the system and cause the open file dialog to no longer work, message checker to flash purple border, or worse). I think a similar idea works better in goldengate because he is not doing that, he's just checking guard areas around the code; and, most of the meat of that OS is in C paravirtual and the only thing running in the emulator is the user's relatively simple shell programs.
+
+So, failure #1! There is rarely success before you've failed a few times.
+
+This is in branch 1.2/debugmemory
