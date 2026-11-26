@@ -24,6 +24,7 @@ struct ensoniq_state_t {
     // resampling 27117→48k).
     int16_t *sdl_staging = nullptr;
     uint32_t sdl_staging_count = 0;  // staged DOC frames (not int16 samples)
+    uint64_t stereo_hold_until_c14m = 0; // no mono mirroring before this (soundglu.cpp)
     static constexpr int CHANNELS = 2; // TN #19 stereo card (odd=L, even=R)
     static constexpr uint32_t SDL_STAGING_CAP = 16384; // frames; >1 frame even at max DOC rate
     int16_t *sdl_resample_buf = nullptr;
