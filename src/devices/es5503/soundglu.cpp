@@ -23,6 +23,15 @@
 // Mono software usually parks every voice on one channel (often 0 / right), so
 // only one SDL side gets energy. If all non-halted enabled oscillators share the
 // same CA0, mirror that side onto both L and R.
+//
+// Stereo software also has moments when every running oscillator is on one
+// side (a rest on the other side, a voice freed). Mirroring those moments
+// throws the whole mix to the centre and back, many times a second. So once
+// both sides have been seen running, mirroring stays off until
+// STEREO_HOLD_SECONDS of emulated time pass with only one side (or nothing)
+// running. A real stereo card never mirrors.
+static constexpr uint32_t STEREO_HOLD_SECONDS = 5;
+
 static void ensoniq_mirror_mono_to_stereo(ensoniq_state_t *st, uint32_t n_frames) {
     constexpr int ch = ensoniq_state_t::CHANNELS;
     if (ch != 2 || !st->chip || !st->audio_buffer || n_frames == 0) {
@@ -42,8 +51,14 @@ static void ensoniq_mirror_mono_to_stereo(ensoniq_state_t *st, uint32_t n_frames
             ca0 = osc_ca0;
             seen = 1;
         } else if (osc_ca0 != ca0) {
-            return; // true stereo — leave L/R alone
+            // true stereo — leave L/R alone, now and for a while
+            st->stereo_hold_until_c14m = st->clock->get_c14m()
+                + STEREO_HOLD_SECONDS * st->clock->get_c14m_per_second();
+            return;
         }
+    }
+    if (st->clock->get_c14m() < st->stereo_hold_until_c14m) {
+        return; // stereo software between notes on one side
     }
     if (seen == 0) {
         return; // silence
@@ -601,6 +616,7 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     computer->register_reset_handler([st](bool cold_start) {
         // this caused the audio to get badly delayed / out of sync. added calculate_output_rate() to reset() to fix.
         st->chip->reset();
+        st->stereo_hold_until_c14m = 0; // reset clears the stereo hold
         // Re-base the catch-up time so we don't render a backlog after reset.
         st->last_catchup_c14m = st->clock->get_c14m();
         st->c14m_accum = 0;
