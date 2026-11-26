@@ -22,3 +22,5 @@
 #define DH_SSC 0x0000000000000014
 #define DH_VOC 0x0000000000000015
 #define DH_THUNDERCLOCK 0x0000000000000016
+// Separate the Second Sight board/processor panel from the simulated display panel.
+#define DH_SECOND_SIGHT_Z180 0x0000000000000017

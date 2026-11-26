@@ -1,0 +1,13 @@
+gs2_version = 1
+id = "be822ec0-1386-45f5-ae35-b04049a28f7d"
+name = "Apple IIgs / Second Sight"
+description = "Apple IIgs (ROM 3) 8MB RAM; Second Sight (with Z180)"
+platform = "apple2gs_rom3"
+
+[[cards]]
+slot = 3
+card = "second_sight_z180"
+
+[[cards]]
+slot = 7
+card = "bazfast3"

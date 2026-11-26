@@ -41,6 +41,8 @@
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
 #include "devices/secondsight/secondsight.hpp"
+// Second Sight firmware execution has its own machine-lifetime initializer.
+#include "devices/secondsight/ss_z180.hpp"
 #include "devices/hostfst/hostfst.hpp"
 #include "devices/uthernet2/uthernet2.hpp"
 #include "devices/ssc/ssc.hpp"
@@ -107,6 +109,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
     make_device(DEVICE_ID_SUPER_SERIAL, init_slot_ssc, NULL),
     make_device(DEVICE_ID_VOC, init_voc, NULL),
     make_device(DEVICE_ID_RAMWORKS, init_slot_ramworks, NULL),
+    // Connect the Second Sight processor, bus observer and independent monitor.
+    make_device(DEVICE_ID_SECOND_SIGHT_Z180, init_secondsight_z180, NULL),
 };
 
 Device_t *get_device(device_id id) {

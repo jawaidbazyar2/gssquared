@@ -94,6 +94,10 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
   * Sleep / Busy Wait
   * Pause when Minimized
   * Right Mouse Button Accelerate
+  * Second Sight (with the card in the machine)
+    * Firmware: 1.4-BEEF (original) / 1.5-CBFC / 2.0-3277
+    * Lattice chip: Original (BE8C) / v2.0 (BBB1)
+    * INT0 pull-up: None (stock card) / Added (card modification)
 
 **Speed** sets the host CPU throttle. **Ludicrous / Unlimited** (video still runs at about 1 MHz so speaker, Ensoniq, and disks keep working) is not in this submenu — use **F9**, the Control Panel speed row, or the hover speed button. See [On-Screen Display](OSD.md) and [Command Line](CommandLine.md).
 
@@ -104,6 +108,8 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
 **Mockingboard** is available while a machine is running. **Mono Helper** decorrelates the right channel so certain Mockingboard sounds don't interfere with each other. **Timbre** chooses the "voice": **Square** is the default; the others (Soft Square, Warm Sine, Organ, Sawtooth) are "reimaginings" of Mockingboard sound. See [Mockingboard](Cards_Mockingboard.md).
 
 **Apple Keys** chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See [Using a Keyboard](KeyboardShortcuts.md).
+
+**Second Sight** selects the firmware and Lattice chip for **Second Sight (with Z180)**. The menu shows only when the machine has that card. The choices are remembered in app settings and applied at power-on or **Machine → Restart**. Every firmware/chip pairing is selectable. Changing firmware leaves the chip choice intact. Defaults are 1.4-BEEF (original) and Original (BE8C). **INT0 pull-up** adds a card modification that lets the VGA retrace interrupt reach the Z180; the default is the stock card. See [Second Sight](Cards_SecondSight.md).
 
 **Debug → CPU Trace** enables or disables CPU instruction trace recording into the ring buffer (on by default). Toggling it here updates the live machine (if running) and saves the default in `system_settings.toml` (`debug.cpu_trace`). You can still toggle tracing temporarily inside the debugger window with **T**.
 
@@ -135,6 +141,15 @@ Drive seek/activity sounds play in stereo (drive 1 toward the left, drive 2 towa
   * Second Sight Text
   * Shadow Mask
   * Phosphor Persistence
+  * Second Sight (with the card in the machine)
+    * Monitor
+      * VGA CRT
+      * VGA LCD
+      * AppleColor RGB
+    * View
+      * IIgs monitor
+      * Second Sight monitor
+      * Both
 
 **HUD → Stats** toggles the small performance/stats overlay (off by default).  
 **HUD → Drives** toggles the drive-activity strip at the bottom of the screen (on by default).  
@@ -144,9 +159,13 @@ Both are useful when recording video and you want a clean picture. Preferences a
 
 **Scaling → Smooth / Sharp** is how Apple II dots are upscaled to the window (**F5** toggles). Smooth is a little more analog; Sharp is square pixels.
 
-**Second Sight Text** (IIgs with a Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).  
-**Shadow Mask** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. Same as the [`-g`](CommandLine.md) flag at boot.  
+**Second Sight Text** (IIgs with the simulated Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).  
+**Shadow Mask** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. Same as the [`-g`](CommandLine.md) flag at boot. With **Second Sight (with Z180)** it also adds scanlines to the card's picture, in the web build too.  
 **Phosphor Persistence** keeps a short glow on green / amber / white monitors. On by default when the GPU decoder is available. See [Displays](Displays.md).
+
+**Second Sight → Monitor → VGA CRT / VGA LCD / AppleColor RGB** selects the monitor attached to **Second Sight (with Z180)**. AppleColor RGB is the default. VGA LCD is a current LCD monitor on the VGA cable; the web build shows it only with a hardware GPU. The ROM reads the monitor sense at each card mode change. A change of cable takes effect at the next card mode change; **Machine → Restart** shows it at once.
+
+**Second Sight → View → IIgs monitor / Second Sight monitor / Both** selects the main-window picture or shows both independent outputs. Native builds use a separate card window for both; the browser shows them side by side. **F11** cycles the three choices. Both is the default. On a IIe the first choice is **IIe monitor**. The menu shows only when the machine has Second Sight (with Z180), and the choices are remembered in app settings. See [Second Sight](Cards_SecondSight.md).
 
 Hover speed and display widgets appear automatically when the mouse is over the window and is not captured. There is no Hover Enable menu item. See [On-Screen Display](OSD.md).
 
